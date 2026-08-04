@@ -336,6 +336,8 @@ export interface Report {
 
 export interface OAuthProviderStatus {
   client_id: string;
+  source?: "env" | "admin" | "";
+  editable?: boolean;
   secret_state: string;
   enabled: boolean;
   redirect_uri: string;

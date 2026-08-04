@@ -8,6 +8,7 @@ import UploadPanel from "./components/UploadPanel";
 import AdminLayout from "./pages/Admin";
 import DashboardPage from "./pages/Dashboard";
 import GalleryPage from "./pages/Gallery";
+import SharePage from "./pages/Share";
 import Home from "./pages/Home";
 import LoginPage from "./pages/Login";
 import ReferPage from "./pages/Refer";
@@ -55,6 +56,10 @@ export default function App() {
                 </RequireAdmin>
               }
             />
+            {/* Short links. Second to last: every named page above already
+              claimed its path, and the reserved-word list on the server keeps
+              a code from ever matching one of them. */}
+            <Route path="/:code" element={<SharePage />} />
             {/* Home is public — the uploader on it prompts anonymous visitors to
               register rather than hiding the product behind a login wall. */}
             <Route path="/*" element={<Home />} />

@@ -36,6 +36,7 @@ func Open(dsn string) *gorm.DB {
 		&models.CheckinRecord{},
 		&models.Report{},
 		&models.SiteSetting{},
+		&models.Reaction{},
 	); err != nil {
 		log.Fatalf("automigrate: %v", err)
 	}

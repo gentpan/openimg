@@ -99,6 +99,7 @@ func main() {
 	srv.StorageDir = cfg.StorageDir
 	srv.PublicBaseURL = cfg.PublicBaseURL
 	srv.FrontendDir = cfg.FrontendDir
+	srv.ReactionSalt = cfg.JWTSecret
 	// Existing rows predate short links; give them one.
 	go srv.BackfillShortCodes()
 	srv.TempDir = cfg.TempDir

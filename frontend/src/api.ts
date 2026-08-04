@@ -305,6 +305,46 @@ export const reportApi = {
     }),
 };
 
+export interface SharePayload {
+  code: string;
+  orig_name: string;
+  mime: string;
+  ext: string;
+  width: number;
+  height: number;
+  size: number;
+  views: number;
+  created_at: string;
+  uploader: string;
+  url: string;
+  short_url: string;
+  thumb_url: string;
+  markdown: string;
+  html: string;
+  html_link: string;
+  html_direct: string;
+  bbcode: string;
+  bbcode_link: string;
+  reactions: Record<string, number>;
+  mine?: string;
+}
+
+/** The public share page behind a short link. No auth required. */
+export const shareApi = {
+  get: (code: string) => jfetch<SharePayload>(`/api/s/${encodeURIComponent(code)}`),
+  react: (code: string, kind: string) =>
+    jfetch<SharePayload>(`/api/s/${encodeURIComponent(code)}/react`, {
+      method: "POST",
+      body: JSON.stringify({ kind }),
+    }),
+  /** Reports by code: the share page never receives the internal image id. */
+  report: (code: string, reason: string, contact?: string) =>
+    jfetch<{ ok: true; message: string }>(`/api/s/${encodeURIComponent(code)}/report`, {
+      method: "POST",
+      body: JSON.stringify({ reason, contact: contact || undefined }),
+    }),
+};
+
 export const adminApi = {
   stats: () => jfetch<Stats>("/admin/api/stats"),
   dashboard: () => jfetch<Dashboard>("/admin/api/dashboard"),

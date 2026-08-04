@@ -26,7 +26,9 @@ type Server struct {
 	Storage *storage.Registry
 	// FrontendDir, when set, is the built SPA this process also serves.
 	FrontendDir string
-	Cipher      *crypto.Cipher
+	// ReactionSalt keeps hashed visitor addresses non-portable.
+	ReactionSalt string
+	Cipher       *crypto.Cipher
 
 	StorageDir string
 	TempDir    string
@@ -74,6 +76,13 @@ func (s *Server) Router() *gin.Engine {
 	r.GET("/api/public-stats", s.handlePublicStats)
 	// Abuse reports accept anonymous submissions, so they get their own
 	// (tighter) limiter to keep the queue from being flooded.
+	// Share page: public, and reactions need to know whether the visitor is
+	// signed in without requiring it.
+	shareGroup := r.Group("", s.Auth.Middleware(false))
+	shareGroup.GET("/api/s/:code", s.handleShareInfo)
+	shareGroup.POST("/api/s/:code/react", s.reportLimiter.middleware("操作过于频繁"), s.handleReact)
+	shareGroup.POST("/api/s/:code/report", s.reportLimiter.middleware("举报过于频繁，请稍后再试"), s.handleShareReport)
+
 	r.POST("/api/report", s.Auth.Middleware(false),
 		s.reportLimiter.middleware("举报过于频繁，请稍后再试"), s.handleReport)
 

@@ -20,17 +20,38 @@ func (s *Server) adminOAuthStatus(c *gin.Context) {
 	}
 	effective := s.oauth()
 
+	// The page must show what is actually in force, not only what is in the
+	// database. Configuring through the environment is a supported path, and
+	// reporting an empty client id next to "已启用" reads as a bug.
+	//
+	// `source` names which one won: the stored value overrides the environment,
+	// so an operator who edits .env and sees nothing change needs to be told
+	// there is a database row shadowing it.
+	source := func(storedID, envID string) string {
+		switch {
+		case storedID != "":
+			return "admin"
+		case envID != "":
+			return "env"
+		}
+		return ""
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"can_store": s.Cipher.Enabled(),
 		"google": gin.H{
-			"client_id":    stored.GoogleClientID,
+			"client_id":    firstNonEmpty(stored.GoogleClientID, effective.GoogleClientID),
+			"editable":     stored.GoogleClientID != "" || s.OAuth.GoogleClientID == "",
+			"source":       source(stored.GoogleClientID, s.OAuth.GoogleClientID),
 			"secret_state": maskSecret(stored.GoogleSecretEnc, s.OAuth.GoogleClientSecret),
 			"enabled":      effective.GoogleClientID != "",
 			"redirect_uri": s.redirectURI("google"),
 			"console_url":  "https://console.cloud.google.com/apis/credentials",
 		},
 		"github": gin.H{
-			"client_id":    stored.GithubClientID,
+			"client_id":    firstNonEmpty(stored.GithubClientID, effective.GithubClientID),
+			"editable":     stored.GithubClientID != "" || s.OAuth.GithubClientID == "",
+			"source":       source(stored.GithubClientID, s.OAuth.GithubClientID),
 			"secret_state": maskSecret(stored.GithubSecretEnc, s.OAuth.GithubClientSecret),
 			"enabled":      effective.GithubClientID != "",
 			"redirect_uri": s.redirectURI("github"),
@@ -126,4 +147,11 @@ func (s *Server) adminOAuthSave(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true, "enabled": clientID != ""})
+}
+
+func firstNonEmpty(a, b string) string {
+	if a != "" {
+		return a
+	}
+	return b
 }

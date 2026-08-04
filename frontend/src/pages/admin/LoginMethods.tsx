@@ -78,9 +78,14 @@ export default function LoginMethods() {
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-sm text-neutral-100">{label} 登录</span>
                 {info.enabled ? (
-                  <span className="rounded-full bg-emerald-900/50 px-1.5 py-0.5 text-[9px] text-emerald-300">
-                    已启用
-                  </span>
+                  <>
+                    <span className="rounded-full bg-emerald-900/50 px-1.5 py-0.5 text-[9px] text-emerald-300">
+                      已启用
+                    </span>
+                    <span className="rounded-full bg-neutral-800 px-1.5 py-0.5 text-[9px] text-neutral-400">
+                      {info.source === "env" ? "环境变量" : "后台配置"}
+                    </span>
+                  </>
                 ) : (
                   <span className="rounded-full bg-neutral-800 px-1.5 py-0.5 text-[9px] text-neutral-500">
                     未配置
@@ -124,6 +129,14 @@ export default function LoginMethods() {
                   </div>
                 )}
               </div>
+
+              {info.source === "env" && (
+                <div className="mt-2 rounded-lg border border-neutral-800 bg-neutral-950/40 px-2.5 py-2 text-[10px] leading-relaxed text-neutral-500">
+                  当前凭据来自 <code className="text-neutral-300">.env</code>。在这里保存会写入数据库并
+                  <span className="text-amber-300">覆盖环境变量</span>——两处都配时以数据库为准。
+                  想继续用 .env 管理就别在这里保存。
+                </div>
+              )}
 
               <button
                 onClick={() => save(p)}

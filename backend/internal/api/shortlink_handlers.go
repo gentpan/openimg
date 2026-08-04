@@ -2,8 +2,14 @@ package api
 
 import (
 	"errors"
+	"github.com/google/uuid"
+	"html"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/gentpan/openimg/backend/internal/models"
 	"github.com/gentpan/openimg/backend/internal/storage"
@@ -42,12 +48,15 @@ func (s *Server) newShortCode(db *gorm.DB) (string, error) {
 	return "", errors.New("生成短链失败")
 }
 
-// GET /:code — resolve a short link.
+// GET /:code — the share page behind a short link.
 //
-// Mounted at the root, so it sees every unmatched path on the domain. It
-// rejects anything that is not code-shaped before touching the database, and
-// hands everything else to the SPA (or a 404 when the SPA is not served from
-// here), which is what keeps /login and friends working.
+// Renders a page rather than redirecting to the file. The short link is what
+// gets pasted into a forum post or a chat, where the useful landing is a page
+// that shows the picture *and* hands over every link format — a bare redirect
+// leaves the visitor on a raw image with no way back and nothing to copy.
+//
+// Embedding still uses the direct URL, which the page displays; that split is
+// deliberate and matches how every other host does it.
 func (s *Server) handleShortLink(c *gin.Context) {
 	code := c.Param("code")
 	if !models.IsValidShortCode(code) {
@@ -58,6 +67,8 @@ func (s *Server) handleShortLink(c *gin.Context) {
 	var img models.Image
 	err := s.DB.Where("short_code = ? AND deleted_at IS NULL", code).First(&img).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// Not a code we issued — hand it to the SPA, which will show its own
+		// not-found rather than a bare 404 from the API.
 		s.serveAppOrNotFound(c)
 		return
 	}
@@ -65,31 +76,70 @@ func (s *Server) handleShortLink(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	if img.Status == models.ImageBlocked {
-		c.JSON(http.StatusGone, gin.H{"error": "该图片已被屏蔽"})
+
+	// Counted here rather than on the image URL: the CDN serves those without
+	// ever reaching us, so a share-page visit is the only view we can observe.
+	// Best-effort — a failed counter must not break the page.
+	if img.Status != models.ImageBlocked {
+		go func(id uuid.UUID) {
+			if err := s.DB.Model(&models.Image{}).Where("id = ?", id).
+				UpdateColumn("view_count", gorm.Expr("view_count + 1")).Error; err != nil {
+				log.Printf("shortlink: view count for %s failed: %v", id, err)
+			}
+		}(img.ID)
+	}
+
+	s.serveShareApp(c, &img)
+}
+
+// serveShareApp returns the SPA with Open Graph tags for this image.
+//
+// The tags have to be in the HTML the crawler receives: a link preview is
+// fetched by a bot that does not run JavaScript, so anything React sets after
+// mount is invisible to it — and a share page whose whole job is to be pasted
+// somewhere is exactly where previews matter.
+func (s *Server) serveShareApp(c *gin.Context, img *models.Image) {
+	if s.FrontendDir == "" {
+		// Development: Vite serves the SPA and the React route renders it.
+		// Previews are a production concern, so there is nothing to inject.
+		s.serveAppOrNotFound(c)
+		return
+	}
+	raw, err := os.ReadFile(filepath.Join(s.FrontendDir, "index.html"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "frontend not available"})
 		return
 	}
 
+	var profile *models.StorageProfile
 	var p models.StorageProfile
-	profile := (*models.StorageProfile)(nil)
 	if s.DB.First(&p, "id = ?", img.ProfileID).Error == nil {
 		profile = &p
 	}
-	target := storage.URLFor(profile, img.ObjectKey, s.PublicBaseURL)
+	imageURL := storage.URLFor(profile, img.ObjectKey, s.PublicBaseURL)
+	pageURL := storage.JoinURL(s.PublicBaseURL, img.ShortCode)
 
-	// Counted here rather than on the image URL: the CDN serves those without
-	// ever reaching us, so a short-link hit is the only view we can actually
-	// observe. Best-effort — a failed counter must not break the redirect.
-	go func(id string) {
-		if err := s.DB.Model(&models.Image{}).Where("id = ?", id).
-			UpdateColumn("view_count", gorm.Expr("view_count + 1")).Error; err != nil {
-			log.Printf("shortlink: view count for %s failed: %v", id, err)
-		}
-	}(img.ID.String())
+	// html.EscapeString, not string concatenation: the filename is entirely
+	// user-controlled and lands inside an attribute.
+	esc := html.EscapeString
+	tags := strings.Join([]string{
+		`<meta property="og:type" content="website">`,
+		`<meta property="og:title" content="` + esc(img.OrigName) + `">`,
+		`<meta property="og:url" content="` + esc(pageURL) + `">`,
+		`<meta property="og:image" content="` + esc(imageURL) + `">`,
+		`<meta property="og:image:width" content="` + strconv.Itoa(img.Width) + `">`,
+		`<meta property="og:image:height" content="` + strconv.Itoa(img.Height) + `">`,
+		`<meta name="twitter:card" content="summary_large_image">`,
+		`<meta name="twitter:title" content="` + esc(img.OrigName) + `">`,
+		`<meta name="twitter:image" content="` + esc(imageURL) + `">`,
+	}, "\n    ")
 
-	// 302, not 301: a permanent redirect would be cached by browsers forever,
-	// and the target changes whenever the image domain does.
-	c.Redirect(http.StatusFound, target)
+	// Injected at </head> so these override the site-wide defaults earlier in
+	// the document — last tag wins for the crawlers that accept duplicates.
+	out := strings.Replace(string(raw), "</head>", "    "+tags+"\n  </head>", 1)
+
+	c.Header("Cache-Control", "public, max-age=300")
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(out))
 }
 
 // backfillShortCodes gives existing images a short link.

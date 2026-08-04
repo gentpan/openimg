@@ -34,6 +34,8 @@ export type ImageStatus = "active" | "blocked" | "deleted";
 export type BackupState = "none" | "pending" | "done" | "failed";
 
 export interface Image {
+  short_code?: string;
+  short_url?: string;
   id: string;
   user_id: string;
   profile_id: string;

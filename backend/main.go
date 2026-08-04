@@ -98,6 +98,9 @@ func main() {
 	srv := api.New(gdb, queue, authSvc, registry, cipher)
 	srv.StorageDir = cfg.StorageDir
 	srv.PublicBaseURL = cfg.PublicBaseURL
+	srv.FrontendDir = cfg.FrontendDir
+	// Existing rows predate short links; give them one.
+	go srv.BackfillShortCodes()
 	srv.TempDir = cfg.TempDir
 	srv.MaxUploadSize = cfg.MaxUploadSize
 	srv.RequireEmailVerified = cfg.RequireEmailVerified

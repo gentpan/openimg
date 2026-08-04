@@ -231,6 +231,11 @@ func (s *Server) storeUpload(ctx context.Context, p storeParams) (*models.Image,
 		refund()
 		return nil, false, err
 	}
+	shortCode, err := s.newShortCode(s.DB)
+	if err != nil {
+		refund()
+		return nil, false, err
+	}
 	written := []string{}
 	putObject := func(key string, out imageproc.Output) error {
 		if err := p.Backend.Put(ctx, key, bytes.NewReader(out.Data), out.Size(), out.MIME); err != nil {
@@ -261,6 +266,7 @@ func (s *Server) storeUpload(ctx context.Context, p storeParams) (*models.Image,
 		ProfileID:    profileID,
 		SHA256:       p.SHA,
 		ObjectKey:    primaryKey,
+		ShortCode:    shortCode,
 		OrigName:     p.OrigName,
 		MIME:         res.Primary.MIME,
 		Ext:          res.Primary.Ext,
@@ -300,12 +306,17 @@ func (s *Server) cloneImage(twin models.Image, p storeParams) (*models.Image, er
 			return nil, err
 		}
 	}
+	shortCode, err := s.newShortCode(s.DB)
+	if err != nil {
+		return nil, err
+	}
 	img := models.Image{
 		ID:           imageID,
 		UserID:       p.User.ID,
 		ProfileID:    twin.ProfileID,
 		SHA256:       twin.SHA256,
 		ObjectKey:    twin.ObjectKey,
+		ShortCode:    shortCode,
 		OrigName:     p.OrigName,
 		MIME:         twin.MIME,
 		Ext:          twin.Ext,

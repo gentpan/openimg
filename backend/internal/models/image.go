@@ -60,6 +60,11 @@ type Image struct {
 	// Indexed together with ProfileID for dedup lookups.
 	SHA256    string `gorm:"size:64;index:idx_images_profile_sha,priority:2;not null" json:"sha256"`
 	ObjectKey string `gorm:"size:512;index;not null" json:"object_key"`
+	// ShortCode is the 4–6 character path of the image's short link. Unique,
+	// unlike ObjectKey — deduplicated uploads share an object but each row is
+	// a separate image with its own link, so one user deleting theirs must not
+	// break the other's.
+	ShortCode string `gorm:"size:8;uniqueIndex" json:"short_code,omitempty"`
 
 	OrigName string `gorm:"size:255" json:"orig_name"`
 	MIME     string `gorm:"size:64;not null" json:"mime"`
@@ -135,6 +140,52 @@ func NewKeyID() string {
 		}
 	}
 	return string(out)
+}
+
+// ReservedShortCodes are paths the short-link space must never claim.
+//
+// The code alphabet and length overlap the app's own routes — "login",
+// "admin", "space" and "refer" are all five characters of [0-9a-zA-Z], and
+// "upload" is six. A code equal to any of these would shadow a real page.
+// Generation skips them and lookup rejects them, so the two can never disagree.
+var ReservedShortCodes = map[string]bool{
+	// Client-side routes.
+	"login": true, "admin": true, "space": true, "refer": true, "upload": true,
+	"docs": true, "help": true, "about": true, "terms": true, "abuse": true,
+	// Server prefixes and conventional well-known names, in case the short
+	// link handler is ever mounted where these could collide.
+	"api": true, "auth": true, "s": true, "img": true, "cdn": true, "www": true,
+	"static": true, "assets": true, "public": true, "health": true, "robots": true,
+	"report": true, "signup": true, "logout": true, "user": true, "users": true,
+}
+
+// IsValidShortCode reports whether s could be a short code at all. Checked
+// before any database lookup so an arbitrary path never costs a query.
+func IsValidShortCode(s string) bool {
+	if len(s) < 4 || len(s) > 6 {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
+			return false
+		}
+	}
+	return !ReservedShortCodes[strings.ToLower(s)]
+}
+
+// NewShortCode returns a candidate code of the given length. Callers must
+// still confirm it is unused — the code space is small enough that collisions
+// are ordinary, not exceptional.
+func NewShortCode(length int) string {
+	for {
+		out := make([]byte, length)
+		id := NewKeyID()
+		copy(out, id[:length])
+		if IsValidShortCode(string(out)) {
+			return string(out)
+		}
+	}
 }
 
 // ObjectKeyFor builds a key for a newly stored image:

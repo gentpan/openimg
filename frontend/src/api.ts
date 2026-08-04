@@ -295,6 +295,16 @@ export const resetApi = {
     }),
 };
 
+/** Abuse reports. Anonymous submissions are accepted — requiring an account
+ *  to report is a good way to never hear about a problem until your host does. */
+export const reportApi = {
+  submit: (imageId: string, reason: string, contact?: string) =>
+    jfetch<{ ok: true }>("/api/report", {
+      method: "POST",
+      body: JSON.stringify({ image_id: imageId, reason, contact: contact || undefined }),
+    }),
+};
+
 export const adminApi = {
   stats: () => jfetch<Stats>("/admin/api/stats"),
   dashboard: () => jfetch<Dashboard>("/admin/api/dashboard"),

@@ -1,0 +1,54 @@
+# Openimg — reverse proxy.
+#
+# Two ways to run this, and the short links are what decide between them.
+
+# --- Recommended: one process owns the domain -------------------------------
+#
+# Set FRONTEND_DIR=/opt/openimg/frontend in the backend's .env and Caddy just
+# forwards everything. The Go server serves the SPA for unmatched paths, so
+# openimg.io/aB3d can answer with a real 302 to the image.
+#
+# Doing it the other way means teaching Caddy which 4–6 character paths are
+# short codes and which are pages ("login" and "admin" are both five letters),
+# and keeping that list in sync with the one in the Go source. One list is
+# better than two.
+
+openimg.io {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8080
+}
+
+# Image domain. Points at the bucket / CDN, not at the app — the app only ever
+# hands out URLs on this host, it never serves the bytes.
+#
+# imgla.com {
+# 	reverse_proxy https://<your-bucket-endpoint> {
+# 		header_up Host {upstream_hostport}
+# 	}
+# 	header Cache-Control "public, max-age=31536000, immutable"
+# 	header X-Content-Type-Options nosniff
+# }
+
+# --- Alternative: Caddy serves the SPA --------------------------------------
+#
+# Keep this only if you have a reason to serve dist/ from Caddy. Short links
+# then need the matcher below, and the reserved list must match
+# models.ReservedShortCodes in the backend.
+#
+# openimg.io {
+# 	encode zstd gzip
+#
+# 	@backend path /api/* /auth/* /admin/api/* /storage/* /healthz
+# 	reverse_proxy @backend 127.0.0.1:8080
+#
+# 	# 4–6 chars of [0-9A-Za-z], minus the paths that are real pages.
+# 	@shortlink {
+# 		path_regexp ^/[0-9A-Za-z]{4,6}$
+# 		not path /login /admin /space /refer /upload /docs /help /about /terms /abuse
+# 	}
+# 	reverse_proxy @shortlink 127.0.0.1:8080
+#
+# 	root * /opt/openimg/frontend
+# 	try_files {path} /index.html
+# 	file_server
+# }

@@ -22,6 +22,7 @@ type imageOut struct {
 	URL       string            `json:"url"`
 	Variants  map[string]string `json:"variant_urls"`
 	Thumb     string            `json:"thumb_url"`
+	ShortURL  string            `json:"short_url,omitempty"`
 	Markdown  string            `json:"markdown"`
 	HTML      string            `json:"html"`
 	BBCode    string            `json:"bbcode"`
@@ -64,6 +65,9 @@ func (s *Server) decorate(images []models.Image) []imageOut {
 		}
 		// Prefer the smallest generated thumbnail; fall back to the original
 		// so a gallery still renders while derivatives are still queued.
+		if img.ShortCode != "" {
+			item.ShortURL = storage.JoinURL(s.PublicBaseURL, img.ShortCode)
+		}
 		item.Thumb = item.URL
 		for _, v := range []string{models.VariantW200, models.VariantW600} {
 			if u, ok := item.Variants[v]; ok {

@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/gentpan/openimg/backend/internal/auth"
@@ -23,7 +24,9 @@ type Server struct {
 	Queue   *scheduler.Queue
 	Auth    *auth.Service
 	Storage *storage.Registry
-	Cipher  *crypto.Cipher
+	// FrontendDir, when set, is the built SPA this process also serves.
+	FrontendDir string
+	Cipher      *crypto.Cipher
 
 	StorageDir string
 	TempDir    string
@@ -183,7 +186,30 @@ func (s *Server) Router() *gin.Engine {
 		c.Next()
 	})
 	storageGroup.Static("/", s.StorageDir)
+
+	// Short links live at the root, so this must be registered last: Gin gives
+	// static routes priority over a wildcard sibling, and everything above has
+	// already claimed its path.
+	//
+	// When FRONTEND_DIR is set the same handler also serves the SPA for any
+	// path that is not a code, which is what lets one process own the whole
+	// domain and makes the short link a genuine 302 instead of a page that
+	// loads React and then navigates.
+	r.GET("/:code", s.handleShortLink)
+	r.NoRoute(s.serveAppOrNotFound)
 	return r
+}
+
+// serveAppOrNotFound hands the request to the built frontend when this process
+// is serving it, and otherwise reports a plain 404 for the reverse proxy to
+// deal with.
+func (s *Server) serveAppOrNotFound(c *gin.Context) {
+	if s.FrontendDir == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	// Any unmatched path is a client-side route: the SPA reads the URL itself.
+	c.File(filepath.Join(s.FrontendDir, "index.html"))
 }
 
 // groupFor resolves a user's tier, falling back to the "free" group so a user

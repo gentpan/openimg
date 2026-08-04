@@ -19,6 +19,7 @@ type Config struct {
 	StorageDir    string
 	TempDir       string
 	PublicBaseURL string
+	FrontendDir   string
 	CookieDomain  string
 	CookieSecure  bool
 
@@ -71,11 +72,14 @@ func Load() Config {
 	requireVerified, _ := strconv.ParseBool(getenv("REQUIRE_EMAIL_VERIFIED", "true"))
 
 	cfg := Config{
-		ListenAddr:       getenv("LISTEN_ADDR", "127.0.0.1:8080"),
-		DatabaseURL:      mustGet("DATABASE_URL"),
-		StorageDir:       getenv("STORAGE_DIR", "/opt/openimg/storage"),
-		TempDir:          getenv("TEMP_DIR", "/opt/openimg/tmp"),
-		PublicBaseURL:    getenv("PUBLIC_BASE_URL", "http://127.0.0.1:8080"),
+		ListenAddr:    getenv("LISTEN_ADDR", "127.0.0.1:8080"),
+		DatabaseURL:   mustGet("DATABASE_URL"),
+		StorageDir:    getenv("STORAGE_DIR", "/opt/openimg/storage"),
+		TempDir:       getenv("TEMP_DIR", "/opt/openimg/tmp"),
+		PublicBaseURL: getenv("PUBLIC_BASE_URL", "http://127.0.0.1:8080"),
+		// Optional. Set it to the frontend's dist/ and this process serves the
+		// SPA too, which is what lets short links live at the domain root.
+		FrontendDir:      os.Getenv("FRONTEND_DIR"),
 		CookieDomain:     getenv("COOKIE_DOMAIN", ""),
 		CookieSecure:     secure,
 		JWTSecret:        mustGet("JWT_SECRET"),

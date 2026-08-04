@@ -235,13 +235,9 @@ function Profile() {
         <label className="block text-[10px] text-neutral-500 mb-1">昵称</label>
         <NicknameField />
         <div className="mt-2 flex items-center gap-2">
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={busy}
-            className="inline-flex h-8 items-center justify-center rounded-lg bg-neutral-800 px-3 text-xs text-neutral-300 hover:bg-neutral-700 disabled:opacity-60 transition"
-          >
-            上传头像
-          </button>
+          <span className="text-[10px] text-faint">
+            点击左侧头像更换 · 支持 JPG / PNG / WebP / HEIC，自动裁成 256px 方图并转为 AVIF
+          </span>
           {user.avatar_url && (
             <button
               onClick={clear}
@@ -251,7 +247,6 @@ function Profile() {
               移除
             </button>
           )}
-          <span className="text-[10px] text-faint">JPG / PNG / WebP，自动裁成 256px 方图</span>
         </div>
       </div>
     </div>

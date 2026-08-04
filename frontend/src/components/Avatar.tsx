@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { User } from "../types";
 
 /** Deterministic hue from the identity, so the same account always gets the
@@ -21,6 +22,13 @@ function initial(user: Pick<User, "name" | "email">): string {
  * The fallback is a coloured initial rather than a generic silhouette: in a
  * list every silhouette looks the same, which defeats the point of showing a
  * picture at all.
+ *
+ * It also covers a browser that cannot decode the stored AVIF. Avatars are
+ * encoded AVIF-only — no WebP twin, no <picture> element — so a viewer on
+ * Safari below 16.4 would otherwise get the broken-image glyph on every page,
+ * since the avatar sits in the nav bar. Falling back on the load error turns
+ * that into an initial, which is what an account with no picture already
+ * looks like.
  */
 export default function Avatar({
   user,
@@ -32,14 +40,20 @@ export default function Avatar({
   className?: string;
 }) {
   const common = `shrink-0 rounded-full object-cover ${className}`;
+  const [failed, setFailed] = useState(false);
 
-  if (user.avatar_url) {
+  // A new URL deserves a fresh attempt: without this, one failure would keep
+  // the initial showing even after the user uploads a different picture.
+  useEffect(() => setFailed(false), [user.avatar_url]);
+
+  if (user.avatar_url && !failed) {
     return (
       <img
         src={user.avatar_url}
         alt=""
         width={size}
         height={size}
+        onError={() => setFailed(true)}
         className={`${common} block h-full w-full`}
         style={{ width: size, height: size }}
       />

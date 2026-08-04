@@ -5,6 +5,7 @@ import Logo from "../Logo";
 import { useTheme } from "../ThemeContext";
 import { authApi, resetApi } from "../api";
 import PasskeyLoginForm from "./PasskeyLoginForm";
+import OAuthButtons from "./OAuthButtons";
 
 type Mode = "password" | "otp" | "passkey";
 
@@ -98,6 +99,10 @@ export default function LoginPage() {
           </button>
         </form>
       )}
+
+      <div className="mt-6">
+        <OAuthButtons onPasskey={() => setMode("passkey")} />
+      </div>
 
       <div className="mt-5 text-sm text-neutral-500 text-center">
         没账号？{" "}

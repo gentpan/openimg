@@ -38,6 +38,10 @@ const (
 	avifEffort   = 4  // 0-9; higher is smaller but much slower
 	pngCompress  = 9
 	thumbQuality = 78
+	// Avatars run a notch above the AVIF default: they are shown small but
+	// often against a solid background, where banding in a gradient is far more
+	// visible than the same artefact inside a photograph.
+	avatarQuality = 62
 
 	// unboundedHeight lets vips_thumbnail size purely by width: libvips fits
 	// within both constraints, so a height no real image reaches never binds.
@@ -417,14 +421,23 @@ func MakeAvatar(buf []byte) (*Output, error) {
 	if err := img.RemoveMetadata(); err != nil {
 		return nil, fmt.Errorf("移除元数据失败：%w", err)
 	}
-	// Always WebP: an avatar is decoration, and every browser that can run
-	// this app decodes it.
-	data, meta, err := img.ExportWebp(&vips.WebpExportParams{Quality: 82, StripMetadata: true})
+
+	// AVIF. Encoding it is slow enough that the upload pipeline pushes it to a
+	// background queue, but that reasoning does not carry here: this is one
+	// 256px square, so the encode is milliseconds rather than the seconds a
+	// full-size photo costs, and doing it inline keeps the avatar a single
+	// object with no "still converting" state to design around.
+	p := vips.NewAvifExportParams()
+	p.Quality = avatarQuality
+	p.Effort = avifEffort
+	p.StripMetadata = true
+
+	data, meta, err := img.ExportAvif(p)
 	if err != nil {
 		return nil, fmt.Errorf("编码头像失败：%w", err)
 	}
 	return &Output{
-		Ext: "webp", MIME: "image/webp", Data: data,
+		Ext: "avif", MIME: "image/avif", Data: data,
 		Width: meta.Width, Height: meta.Height,
 	}, nil
 }

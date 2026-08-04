@@ -23,7 +23,7 @@ const avatarMaxUpload = 8 << 20 // 8 MiB
 // POST /api/account/avatar
 //
 // Avatars are stored on the platform pool and are deliberately *not* charged
-// to the user's quota. One 256px WebP is a few kilobytes, it is account
+// to the user's quota. One 256px AVIF is a couple of kilobytes, it is account
 // furniture rather than something the user is hosting, and billing it would
 // mean a user at their limit could not change their profile picture.
 func (s *Server) handleUploadAvatar(c *gin.Context) {
@@ -71,7 +71,7 @@ func (s *Server) handleUploadAvatar(c *gin.Context) {
 	// object stays readable until the new row is committed, so a viewer mid
 	// page-load never sees a broken image, and a CDN holding the old URL is
 	// not serving a picture the user just replaced.
-	key := "avatar/" + models.NewKeyID() + ".webp"
+	key := "avatar/" + models.NewKeyID() + "." + out.Ext
 	if err := backend.Put(ctx, key, bytes.NewReader(out.Data), out.Size(), out.MIME); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "写入存储失败：" + err.Error()})
 		return

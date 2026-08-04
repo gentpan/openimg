@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { authApi } from "../api";
+import PasswordField from "../components/PasswordField";
 import { AuthShell, Field, inputCls } from "./Login";
 import OAuthButtons from "./OAuthButtons";
 
@@ -11,6 +12,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
   const [code, setCode] = useState("");
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState("");
@@ -42,8 +44,16 @@ export default function RegisterPage() {
     }
   }
 
+  const mismatch = password2.length > 0 && password !== password2;
+  const ready =
+    name.trim().length > 0 &&
+    password.length >= 8 &&
+    password === password2 &&
+    code.length === 6;
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!ready) return;
     setBusy(true);
     setErr(null);
     try {
@@ -62,11 +72,29 @@ export default function RegisterPage() {
         <Field label="邮箱">
           <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} autoComplete="email" />
         </Field>
-        <Field label="昵称（可选）">
-          <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} autoComplete="nickname" />
+        <Field label="昵称">
+          <input
+            value={name}
+            required
+            maxLength={32}
+            placeholder="别人看到的名字，可重复"
+            onChange={(e) => setName(e.target.value)}
+            className={inputCls}
+            autoComplete="nickname"
+          />
         </Field>
         <Field label="密码（至少 8 位）">
-          <input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} autoComplete="new-password" />
+          <PasswordField value={password} onChange={setPassword} />
+        </Field>
+        <Field label="确认密码">
+          <PasswordField
+            value={password2}
+            onChange={setPassword2}
+            placeholder="再输入一次"
+            showStrength={false}
+            showGenerate={false}
+          />
+          {mismatch && <div className="mt-1.5 text-[11px] text-red-400">两次输入不一致</div>}
         </Field>
         <Field label="邮箱验证码">
           <div className="flex gap-1.5">
@@ -98,7 +126,7 @@ export default function RegisterPage() {
         {err && <div className="text-sm text-red-400">{err}</div>}
         <button
           type="submit"
-          disabled={busy || code.length !== 6 || password.length < 8}
+          disabled={busy || !ready}
           className="w-full rounded-lg bg-violet-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-violet-500 disabled:bg-neutral-800 disabled:text-neutral-500"
         >
           {busy ? "注册中…" : "创建账号"}

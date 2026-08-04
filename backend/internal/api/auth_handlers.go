@@ -19,7 +19,7 @@ type registerReq struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=8,max=128"`
 	Code     string `json:"code" binding:"required,len=6"`
-	Name     string `json:"name"`
+	Name     string `json:"name" binding:"required,min=1,max=32"`
 	Ref      string `json:"ref"`
 }
 
@@ -81,7 +81,12 @@ func (s *Server) handleRegister(c *gin.Context) {
 	var req registerReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		msg := "请填写邮箱和至少 8 位的密码"
-		if len(strings.TrimSpace(req.Code)) != 6 {
+		switch {
+		case strings.TrimSpace(req.Name) == "":
+			msg = "请填写昵称"
+		case len([]rune(strings.TrimSpace(req.Name))) > 32:
+			msg = "昵称最多 32 个字符"
+		case len(strings.TrimSpace(req.Code)) != 6:
 			msg = "请输入 6 位邮箱验证码"
 		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": msg})
@@ -89,9 +94,6 @@ func (s *Server) handleRegister(c *gin.Context) {
 	}
 	email := strings.ToLower(strings.TrimSpace(req.Email))
 	name := strings.TrimSpace(req.Name)
-	if name == "" {
-		name = email
-	}
 
 	var existing models.User
 	if err := s.DB.Where("email = ?", email).First(&existing).Error; err == nil {

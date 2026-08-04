@@ -10,6 +10,7 @@ import OtpConfirm from "../components/OtpConfirm";
 import { useToast } from "../ToastContext";
 import Avatar from "../components/Avatar";
 import { RingSpinner } from "../components/Spinner";
+import PasswordField from "../components/PasswordField";
 import ConvertSettings from "../components/ConvertSettings";
 import DeleteAccount from "../components/DeleteAccount";
 import StorageProfiles from "../components/StorageProfiles";
@@ -417,22 +418,13 @@ function ChangePassword({ onClose }: { onClose: () => void }) {
         </div>
 
         <label className="block text-[10px] text-neutral-500 mb-1">新密码</label>
-        <input
-          type="password"
-          value={pw}
-          autoComplete="new-password"
-          placeholder="至少 8 位"
-          onChange={(e) => setPw(e.target.value)}
-          className="w-full h-8 rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 text-xs outline-none focus:border-violet-500 placeholder-faint mb-2"
-        />
-        <input
-          type="password"
+        <PasswordField value={pw} onChange={setPw} className="mb-2" />
+        <PasswordField
           value={pw2}
-          autoComplete="new-password"
+          onChange={setPw2}
           placeholder="再输入一次"
-          onChange={(e) => setPw2(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submit()}
-          className="w-full h-8 rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 text-xs outline-none focus:border-violet-500 placeholder-faint"
+          showStrength={false}
+          showGenerate={false}
         />
 
         {tooShort && <div className="mt-2 text-[11px] text-red-400">密码至少 8 位</div>}

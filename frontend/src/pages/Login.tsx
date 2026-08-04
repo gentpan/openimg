@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import Logo from "../Logo";
+import PasswordField from "../components/PasswordField";
 import { useTheme } from "../ThemeContext";
 import { authApi, resetApi } from "../api";
 import PasskeyLoginForm from "./PasskeyLoginForm";
@@ -269,16 +270,7 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
         </Field>
 
         <Field label="新密码">
-          <input
-            type="password"
-            required
-            minLength={8}
-            value={pw}
-            onChange={(e) => setPw(e.target.value)}
-            autoComplete="new-password"
-            placeholder="至少 8 位"
-            className={inputCls}
-          />
+          <PasswordField value={pw} onChange={setPw} />
         </Field>
 
         {sent && (

@@ -323,6 +323,7 @@ export interface AdminQuotaTx {
 export interface Report {
   id: string;
   image_id: string;
+  category?: string;
   reason: string;
   contact: string;
   status: "open" | "resolved";
@@ -332,6 +333,13 @@ export interface Report {
   owner_email: string;
   owner_id: string;
   image_status: ImageStatus;
+  orig_name: string;
+  short_code?: string;
+  width: number;
+  height: number;
+  size_stored: number;
+  anonymous: boolean;
+  reports_on_image: number;
 }
 
 export interface OAuthProviderStatus {

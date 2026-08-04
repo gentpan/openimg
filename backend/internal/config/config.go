@@ -50,6 +50,7 @@ type Config struct {
 	S3AccessKey     string
 	S3SecretKey     string
 	S3PublicURLBase string
+	S3ThumbURLBase  string
 	S3KeyPrefix     string
 	S3UsePathStyle  bool
 
@@ -103,6 +104,7 @@ func Load() Config {
 		S3AccessKey:     os.Getenv("S3_ACCESS_KEY"),
 		S3SecretKey:     os.Getenv("S3_SECRET_KEY"),
 		S3PublicURLBase: os.Getenv("S3_PUBLIC_URL_BASE"),
+		S3ThumbURLBase:  os.Getenv("S3_THUMB_URL_BASE"),
 		S3KeyPrefix:     os.Getenv("S3_KEY_PREFIX"),
 		S3UsePathStyle:  parseBool(getenv("S3_PATH_STYLE", "true")),
 

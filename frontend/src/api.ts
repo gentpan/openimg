@@ -298,10 +298,10 @@ export const resetApi = {
 /** Abuse reports. Anonymous submissions are accepted — requiring an account
  *  to report is a good way to never hear about a problem until your host does. */
 export const reportApi = {
-  submit: (imageId: string, reason: string, contact?: string) =>
+  submit: (imageId: string, category: string, reason?: string, contact?: string) =>
     jfetch<{ ok: true }>("/api/report", {
       method: "POST",
-      body: JSON.stringify({ image_id: imageId, reason, contact: contact || undefined }),
+      body: JSON.stringify({ image_id: imageId, category, reason: reason || undefined, contact: contact || undefined }),
     }),
 };
 
@@ -338,12 +338,27 @@ export const shareApi = {
       body: JSON.stringify({ kind }),
     }),
   /** Reports by code: the share page never receives the internal image id. */
-  report: (code: string, reason: string, contact?: string) =>
+  report: (code: string, category: string, reason?: string, contact?: string) =>
     jfetch<{ ok: true; message: string }>(`/api/s/${encodeURIComponent(code)}/report`, {
       method: "POST",
-      body: JSON.stringify({ reason, contact: contact || undefined }),
+      body: JSON.stringify({ category, reason: reason || undefined, contact: contact || undefined }),
     }),
 };
+
+/** Report categories. Keys are stable; labels are what both the reporter and
+ *  the admin see, so a report never reads differently on the two ends. */
+export const REPORT_CATEGORIES = [
+  { key: "porn", label: "涉黄内容" },
+  { key: "copyright", label: "侵犯版权" },
+  { key: "violence", label: "涉恐或血腥" },
+  { key: "privacy", label: "个人隐私" },
+  { key: "fraud", label: "诈骗或恶意链接" },
+  { key: "other", label: "其他违规" },
+] as const;
+
+export function reportCategoryLabel(key?: string): string {
+  return REPORT_CATEGORIES.find((c) => c.key === key)?.label ?? "其他违规";
+}
 
 export const adminApi = {
   stats: () => jfetch<Stats>("/admin/api/stats"),

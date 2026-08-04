@@ -50,6 +50,15 @@ type StorageProfile struct {
 	// PublicBaseURL is the CDN origin this bucket is served from, e.g.
 	// "https://cdn.openimg.io". Object URLs are assembled at read time.
 	PublicBaseURL string `gorm:"size:255;not null" json:"public_base_url"`
+	// ThumbBaseURL optionally serves the display-size variants from a second
+	// origin. Empty means they share PublicBaseURL.
+	//
+	// Worth splitting because the two have different cache economics: a main
+	// image is written once and read forever, while thumbnails are generated
+	// on demand and can be regenerated from the original at any time. Pointing
+	// them at separate hostnames lets the CDN treat them differently — and
+	// lets the thumbnail tier be purged wholesale without touching originals.
+	ThumbBaseURL string `gorm:"size:255" json:"thumb_base_url"`
 
 	// IsDefault marks the profile new uploads land on. Scoped per user; the
 	// platform profile is the fallback when a user has none.

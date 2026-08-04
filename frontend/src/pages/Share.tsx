@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { formatBytes, shareApi, type SharePayload } from "../api";
+import { REPORT_CATEGORIES, formatBytes, shareApi, type SharePayload } from "../api";
 import Logo from "../Logo";
 import { useTheme } from "../ThemeContext";
 import { useToast } from "../ToastContext";
@@ -337,24 +337,25 @@ function ShareRow({ url, title }: { url: string; title: string }) {
 
 function ReportDialog({ code, onClose }: { code: string; onClose: () => void }) {
   const toast = useToast();
-  const [preset, setPreset] = useState<string | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [contact, setContact] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const PRESETS = ["色情或血腥内容", "侵犯版权", "个人隐私信息", "诈骗或恶意链接", "其他"];
-  const full = preset && preset !== "其他" ? `${preset}${reason ? " — " + reason : ""}` : reason;
-  const ready = (full || "").trim().length >= 4;
+  // A type is required; the description is not. The category is what gets
+  // triaged, and demanding prose on top of it only teaches people to type
+  // filler to get past the button.
+  const ready = !!category;
 
   async function submit() {
     if (!ready || busy) return;
     setBusy(true);
     setErr(null);
     try {
-      await shareApi.report(code, full!.trim(), contact.trim());
+      await shareApi.report(code, category!, reason.trim(), contact.trim());
       onClose();
-      toast.success("投诉已提交", "我们会尽快核实处理");
+      toast.success("举报已提交", "管理员会收到通知并尽快核实");
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -365,66 +366,87 @@ function ReportDialog({ code, onClose }: { code: string; onClose: () => void }) 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/50" onClick={() => !busy && onClose()} />
-      <div className="shadow-panel relative w-full max-w-sm rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
-        <div className="mb-1 flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-900/40 text-xs text-red-300">
-            <i className="fa-solid fa-flag" />
-          </span>
-          <span className="text-sm text-neutral-100">举报这张图片</span>
-        </div>
-        <p className="mb-3 text-[11px] leading-relaxed text-neutral-500">
-          管理员会收到通知并核实。无需登录即可提交。
-        </p>
-
-        <div className="mb-3 flex flex-wrap gap-1.5">
-          {PRESETS.map((p) => (
-            <button
-              key={p}
-              onClick={() => setPreset(preset === p ? null : p)}
-              className={`inline-flex h-8 items-center justify-center rounded-lg px-3 text-xs transition ${
-                preset === p
-                  ? "border border-red-500/40 bg-red-600/20 text-red-300"
-                  : "border border-transparent bg-neutral-800 text-neutral-400 hover:text-neutral-100"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-
-        <textarea
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          rows={3}
-          maxLength={500}
-          placeholder={preset && preset !== "其他" ? "补充说明（可选）" : "请说明问题，至少 4 个字"}
-          className="placeholder-faint w-full resize-none rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 py-2 text-xs outline-none focus:border-red-500"
-        />
-        <input
-          value={contact}
-          onChange={(e) => setContact(e.target.value)}
-          placeholder="联系方式（可选）"
-          className="placeholder-faint mt-2 h-8 w-full rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 text-xs outline-none focus:border-red-500"
-        />
-
-        {err && <div className="mt-2 text-[11px] text-red-400">{err}</div>}
-
-        <div className="mt-3 flex items-center gap-2">
+      <div className="shadow-panel relative flex max-h-[88vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900">
+        <div className="flex items-center gap-2 border-b border-neutral-800/60 px-5 py-3.5">
+          <span className="text-sm text-neutral-100">举报图片</span>
           <div className="flex-1" />
           <button
             onClick={onClose}
             disabled={busy}
-            className="inline-flex h-8 items-center justify-center rounded-lg px-3 text-xs text-neutral-400 transition hover:text-neutral-100"
+            aria-label="关闭"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-800 hover:text-neutral-200"
+          >
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <div className="mb-2 text-xs text-neutral-300">举报类型</div>
+          <div className="space-y-2">
+            {REPORT_CATEGORIES.map((c) => {
+              const on = category === c.key;
+              return (
+                <button
+                  key={c.key}
+                  onClick={() => setCategory(c.key)}
+                  className={`flex w-full items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-xs transition ${
+                    on
+                      ? "border-violet-500/50 bg-violet-600/15 text-violet-200"
+                      : "border-neutral-800 bg-neutral-950/40 text-neutral-300 hover:border-neutral-700"
+                  }`}
+                >
+                  <span
+                    className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border ${
+                      on ? "border-violet-400" : "border-neutral-600"
+                    }`}
+                  >
+                    {on && <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />}
+                  </span>
+                  {c.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mb-1.5 mt-4 text-xs text-neutral-300">
+            补充说明 <span className="text-neutral-600">（可选）</span>
+          </div>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={3}
+            maxLength={500}
+            placeholder="请描述具体问题…"
+            className="placeholder-faint w-full resize-none rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-xs outline-none focus:border-violet-500"
+          />
+
+          <input
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+            placeholder="联系方式（可选，便于回复处理结果）"
+            className="placeholder-faint mt-2 h-8 w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 text-xs outline-none focus:border-violet-500"
+          />
+
+          {err && <div className="mt-2 text-[11px] text-red-400">{err}</div>}
+        </div>
+
+        <div className="flex items-center gap-2 border-t border-neutral-800/60 px-5 py-3">
+          <button
+            onClick={onClose}
+            disabled={busy}
+            className="inline-flex h-8 items-center justify-center rounded-lg border border-neutral-800 px-4 text-xs text-neutral-300 transition hover:border-neutral-700"
           >
             取消
           </button>
           <button
             onClick={submit}
             disabled={!ready || busy}
-            className="inline-flex h-8 items-center justify-center rounded-lg bg-red-600 px-3 text-xs font-medium text-white transition hover:bg-red-700 disabled:bg-neutral-800 disabled:text-neutral-500"
+            className="inline-flex h-8 items-center justify-center rounded-lg bg-red-600 px-4 text-xs font-medium text-white transition hover:bg-red-700 disabled:bg-neutral-800 disabled:text-neutral-500"
           >
             {busy ? <RingSpinner className="h-3.5 w-3.5" /> : "提交举报"}
           </button>
+          <div className="flex-1" />
+          <span className="text-[10px] text-faint">无需登录</span>
         </div>
       </div>
     </div>

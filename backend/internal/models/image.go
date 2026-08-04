@@ -207,6 +207,16 @@ func OriginalVariant(ext string) string { return VariantOriginalPrefix + ext }
 // IsOriginalVariant reports whether a variant name refers to a kept original.
 func IsOriginalVariant(name string) bool { return strings.HasPrefix(name, VariantOriginalPrefix) }
 
+// IsThumbVariant reports whether a variant is one of the display sizes, as
+// opposed to a full-size re-encode or a kept original.
+func IsThumbVariant(name string) bool {
+	switch name {
+	case VariantW200, VariantW600, VariantW1200:
+		return true
+	}
+	return false
+}
+
 // BaseKey strips the extension off an object key, giving the stem every
 // derivative hangs off.
 func BaseKey(objectKey string) string {

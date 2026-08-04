@@ -5,7 +5,7 @@ import Footer from "../Footer";
 import AdminDashboard from "./admin/Dashboard";
 import LoginMethods from "./admin/LoginMethods";
 import UploadSettings from "./admin/UploadSettings";
-import { adminApi, formatBytes } from "../api";
+import { adminApi, formatBytes, reportCategoryLabel } from "../api";
 import type { AdminQuotaTx, AdminUser, Image, Report, UserGroup } from "../types";
 
 type Tab = "dashboard" | "users" | "groups" | "images" | "reports" | "ledger" | "login" | "upload";
@@ -401,6 +401,7 @@ function ReportsTab({ onChange }: { onChange: (n: number) => void }) {
   const [reports, setReports] = useState<Report[]>([]);
   const [status, setStatus] = useState("open");
   const [busy, setBusy] = useState(false);
+  const [detail, setDetail] = useState<Report | null>(null);
 
   async function load() {
     const r = await adminApi.listReports(status);
@@ -450,46 +451,239 @@ function ReportsTab({ onChange }: { onChange: (n: number) => void }) {
         <div className="space-y-2">
           {reports.map((r) => (
             <div key={r.id} className="rounded-xl border border-neutral-800 bg-neutral-950/40 p-3">
-              <div className="flex items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-neutral-200 break-words">{r.reason}</div>
-                  <div className="mt-1 text-[10px] text-neutral-600">
-                    上传者 {r.owner_email} · {new Date(r.created_at).toLocaleString("zh-CN")}
-                    {r.contact && ` · 联系方式 ${r.contact}`}
-                  </div>
-                  <div className="mt-1 text-[10px] text-faint font-mono break-all">{r.object_key}</div>
+              {/* The whole summary is the affordance: a report is something you
+                  read before acting on, so opening it should not require
+                  hunting for a "详情" link. */}
+              <button
+                onClick={() => setDetail(r)}
+                className="group flex w-full items-start gap-2.5 text-left"
+              >
+                <span className="mt-0.5 shrink-0 rounded-md bg-red-900/40 px-1.5 py-0.5 text-[10px] text-red-300">
+                  {reportCategoryLabel(r.category)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs text-neutral-200 group-hover:text-violet-300">
+                    {r.reason || "（无补充说明）"}
+                  </span>
+                  <span className="mt-1 block text-[10px] text-neutral-600">
+                    {r.orig_name} · 上传者 {r.owner_email} ·{" "}
+                    {new Date(r.created_at).toLocaleString("zh-CN")}
+                    {r.reports_on_image > 1 && (
+                      <span className="ml-1 text-amber-300">· 该图共 {r.reports_on_image} 次举报</span>
+                    )}
+                  </span>
+                </span>
+                <i className="fa-solid fa-chevron-right mt-1 shrink-0 text-[9px] text-neutral-700 group-hover:text-violet-400" />
+              </button>
+
+              {status === "open" && (
+                <div className="mt-2.5 flex items-center gap-1.5 border-t border-neutral-800/60 pt-2.5">
+                  <button
+                    onClick={() => resolve(r, "dismiss")}
+                    disabled={busy}
+                    className="inline-flex h-7 items-center justify-center rounded-md bg-neutral-800 px-3 text-[11px] text-neutral-300 transition hover:bg-neutral-700 disabled:opacity-50"
+                  >
+                    驳回
+                  </button>
+                  <button
+                    onClick={() => resolve(r, "block")}
+                    disabled={busy}
+                    className="inline-flex h-7 items-center justify-center rounded-md bg-amber-700 px-3 text-[11px] text-white transition hover:bg-amber-600 disabled:opacity-50"
+                  >
+                    屏蔽
+                  </button>
+                  <button
+                    onClick={() => resolve(r, "block_and_ban")}
+                    disabled={busy}
+                    className="inline-flex h-7 items-center justify-center rounded-md bg-red-600 px-3 text-[11px] text-white transition hover:bg-red-700 disabled:opacity-50"
+                  >
+                    屏蔽 + 封禁
+                  </button>
+                  <div className="flex-1" />
+                  <button
+                    onClick={() => setDetail(r)}
+                    className="inline-flex h-7 items-center justify-center rounded-md px-2 text-[11px] text-neutral-500 transition hover:text-violet-300"
+                  >
+                    详情
+                  </button>
                 </div>
-                {status === "open" && (
-                  <div className="flex flex-col gap-1 shrink-0">
-                    <button
-                      onClick={() => resolve(r, "dismiss")}
-                      disabled={busy}
-                      className="rounded-md bg-neutral-800 px-2.5 py-1 text-[10px] text-neutral-300 hover:bg-neutral-700 transition"
-                    >
-                      驳回
-                    </button>
-                    <button
-                      onClick={() => resolve(r, "block")}
-                      disabled={busy}
-                      className="rounded-md bg-amber-700 px-2.5 py-1 text-[10px] text-white hover:bg-amber-600 transition"
-                    >
-                      屏蔽
-                    </button>
-                    <button
-                      onClick={() => resolve(r, "block_and_ban")}
-                      disabled={busy}
-                      className="rounded-md bg-red-600 px-2.5 py-1 text-[10px] text-white hover:bg-red-700 transition"
-                    >
-                      屏蔽+封禁
-                    </button>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           ))}
         </div>
       )}
+
+      {detail && (
+        <ReportDetail
+          report={detail}
+          onClose={() => setDetail(null)}
+          onResolve={async (action) => {
+            await resolve(detail, action);
+            setDetail(null);
+          }}
+        />
+      )}
     </Card>
+  );
+}
+
+/**
+ * Full report, with the image alongside it.
+ *
+ * Judging a report means looking at what was reported, and an admin who has to
+ * copy a URL into another tab to do that will decide without looking. The
+ * preview is behind one click rather than shown outright: the whole premise is
+ * that the content might be something they did not ask to see.
+ */
+function ReportDetail({
+  report,
+  onClose,
+  onResolve,
+}: {
+  report: Report;
+  onClose: () => void;
+  onResolve: (a: "dismiss" | "block" | "block_and_ban") => Promise<void>;
+}) {
+  const [revealed, setRevealed] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function act(a: "dismiss" | "block" | "block_and_ban") {
+    setBusy(true);
+    try {
+      await onResolve(a);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/50" onClick={() => !busy && onClose()} />
+      <div className="shadow-panel relative flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900">
+        <div className="flex items-center gap-2 border-b border-neutral-800/60 px-5 py-3.5">
+          <span className="rounded-md bg-red-900/40 px-1.5 py-0.5 text-[10px] text-red-300">
+            {reportCategoryLabel(report.category)}
+          </span>
+          <span className="text-sm text-neutral-100">举报详情</span>
+          <div className="flex-1" />
+          <button
+            onClick={onClose}
+            aria-label="关闭"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-800 hover:text-neutral-200"
+          >
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
+          <div>
+            <div className="mb-1 text-[10px] text-neutral-500">举报说明</div>
+            <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 px-3 py-2.5 text-xs leading-relaxed whitespace-pre-wrap text-neutral-200">
+              {report.reason || "（举报人未填写补充说明）"}
+            </div>
+          </div>
+
+          <dl className="space-y-1.5 text-[11px]">
+            <DetailRow label="图片" value={report.orig_name} />
+            <DetailRow label="尺寸" value={`${report.width} × ${report.height} · ${formatBytes(report.size_stored)}`} />
+            <DetailRow label="上传者" value={report.owner_email} />
+            <DetailRow label="举报人" value={report.anonymous ? "匿名访客" : "已登录用户"} />
+            <DetailRow label="联系方式" value={report.contact || "未留"} />
+            <DetailRow label="举报时间" value={new Date(report.created_at).toLocaleString("zh-CN")} />
+            <DetailRow
+              label="该图举报次数"
+              value={
+                report.reports_on_image > 1 ? (
+                  <span className="text-amber-300">{report.reports_on_image} 次</span>
+                ) : (
+                  "1 次"
+                )
+              }
+            />
+            <DetailRow label="图片状态" value={report.image_status === "blocked" ? "已屏蔽" : "正常"} />
+          </dl>
+
+          <div>
+            <div className="mb-1 text-[10px] text-neutral-500">对象路径</div>
+            <div className="rounded-lg border border-neutral-800 bg-neutral-950/60 px-3 py-2 font-mono text-[10px] break-all text-neutral-400">
+              {report.object_key}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-1.5 flex items-center gap-2">
+              <span className="text-[10px] text-neutral-500">图片预览</span>
+              {report.short_code && (
+                <a
+                  href={`/${report.short_code}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-violet-400 hover:underline"
+                >
+                  打开分享页 →
+                </a>
+              )}
+            </div>
+            {revealed ? (
+              <img
+                src={`/storage/${report.object_key}`}
+                alt=""
+                className="max-h-64 w-full rounded-lg border border-neutral-800 object-contain"
+              />
+            ) : (
+              <button
+                onClick={() => setRevealed(true)}
+                className="flex h-32 w-full items-center justify-center rounded-lg border border-dashed border-neutral-700 text-xs text-neutral-500 transition hover:border-violet-500 hover:text-violet-300"
+              >
+                <i className="fa-solid fa-eye mr-1.5" />
+                点击查看被举报的图片
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 border-t border-neutral-800/60 px-5 py-3">
+          <button
+            onClick={() => act("dismiss")}
+            disabled={busy}
+            className="inline-flex h-8 items-center justify-center rounded-lg bg-neutral-800 px-3 text-xs text-neutral-300 transition hover:bg-neutral-700 disabled:opacity-50"
+          >
+            驳回
+          </button>
+          <button
+            onClick={() => act("block")}
+            disabled={busy}
+            className="inline-flex h-8 items-center justify-center rounded-lg bg-amber-700 px-3 text-xs text-white transition hover:bg-amber-600 disabled:opacity-50"
+          >
+            屏蔽
+          </button>
+          <button
+            onClick={() => act("block_and_ban")}
+            disabled={busy}
+            className="inline-flex h-8 items-center justify-center rounded-lg bg-red-600 px-3 text-xs font-medium text-white transition hover:bg-red-700 disabled:opacity-50"
+          >
+            屏蔽 + 封禁
+          </button>
+          <div className="flex-1" />
+          <button
+            onClick={onClose}
+            disabled={busy}
+            className="inline-flex h-8 items-center justify-center rounded-lg px-3 text-xs text-neutral-400 transition hover:text-neutral-100"
+          >
+            关闭
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="shrink-0 text-neutral-600">{label}</dt>
+      <dd className="min-w-0 truncate text-neutral-300">{value}</dd>
+    </div>
   );
 }
 

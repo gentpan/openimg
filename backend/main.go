@@ -81,6 +81,7 @@ func main() {
 		AccessKey:     cfg.S3AccessKey,
 		SecretKey:     cfg.S3SecretKey,
 		PublicURLBase: cfg.S3PublicURLBase,
+		ThumbURLBase:  cfg.S3ThumbURLBase,
 		KeyPrefix:     cfg.S3KeyPrefix,
 		UsePathStyle:  cfg.S3UsePathStyle,
 	}); err != nil {

@@ -102,7 +102,7 @@ func (s *Server) buildSharePayload(c *gin.Context, img *models.Image) sharePaylo
 
 	thumb := url
 	if img.HasVariant(models.VariantW200) {
-		thumb = storage.URLFor(profile, models.VariantKey(img.ObjectKey, models.VariantW200), s.PublicBaseURL)
+		thumb = storage.ThumbURLFor(profile, models.VariantKey(img.ObjectKey, models.VariantW200), s.PublicBaseURL)
 	}
 
 	// Alt text with a quote in it would break the HTML snippet the page hands
@@ -209,16 +209,18 @@ func (s *Server) handleReact(c *gin.Context) {
 // through the code they already have, and the server does the lookup.
 func (s *Server) handleShareReport(c *gin.Context) {
 	var req struct {
-		Reason  string `json:"reason" binding:"required"`
-		Contact string `json:"contact"`
+		Category string `json:"category"`
+		Reason   string `json:"reason"`
+		Contact  string `json:"contact"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请说明举报原因"})
-		return
+		req.Reason = ""
 	}
+	// The category carries the meaning; free text is genuinely optional, and
+	// demanding four characters just teaches people to type "aaaa".
 	reason := strings.TrimSpace(req.Reason)
-	if len([]rune(reason)) < 4 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请说明问题，至少 4 个字"})
+	if !models.ValidReportCategory(strings.TrimSpace(req.Category)) && len([]rune(reason)) < 4 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请选择举报类型，或填写说明"})
 		return
 	}
 	img, err := s.findByShortCode(c.Param("code"))
@@ -227,9 +229,14 @@ func (s *Server) handleShareReport(c *gin.Context) {
 		return
 	}
 
+	category := strings.TrimSpace(req.Category)
+	if !models.ValidReportCategory(category) {
+		category = "other"
+	}
 	rep := models.Report{
 		ID:         uuid.New(),
 		ImageID:    img.ID,
+		Category:   category,
 		Reason:     reason,
 		Contact:    strings.TrimSpace(req.Contact),
 		ReporterIP: c.ClientIP(),
@@ -242,5 +249,6 @@ func (s *Server) handleShareReport(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	s.notifyAdminsOfReport(&rep, img)
 	c.JSON(http.StatusOK, gin.H{"ok": true, "message": "举报已收到，我们会尽快处理"})
 }

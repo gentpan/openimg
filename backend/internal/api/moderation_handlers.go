@@ -15,9 +15,10 @@ import (
 )
 
 type reportReq struct {
-	ImageID string `json:"image_id" binding:"required"`
-	Reason  string `json:"reason" binding:"required,max=500"`
-	Contact string `json:"contact" binding:"max=255"`
+	ImageID  string `json:"image_id" binding:"required"`
+	Category string `json:"category"`
+	Reason   string `json:"reason" binding:"required,max=500"`
+	Contact  string `json:"contact" binding:"max=255"`
 }
 
 // POST /api/report — anyone who can see an image can report it, including
@@ -40,9 +41,14 @@ func (s *Server) handleReport(c *gin.Context) {
 		return
 	}
 
+	category := strings.TrimSpace(req.Category)
+	if !models.ValidReportCategory(category) {
+		category = "other"
+	}
 	rep := models.Report{
 		ID:         uuid.New(),
 		ImageID:    imageID,
+		Category:   category,
 		Reason:     strings.TrimSpace(req.Reason),
 		Contact:    strings.TrimSpace(req.Contact),
 		ReporterIP: c.ClientIP(),
@@ -55,6 +61,7 @@ func (s *Server) handleReport(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	s.notifyAdminsOfReport(&rep, &img)
 	c.JSON(http.StatusCreated, gin.H{"ok": true, "message": "举报已收到，我们会尽快处理"})
 }
 
@@ -69,6 +76,7 @@ func (s *Server) adminListReports(c *gin.Context) {
 	type row struct {
 		ID        string `json:"id"`
 		ImageID   string `json:"image_id"`
+		Category  string `json:"category"`
 		Reason    string `json:"reason"`
 		Contact   string `json:"contact"`
 		Status    string `json:"status"`
@@ -79,12 +87,23 @@ func (s *Server) adminListReports(c *gin.Context) {
 		OwnerEmail  string `json:"owner_email"`
 		OwnerID     string `json:"owner_id"`
 		ImageStatus string `json:"image_status"`
+		// For the detail panel: enough to judge a report without leaving it.
+		OrigName   string `json:"orig_name"`
+		ShortCode  string `json:"short_code"`
+		Width      int    `json:"width"`
+		Height     int    `json:"height"`
+		SizeStored int64  `json:"size_stored"`
+		Anonymous  bool   `json:"anonymous"`
+		ReportsOn  int64  `json:"reports_on_image"`
 	}
 	var rows []row
 	q := `
-		SELECT r.id, r.image_id, r.reason, r.contact, r.status, r.created_at,
+		SELECT r.id, r.image_id, r.category, r.reason, r.contact, r.status, r.created_at,
+		       (r.reporter_id IS NULL) AS anonymous,
 		       i.object_key, i.profile_id, i.status AS image_status,
-		       u.email AS owner_email, u.id AS owner_id
+		       i.orig_name, i.short_code, i.width, i.height, i.size_stored,
+		       u.email AS owner_email, u.id AS owner_id,
+		       (SELECT COUNT(*) FROM reports r2 WHERE r2.image_id = r.image_id) AS reports_on
 		FROM reports r
 		JOIN images i ON i.id = r.image_id
 		JOIN users u ON u.id = i.user_id

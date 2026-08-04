@@ -28,6 +28,7 @@ type platformStorageOut struct {
 	Endpoint      string `json:"endpoint"`
 	KeyPrefix     string `json:"key_prefix"`
 	PublicBaseURL string `json:"public_base_url"`
+	ThumbBaseURL  string `json:"thumb_base_url"`
 	SiteBaseURL   string `json:"site_base_url"`
 	SampleURL     string `json:"sample_url"`
 	ImageCount    int64  `json:"image_count"`
@@ -64,6 +65,7 @@ func (s *Server) adminPlatformStorage(c *gin.Context) {
 		Endpoint:      p.Endpoint,
 		KeyPrefix:     p.KeyPrefix,
 		PublicBaseURL: p.PublicBaseURL,
+		ThumbBaseURL:  p.ThumbBaseURL,
 		SiteBaseURL:   s.PublicBaseURL,
 		SampleURL:     storage.URLFor(&p, sample, s.PublicBaseURL),
 		ImageCount:    n,
@@ -72,6 +74,8 @@ func (s *Server) adminPlatformStorage(c *gin.Context) {
 
 type platformStorageReq struct {
 	PublicBaseURL string `json:"public_base_url" binding:"required"`
+	// Optional. Empty leaves display sizes on the main origin.
+	ThumbBaseURL string `json:"thumb_base_url"`
 }
 
 // PATCH /admin/api/storage/platform — repoint every image URL at a new domain.
@@ -99,7 +103,17 @@ func (s *Server) adminUpdatePlatformStorage(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "尚未配置平台存储"})
 		return
 	}
-	if err := s.DB.Model(&p).Update("public_base_url", base).Error; err != nil {
+	updates := map[string]any{"public_base_url": base}
+	thumb := strings.TrimRight(strings.TrimSpace(req.ThumbBaseURL), "/")
+	if thumb != "" {
+		if err := storage.ValidatePublicBaseURL(thumb); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "缩略图域名：" + err.Error()})
+			return
+		}
+	}
+	updates["thumb_base_url"] = thumb
+
+	if err := s.DB.Model(&p).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -109,5 +123,5 @@ func (s *Server) adminUpdatePlatformStorage(c *gin.Context) {
 
 	var n int64
 	s.DB.Model(&models.Image{}).Where("profile_id = ? AND deleted_at IS NULL", p.ID).Count(&n)
-	c.JSON(http.StatusOK, gin.H{"ok": true, "public_base_url": base, "affected": n})
+	c.JSON(http.StatusOK, gin.H{"ok": true, "public_base_url": base, "thumb_base_url": thumb, "affected": n})
 }

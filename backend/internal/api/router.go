@@ -2,7 +2,10 @@ package api
 
 import (
 	"net/http"
+	"os"
+	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gentpan/openimg/backend/internal/auth"
@@ -217,8 +220,52 @@ func (s *Server) serveAppOrNotFound(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
 	}
+
+	// A real file if the path names one, the SPA otherwise.
+	//
+	// Returning index.html for everything looks fine to anything that only
+	// checks status codes — /assets/index-abc.js answers 200 — but the browser
+	// asked for JavaScript and received HTML, so nothing boots and the page is
+	// blank. curl cannot see that; only the Content-Type gives it away.
+	if full, ok := s.frontendFile(c.Request.URL.Path); ok {
+		// Vite fingerprints these filenames, so the content behind one can
+		// never change. index.html must not be cached: it is what points at
+		// the current fingerprints.
+		if strings.HasPrefix(c.Request.URL.Path, "/assets/") {
+			c.Header("Cache-Control", "public, max-age=31536000, immutable")
+		}
+		c.File(full)
+		return
+	}
+
 	// Any unmatched path is a client-side route: the SPA reads the URL itself.
+	c.Header("Cache-Control", "no-cache")
 	c.File(filepath.Join(s.FrontendDir, "index.html"))
+}
+
+// frontendFile resolves a request path to a file inside FrontendDir, or
+// reports that there isn't one.
+//
+// The join is checked rather than trusted: a path of "/../../etc/passwd"
+// would otherwise walk straight out of the directory, and this handler serves
+// every unmatched request on the domain.
+func (s *Server) frontendFile(urlPath string) (string, bool) {
+	if urlPath == "" || urlPath == "/" {
+		return "", false
+	}
+	root, err := filepath.Abs(s.FrontendDir)
+	if err != nil {
+		return "", false
+	}
+	full := filepath.Join(root, filepath.FromSlash(path.Clean("/"+urlPath)))
+	if full != root && !strings.HasPrefix(full, root+string(os.PathSeparator)) {
+		return "", false
+	}
+	st, err := os.Stat(full)
+	if err != nil || st.IsDir() {
+		return "", false
+	}
+	return full, true
 }
 
 // groupFor resolves a user's tier, falling back to the "free" group so a user

@@ -72,7 +72,24 @@ export default function Reveal({
       { threshold, rootMargin: "0px 0px -40px 0px" },
     );
     io.observe(el);
-    return () => io.disconnect();
+
+    // Failsafe. The observer normally reports on observe() for anything
+    // already on screen, but "normally" is doing real work there: a tab opened
+    // in the background, or a window that has not painted, can leave the
+    // callback pending indefinitely — and the content stays at opacity 0 until
+    // the visitor scrolls, on a page whose first screen is the entire pitch.
+    //
+    // A decorative fade is never worth a blank page, so if nothing has fired
+    // by the time the animation would have finished anyway, just show it.
+    const failsafe = window.setTimeout(() => {
+      setVisible(true);
+      io.disconnect();
+    }, 800);
+
+    return () => {
+      clearTimeout(failsafe);
+      io.disconnect();
+    };
   }, [threshold, once]);
 
   return (

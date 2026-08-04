@@ -49,7 +49,9 @@ export default function Footer() {
               rel="noopener noreferrer"
               aria-label={s.label}
               title={s.label}
-              className={`flex h-5 w-5 items-center justify-center text-neutral-500 transition-colors ${
+              // The box stays 5×5 and only the glyph scales, so growing one
+              // icon never nudges its neighbours along the row.
+              className={`flex h-5 w-5 items-center justify-center text-neutral-500 transition-[color,transform] duration-200 hover:scale-150 ${
                 s.hover ?? "hover:text-violet-300"
               }`}
             >

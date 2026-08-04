@@ -6,6 +6,17 @@ import Nav from "../components/Nav";
 import Uploader from "../components/Uploader";
 import Reveal, { RevealGroup } from "../components/Reveal";
 
+/** Hero feature pills. Six is the ceiling: past that the row wraps to three
+ *  lines on a phone and reads as a wall rather than a summary. */
+const HIGHLIGHTS: { icon: string; text: string }[] = [
+  { icon: "fa-bolt", text: "上传即压缩" },
+  { icon: "fa-file-zipper", text: "WebP / AVIF" },
+  { icon: "fa-globe", text: "全球 CDN" },
+  { icon: "fa-user-shield", text: "自动抹除 EXIF" },
+  { icon: "fa-cloud", text: "可绑自有 R2 / S3" },
+  { icon: "fa-infinity", text: "永久免费" },
+];
+
 export default function Home() {
   const { user } = useAuth();
 
@@ -27,16 +38,30 @@ export default function Home() {
             </Reveal>
             <Reveal delay={80}>
               <h1 className="text-3xl sm:text-5xl font-brand text-neutral-100 leading-tight">
-                放心把图片
-                <span className="text-violet-400">交给我们</span>
+                图片托管，
+                <span className="text-violet-400">从此不用操心</span>
               </h1>
             </Reveal>
             <Reveal delay={160}>
               <p className="mt-4 text-sm sm:text-base text-neutral-400 max-w-xl mx-auto leading-relaxed">
-                自动压缩转换、全球 CDN 加速、支持绑定你自己的 R2 存储。
-                <br className="hidden sm:block" />
-                没有付费墙，空间靠每天签到累积。
+                拖进来就好。剩下的压缩、转码、分发，我们全包了。
               </p>
+            </Reveal>
+            {/* Pills instead of another sentence: these are six independent
+                claims, and a prose list makes the reader hold all of them in
+                order before any one of them lands. */}
+            <Reveal delay={220}>
+              <ul className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                {HIGHLIGHTS.map((h) => (
+                  <li
+                    key={h.text}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-neutral-800 bg-neutral-900/50 px-3 py-1.5 text-[11px] text-neutral-300"
+                  >
+                    <i className={`fa-solid ${h.icon} text-[9px] text-violet-400`} />
+                    {h.text}
+                  </li>
+                ))}
+              </ul>
             </Reveal>
           </div>
 

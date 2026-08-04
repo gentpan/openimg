@@ -1,0 +1,31 @@
+[Unit]
+Description=Openimg Go backend (Gin + image pipeline)
+After=network-online.target postgresql.service openclaw-gateway.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=openimg
+Group=openimg
+WorkingDirectory=/opt/openimg
+EnvironmentFile=/opt/openimg/config/.env
+ExecStart=/opt/openimg/bin/openimg-server
+Restart=always
+RestartSec=3
+
+# basic hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/openimg/storage /opt/openimg/logs
+# /root/.openclaw/media — generated images
+# /root/.openclaw/agents — auth profiles (subscription status)
+# /root/.openclaw-gateway-token — bearer for gateway probe
+ReadOnlyPaths=/root/.openclaw /root/.openclaw-gateway-token
+
+StandardOutput=append:/opt/openimg/logs/backend.log
+StandardError=append:/opt/openimg/logs/backend.log
+
+[Install]
+WantedBy=multi-user.target

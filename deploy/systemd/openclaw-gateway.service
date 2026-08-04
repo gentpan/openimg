@@ -1,0 +1,20 @@
+[Unit]
+Description=OpenClaw Gateway (HTTP API for Openimg)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/root
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/openclaw gateway --port 18789 --bind loopback
+Restart=always
+RestartSec=5
+
+StandardOutput=append:/var/log/openclaw-gateway.log
+StandardError=append:/var/log/openclaw-gateway.log
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,69 @@
+import { startAuthentication } from "@simplewebauthn/browser";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { authApi } from "../api";
+import { useAuth } from "../AuthContext";
+import { Field, inputCls } from "./Login";
+
+export default function PasskeyLoginForm() {
+  const { refresh } = useAuth();
+  const nav = useNavigate();
+  const loc = useLocation();
+  const next = (loc.state as { from?: string } | null)?.from || "/";
+
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      // Empty email triggers discoverable login: browser opens the platform
+      // passkey picker, user picks their passkey, the credential reveals which
+      // account to log in. No email guessing required.
+      const begin = await authApi.passkeyLoginBegin(email || undefined);
+      const credential = await startAuthentication({ optionsJSON: begin.options.publicKey });
+      await authApi.passkeyLoginFinish(email, begin.flow, credential);
+      await refresh();
+      nav(next, { replace: true });
+    } catch (e: any) {
+      if (e?.name === "NotAllowedError") {
+        setErr("已取消或失败");
+      } else {
+        setErr(String(e?.message || e));
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <Field label="邮箱（可选 — 留空让浏览器选择 Passkey）">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="username webauthn"
+          placeholder="留空使用本机 Passkey 直接登录"
+          className={inputCls}
+        />
+      </Field>
+      {err && <div className="text-sm text-red-400">{err}</div>}
+      <button
+        type="submit"
+        disabled={busy}
+        className="w-full rounded-lg bg-violet-600 px-4 py-3 text-sm font-medium text-white hover:bg-violet-500 disabled:bg-neutral-700 inline-flex items-center justify-center gap-2"
+      >
+        <i className="fa-solid fa-fingerprint" aria-hidden></i>
+        {busy ? "等待 Passkey…" : "用 Passkey 登录"}
+      </button>
+      <p className="text-xs text-neutral-500 text-center">
+        会调用本机 Touch ID / Face ID / 安全密钥
+      </p>
+    </form>
+  );
+}

@@ -1,0 +1,221 @@
+@import "tailwindcss";
+
+/* Brand violet palette — built around #8E47FF (HSL 263,100%,64%).
+   Overrides Tailwind's default violet so every `text-violet-*` / `bg-violet-*`
+   class in the codebase tracks the brand without having to be edited. */
+@theme {
+  --color-violet-200: #ddc8ff;
+  --color-violet-300: #c5a3ff;
+  --color-violet-400: #a87dff;
+  --color-violet-500: #8e47ff;
+  --color-violet-600: #7c2ee0;
+  --color-violet-700: #5e1cc4;
+  --color-violet-900: #2d0e63;
+  --color-violet-950: #1b0840;
+}
+
+/* ---------------------------------------------------------------------------
+   Theming
+
+   Tailwind v4 compiles `bg-neutral-950` to `background-color:
+   var(--color-neutral-950)` and `bg-neutral-900/40` to a color-mix() over the
+   same variable. Every colour in the app is therefore a live variable
+   reference, and a whole theme is a set of variable overrides — no `dark:`
+   prefix on 880 utility classes, and no re-render when the theme flips.
+
+   The dark theme is deliberately absent from this file: it is Tailwind's stock
+   neutral ramp, used the way a dark UI uses it (high number = dark surface,
+   low number = light text). Leaving it untouched is what guarantees the
+   existing dark appearance is unchanged to the pixel.
+
+   The light theme inverts that ramp. Because the codebase consistently follows
+   "high = surface, low = text", inverting is enough to flip all 500-odd
+   neutral utilities correctly at once. The values below are the inverted
+   positions rounded to the project's design tokens (#111827 / #6b7280 /
+   #9ca3af text, #ffffff / #f8f9fa surfaces, #d1d5db borders) rather than to
+   Tailwind's raw greys, so the light theme lands on-spec instead of merely
+   being a photographic negative.
+   --------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: dark;
+  /* Scrim over imagery. Stays dark in both themes — a light scrim over a photo
+     hides nothing — so anything sitting on it must not use themed text. */
+  --scrim: rgb(0 0 0 / 0.6);
+  --scrim-fg: #ffffff;
+  --shadow-panel: 0 8px 32px rgb(0 0 0 / 0.5);
+  --shadow-card: 0 1px 3px rgb(0 0 0 / 0.4);
+  /* Neutral track behind gauges and heat cells, where a utility class can't
+     reach (SVG stroke attributes, inline styles). */
+  --track: rgb(64 64 64 / 0.4);
+
+  /* Heat-map ramp, least → most. This can't ride the violet scale: the scale
+     means "brighter = more", which only reads as intensity against a dark
+     page. On white the same four tiers are all dark and nearly identical, so
+     light needs its own ramp running pale → deep. */
+  /* Dimmest readable text. Separate from the neutral ramp because the tier
+     the dark theme uses for it (700) is a surface tone once inverted. */
+  --text-faint: #404040;
+
+  --heat-empty: rgb(38 38 38 / 0.7);
+  --heat-zero: #404040;
+  --heat-1: #5e1cc4;
+  --heat-2: #7c2ee0;
+  --heat-3: #8e47ff;
+  --heat-4: #a87dff;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Inverted neutral ramp: 950 is now the page, 100 is now the ink. */
+  --color-neutral-50: #030712;
+  --color-neutral-100: #030712; /* primary text */
+  --color-neutral-200: #111827;
+  --color-neutral-300: #1f2937;
+  --color-neutral-400: #374151;
+  --color-neutral-500: #4b5563; /* secondary text */
+  --color-neutral-600: #5d6675; /* tertiary — the most-used class; clears AA on
+                                   white and on the violet-tinted cards */
+  /* Surfaces and edges.
+     These are one step darker than a straight inversion would give, because
+     the dark theme separates panels by *lightening* them against near-black —
+     a move that has no equivalent on white. `bg-neutral-900/40`, the card fill
+     used on nearly every panel, mixes to within a hair of #ffffff, so on light
+     the structure has to come from the border tier instead. Too pale a border
+     and the page reads as one undifferentiated sheet. */
+  --color-neutral-700: #c3cad3; /* hover surface / strong border */
+  --color-neutral-800: #d5d9df; /* chips, buttons, card borders */
+  --color-neutral-900: #eef1f5; /* raised surface; /40 over white ≈ #f9fafc */
+  --color-neutral-950: #ffffff; /* page */
+
+  /* Violet keeps its identity, but the tiers used as *light text on a dark
+     chip* have to become dark text on a light chip, and the tier used as a
+     dark chip background has to become a light one. The 500/600/700 tiers are
+     untouched: they are solid fills carrying white text, which reads correctly
+     against either theme. */
+  --color-violet-200: #5b21b6;
+  --color-violet-300: #6d28d9;
+  --color-violet-400: #7c2ee0;
+  /* Tinted-chip slots, same alpha reasoning as the semantic ramps below.
+     violet-500/600/700 are deliberately absent: 24 solid buttons fill with
+     bg-violet-500 and carry white text, and darkening those would change the
+     brand in both themes. */
+  --color-violet-900: #c4b5fd;
+  --color-violet-950: #a78bfa;
+
+  /* Same reasoning for the semantic ramps: the pale tiers were picked to glow
+     on near-black and are unreadable on white.
+
+     The 900/950 tiers are the subtle part. They are never used at full
+     strength — every occurrence is a tinted panel or overlay at 15–80% alpha.
+     Setting them to a pale tint therefore produces *nothing*: 20% of #ecfdf5
+     over white is white. So their light values are saturated mid-tones, chosen
+     so the result *after* the alpha is the pale tint the design wants. The
+     variable names the slot, not the colour. */
+  --color-red-200: #7f1d1d;
+  --color-red-300: #991b1b;
+  --color-red-400: #dc2626;
+  --color-red-900: #f87171;
+  --color-red-950: #ef4444;
+
+  --color-emerald-200: #064e3b;
+  --color-emerald-300: #065f46;
+  --color-emerald-400: #059669;
+  --color-emerald-500: #059669;
+  --color-emerald-900: #34d399;
+  --color-emerald-950: #10b981;
+
+  --color-amber-100: #78350f;
+  --color-amber-200: #78350f;
+  --color-amber-300: #92400e;
+  --color-amber-400: #d97706;
+  --color-amber-500: #d97706;
+  --color-amber-900: #fbbf24;
+  --color-amber-950: #f59e0b;
+
+  --shadow-panel: 0 8px 32px rgb(17 24 39 / 0.12);
+  --shadow-card: 0 1px 3px rgb(17 24 39 / 0.08);
+  --track: rgb(17 24 39 / 0.1);
+
+  --text-faint: #646d7d;
+
+  --heat-empty: #f3f4f6;
+  --heat-zero: #e5e7eb;
+  --heat-1: #ddd6fe;
+  --heat-2: #c4b5fd;
+  --heat-3: #8b5cf6;
+  --heat-4: #6d28d9;
+}
+
+/* Reserve the scrollbar gutter on every page. Without this, navigating from a
+   short page (no scrollbar) to a long one (scrollbar appears) shifts all
+   centred content left by half the scrollbar width — which reads as the pages
+   having inconsistent widths. */
+html {
+  scrollbar-gutter: stable;
+}
+
+html, body {
+  margin: 0;
+  background: var(--color-neutral-950);
+  color: var(--color-neutral-100);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* No transition on the theme switch. Cross-fading the page background means
+   every sampled frame is a half-applied colour, and it buys nothing: the whole
+   page changes at once anyway, so the eye reads it as a switch either way. */
+
+::selection {
+  background: var(--color-violet-500);
+  color: #ffffff;
+}
+
+/* Brand typeface. Ubuntu covers Latin only, so CJK falls through to the system
+   stack below it — that's intentional: headings mixing "Openimg" with Chinese
+   render the brand in Ubuntu and the Chinese in PingFang / 微软雅黑 rather than
+   in a mismatched substitute. */
+.font-brand {
+  font-family: "Ubuntu", ui-sans-serif, system-ui, -apple-system, "PingFang SC",
+    "Microsoft YaHei", "Segoe UI", sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Utilities for the cases a themed ramp can't express. */
+.scrim {
+  background: var(--scrim);
+  color: var(--scrim-fg);
+}
+
+.shadow-panel {
+  box-shadow: var(--shadow-panel);
+}
+
+.text-faint { color: var(--text-faint); }
+.placeholder-faint::placeholder { color: var(--text-faint); }
+
+/* Toast entry. Rises a short distance rather than sliding in from an edge —
+   the strip sits at the bottom of the viewport, so a long travel would read as
+   something being dragged onto the page rather than appearing on it. */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(0.75rem) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.toast-in {
+  animation: toast-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-in { animation: none; }
+}
+
+.heat-empty { background-color: var(--heat-empty); }
+.heat-zero  { background-color: var(--heat-zero); }
+.heat-1     { background-color: var(--heat-1); }
+.heat-2     { background-color: var(--heat-2); }
+.heat-3     { background-color: var(--heat-3); }
+.heat-4     { background-color: var(--heat-4); }

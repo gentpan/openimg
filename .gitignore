@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+frontend/dist/
+backend/picbi-server
+backend/openimg-server
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local storage / uploads
+storage/
+tmp/
+
+# OS
+.DS_Store
+
+# Server backups / dumps — large binaries, not source
+server-backup-*/
+*.tgz
+*.dump
+
+# Logs
+*.log
+logs/

@@ -52,6 +52,38 @@ export function linkFor(img: Image, fmt: LinkFormat): string {
 // connections open.
 const CONCURRENCY = 3;
 
+/** Wide enough to stay crisp in the 32px slot on a 2x display. */
+const PREVIEW_PX = 96;
+
+/**
+ * Builds a preview sized for the slot it renders into, not for the file.
+ *
+ * `URL.createObjectURL(file)` is one line and looks free, but the browser still
+ * has to decode the *original* to paint that 32px square: a 12 MP photo becomes
+ * a 48 MB bitmap. Twenty-five of those blow past the decoded-image cache, so
+ * every scroll frame evicts and re-decodes — which is exactly when the panel
+ * stutters, and why it only shows up once the queue gets long.
+ *
+ * createImageBitmap decodes and downscales in one step without the full-size
+ * bitmap ever reaching the DOM, so each row costs a few KB instead of tens of MB.
+ */
+async function makePreview(file: File): Promise<string> {
+  try {
+    const bmp = await createImageBitmap(file, { resizeWidth: PREVIEW_PX, resizeQuality: "low" });
+    const canvas = document.createElement("canvas");
+    canvas.width = bmp.width;
+    canvas.height = bmp.height;
+    canvas.getContext("2d")?.drawImage(bmp, 0, 0);
+    bmp.close();
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/webp", 0.7));
+    if (blob) return URL.createObjectURL(blob);
+  } catch {
+    // SVG, HEIC, or anything this browser can't decode natively — fall back to
+    // the original rather than showing a blank square.
+  }
+  return URL.createObjectURL(file);
+}
+
 interface UploadCtx {
   items: QueueItem[];
   enqueue: (files: FileList | File[]) => void;
@@ -80,19 +112,35 @@ export function UploadProvider({ children }: { children: ReactNode }) {
   const [format, setFormat] = useState<LinkFormat>("url");
   const runningRef = useRef(0);
 
+  // Lets the async preview check whether its item still exists without doing
+  // side effects inside a state updater, which React may invoke twice.
+  const itemsRef = useRef<QueueItem[]>([]);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
   const enqueue = useCallback((files: FileList | File[]) => {
     const picked = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (picked.length === 0) return;
-    setItems((prev) => [
-      ...prev,
-      ...picked.map((file) => ({
-        id: `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        file,
-        preview: URL.createObjectURL(file),
-        state: "queued" as ItemState,
-        progress: 0,
-      })),
-    ]);
+    const added = picked.map((file) => ({
+      id: `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      file,
+      preview: "",
+      state: "queued" as ItemState,
+      progress: 0,
+    }));
+    // Queued synchronously so dropping 30 files doesn't wait on 30 decodes;
+    // each preview is patched in when it lands.
+    setItems((prev) => [...prev, ...added]);
+    for (const item of added) {
+      void makePreview(item.file).then((url) => {
+        if (!itemsRef.current.some((i) => i.id === item.id)) {
+          URL.revokeObjectURL(url); // removed while we were decoding
+          return;
+        }
+        setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, preview: url } : i)));
+      });
+    }
   }, []);
 
   const remove = useCallback((id: string) => {

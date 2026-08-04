@@ -56,7 +56,7 @@ export default function UploadPanel() {
 
   return (
     <div className="fixed bottom-4 right-4 z-50 w-[min(22rem,calc(100vw-2rem))]">
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-900/95 backdrop-blur-xl shadow-panel overflow-hidden">
+      <div className="rounded-2xl border border-neutral-800 bg-neutral-900/95 shadow-panel overflow-hidden">
         {/* Header doubles as the collapsed state */}
         <button
           onClick={() => setCollapsed((c) => !c)}
@@ -108,7 +108,7 @@ export default function UploadPanel() {
 
         {!collapsed && (
           <>
-            <div className="max-h-72 overflow-y-auto border-t border-neutral-800/60">
+            <div className="max-h-72 overflow-y-auto overscroll-contain border-t border-neutral-800/60">
               {items.map((item) => (
                 <Row
                   key={item.id}
@@ -194,7 +194,14 @@ function Row({
   return (
     <div className="flex items-center gap-2.5 px-3 py-2 hover:bg-neutral-800/30 transition group">
       <div className="relative w-8 h-8 shrink-0 rounded-md overflow-hidden bg-neutral-800">
-        <img src={item.image?.thumb_url || item.preview} alt="" className="w-full h-full object-cover" />
+        {(item.image?.thumb_url || item.preview) && (
+          <img
+            src={item.image?.thumb_url || item.preview}
+            alt=""
+            decoding="async"
+            className="w-full h-full object-cover"
+          />
+        )}
         {item.state === "uploading" && (
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
             <span className="text-[9px] text-white tabular-nums">{item.progress}</span>

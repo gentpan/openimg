@@ -10,7 +10,10 @@ import { RingSpinner } from "../components/Spinner";
 import OtpConfirm from "../components/OtpConfirm";
 import { useToast } from "../ToastContext";
 
-const PAGE = 40;
+// Every size is a multiple of the 5-column grid, so a full page never ends in
+// a short row with holes where the missing cards would be.
+const PAGE_SIZES = [25, 50, 100, 200];
+const DEFAULT_PAGE = 25;
 
 export default function GalleryPage() {
   const { user, loading, refresh } = useAuth();
@@ -19,6 +22,7 @@ export default function GalleryPage() {
   const [offset, setOffset] = useState(0);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("newest");
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE);
   const [busy, setBusy] = useState(false);
   const [wiping, setWiping] = useState<string | null>(null);
   const [wipeOpen, setWipeOpen] = useState(false);
@@ -27,10 +31,11 @@ export default function GalleryPage() {
   const [detail, setDetail] = useState<Image | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  const load = useCallback(async (nextOffset: number, q: string, s: SortKey, append: boolean) => {
+  const load = useCallback(
+    async (nextOffset: number, q: string, s: SortKey, append: boolean, size: number) => {
     setBusy(true);
     try {
-      const res = await imageApi.list({ limit: PAGE, offset: nextOffset, q: q || undefined, sort: s });
+      const res = await imageApi.list({ limit: size, offset: nextOffset, q: q || undefined, sort: s });
       setImages((prev) => (append ? [...prev, ...res.images] : res.images));
       setTotal(res.total);
       setOffset(nextOffset);
@@ -40,7 +45,9 @@ export default function GalleryPage() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  },
+    [],
+  );
 
   // Debounced search; also covers the initial load and any sort change.
   // Selection is dropped whenever the result set changes, since a checkbox on
@@ -49,10 +56,10 @@ export default function GalleryPage() {
     if (!user) return;
     const t = setTimeout(() => {
       setSelected(new Set());
-      load(0, query, sort, false);
+      load(0, query, sort, false, pageSize);
     }, query ? 300 : 0);
     return () => clearTimeout(t);
-  }, [query, sort, user, load]);
+  }, [query, sort, pageSize, user, load]);
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -109,12 +116,12 @@ export default function GalleryPage() {
         if (res.remaining === 0 || res.deleted === 0) break;
       }
       setSelected(new Set());
-      await load(0, query, sort, false);
+      await load(0, query, sort, false, pageSize);
       setErr(null);
       toast.success(`图库已清空，共删除 ${done} 张`, "空间已全部释放");
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
-      await load(0, query, sort, false);
+      await load(0, query, sort, false, pageSize);
       toast.error("清空未完成", `已删除 ${done} 张后中断`);
     } finally {
       setWiping(null);
@@ -135,6 +142,8 @@ export default function GalleryPage() {
             <span className="ml-2 text-xs text-neutral-600 font-normal">{total} 张</span>
           </h1>
           <div className="flex-1" />
+
+          <PageSizeMenu value={pageSize} onChange={setPageSize} />
 
           <SortMenu value={sort} onChange={setSort} />
 
@@ -233,7 +242,7 @@ export default function GalleryPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {images.map((img) => (
                 <Card
                   key={img.id}
@@ -249,7 +258,7 @@ export default function GalleryPage() {
             {images.length < total && (
               <div className="mt-6 text-center">
                 <button
-                  onClick={() => load(offset + PAGE, query, sort, true)}
+                  onClick={() => load(offset + pageSize, query, sort, true, pageSize)}
                   disabled={busy}
                   className="rounded-xl bg-neutral-900 border border-neutral-800 px-5 py-2 text-xs text-neutral-300 hover:border-neutral-700 disabled:opacity-50 transition"
                 >
@@ -298,6 +307,61 @@ export default function GalleryPage() {
 
 /** Sort picker. A popover rather than a native <select> so it can carry icons
  *  and match the rest of the dark chrome. */
+function PageSizeMenu({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        title="每页显示数量"
+        className="flex items-center gap-1.5 rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:border-neutral-700 transition"
+      >
+        <i className="fa-solid fa-table-cells text-[10px] text-neutral-500" />
+        <span className="tabular-nums">{value}</span>
+        <i className="fa-solid fa-chevron-down text-[8px] text-neutral-600" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1.5 z-20 w-28 rounded-xl border border-neutral-800 bg-neutral-900 py-1 shadow-panel">
+          {PAGE_SIZES.map((n) => (
+            <button
+              key={n}
+              onClick={() => {
+                onChange(n);
+                setOpen(false);
+              }}
+              className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition ${
+                n === value ? "text-violet-300 bg-violet-950/30" : "text-neutral-400 hover:bg-neutral-800/60"
+              }`}
+            >
+              <span className="tabular-nums">{n}</span>
+              <span className="text-neutral-600">张</span>
+              {n === value && <i className="fa-solid fa-check ml-auto text-[9px]" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SortMenu({ value, onChange }: { value: SortKey; onChange: (v: SortKey) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);

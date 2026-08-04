@@ -67,7 +67,7 @@ export default function Footer() {
 const SOCIALS: { label: string; href: string; icon: React.ReactNode; hover?: string }[] = [
   { label: "X", href: "https://x.com/giantaccel", icon: <XIcon /> },
   { label: "GitHub", href: "https://github.com/gentpan/openimg", icon: <GithubIcon /> },
-  { label: "Blog", href: "https://blog.openimg.io", icon: <BlogIcon /> },
+  { label: "Blog", href: "https://xifeng.net", icon: <BlogIcon /> },
   {
     label: "GiantAccel",
     href: "https://www.giantaccel.com",

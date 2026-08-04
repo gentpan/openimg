@@ -174,3 +174,64 @@ func TestProcessStripsMetadata(t *testing.T) {
 		t.Error("primary output still contains an Exif marker")
 	}
 }
+
+// synthPhotoPNG builds rows that differ from one another but vary smoothly
+// across each row — the shape of photographic data, and the only case where
+// PNG's row filters earn their keep. A flat or exactly-repeating pattern
+// compresses fine unfiltered, so it would not catch a filter regression.
+func synthPhotoPNG(t *testing.T, w, h int) []byte { return synthPhotoPNGJitter(t, w, h, 4) }
+
+func synthPhotoPNGJitter(t *testing.T, w, h, amp int) []byte {
+	t.Helper()
+	img := image.NewRGBA(image.Rect(0, 0, w, h))
+	seed := uint32(0x9E3779B9)
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			seed = seed*1664525 + 1013904223
+			jitter := 0
+			if amp > 0 {
+				jitter = int(seed>>26)%(2*amp) - amp // small, so neighbours stay close
+			}
+			clamp := func(v int) uint8 {
+				if v < 0 {
+					return 0
+				}
+				if v > 255 {
+					return 255
+				}
+				return uint8(v)
+			}
+			img.Set(x, y, color.RGBA{
+				R: clamp(x*200/w + y*40/h + jitter),
+				G: clamp(y*200/h + jitter),
+				B: clamp((x+y)*160/(w+h) + 40 + jitter),
+				A: 255,
+			})
+		}
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatalf("encode source: %v", err)
+	}
+	return buf.Bytes()
+}
+
+// A stored PNG must never be meaningfully larger than the one that was
+// uploaded. It was: govips defaults the export filter to PngFilterNone, and
+// every photographic PNG on the site landed 30-80% bigger than it arrived,
+// with the user's quota charged for the difference. Nothing in the suite
+// asserted on output size, so the whole thing was invisible.
+func TestProcessPNGDoesNotInflate(t *testing.T) {
+	src := synthPhotoPNG(t, 900, 600)
+	res, err := Process(src, Options{ResizeWidth: 4000})
+	if err != nil {
+		t.Fatalf("Process: %v", err)
+	}
+	in, out := int64(len(src)), res.Primary.Size()
+	ratio := float64(out) / float64(in)
+	t.Logf("输入 %d 字节 → 主图 %d 字节（%.1f%%）", in, out, ratio*100-100)
+	if ratio > 1.05 {
+		t.Fatalf("主图比原图大 %.1f%%（%d → %d 字节）；PNG 导出的 Filter 可能又退回 PngFilterNone 了",
+			ratio*100-100, in, out)
+	}
+}

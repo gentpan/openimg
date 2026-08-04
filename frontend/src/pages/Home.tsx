@@ -9,7 +9,7 @@ import Reveal, { RevealGroup } from "../components/Reveal";
 /** Hero feature pills. Six is the ceiling: past that the row wraps to three
  *  lines on a phone and reads as a wall rather than a summary. */
 const HIGHLIGHTS: { icon: string; text: string }[] = [
-  { icon: "fa-bolt", text: "上传即压缩" },
+  { icon: "fa-sliders", text: "压缩或留原图" },
   { icon: "fa-file-zipper", text: "WebP / AVIF" },
   { icon: "fa-globe", text: "全球 CDN" },
   { icon: "fa-user-shield", text: "自动抹除 EXIF" },

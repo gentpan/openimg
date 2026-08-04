@@ -14,7 +14,11 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer className="mt-16 border-t border-neutral-900 bg-neutral-950/60">
+    /* Vertical rhythm has to shrink on a phone. The horizontal padding was
+       already responsive; this was not, so a 390px screen carried the same
+       64px gap as a 1440px one — on a narrow column that reads as the page
+       having ended. */
+    <footer className="mt-10 sm:mt-16 border-t border-neutral-900 bg-neutral-950/60">
       {stats && (
         <div className="border-b border-neutral-900/70">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-3">

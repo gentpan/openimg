@@ -48,7 +48,7 @@ export default function Uploader({ compact = false }: { compact?: boolean }) {
         dragging
           ? "border-violet-500 bg-violet-950/20"
           : "border-neutral-800 bg-neutral-900/40 hover:border-neutral-700 hover:bg-neutral-900/60"
-      } ${compact ? "py-10" : "py-16"} px-6 text-center`}
+      } ${compact ? "py-8 sm:py-10" : "py-10 sm:py-16"} px-6 text-center`}
     >
       <input
         ref={inputRef}

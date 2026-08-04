@@ -40,7 +40,7 @@ export default function SharePage() {
   if (err) {
     return (
       <Shell theme={theme} onToggle={toggle}>
-        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 py-20 text-center">
+        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 py-14 sm:py-20 text-center">
           <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-800">
             <i className="fa-solid fa-link-slash text-xl text-neutral-500" />
           </div>

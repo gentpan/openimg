@@ -72,7 +72,7 @@ export default function Home() {
         </section>
 
         {/* Features */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
           <Reveal>
             <SectionHead
               title="为什么用 Openimg"
@@ -124,7 +124,7 @@ export default function Home() {
         </section>
 
         {/* How it works */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
           <Reveal>
             <SectionHead title="三步开始" subtitle="不到一分钟" />
           </Reveal>
@@ -155,7 +155,7 @@ export default function Home() {
         </section>
 
         {/* Integration */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
           <Reveal>
             <SectionHead
               title="接入你的工作流"
@@ -184,7 +184,7 @@ JSON 路径   image.url`}
 
         {/* CTA */}
         {!user && (
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
             <Reveal direction="scale" duration={700}>
               <div className="rounded-2xl border border-violet-500/20 bg-violet-950/20 px-6 py-10 text-center">
                 <h2 className="text-xl sm:text-2xl font-brand text-neutral-100">

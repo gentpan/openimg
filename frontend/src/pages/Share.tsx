@@ -76,7 +76,22 @@ export default function SharePage() {
   ];
 
   return (
-    <Shell theme={theme} onToggle={toggle} onReport={() => setReporting(true)}>
+    <Shell
+      theme={theme}
+      onToggle={toggle}
+      onReport={() => setReporting(true)}
+      footer={
+        <>
+          <Link to="/" className="font-brand text-neutral-500 transition hover:text-violet-300">
+            © {new Date().getFullYear()} Open<span className="text-violet-400">img</span>
+          </Link>
+          <div className="flex-1" />
+          {data.uploader && <span>由 {data.uploader} 上传</span>}
+          <span className="text-neutral-700">·</span>
+          <span>{new Date(data.created_at).toLocaleString("zh-CN")}</span>
+        </>
+      }
+    >
       <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900/40">
         <div className="flex items-center justify-center bg-neutral-950/60">
           <img
@@ -115,7 +130,7 @@ export default function SharePage() {
         </div>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-800">
+      <div className="mt-6 overflow-hidden rounded-2xl border border-neutral-800">
         {formats.map((f, i) => (
           <FormatRow key={f.label} label={f.label} value={f.value} first={i === 0} />
         ))}
@@ -123,20 +138,10 @@ export default function SharePage() {
 
       <ShareRow url={data.short_url} title={data.orig_name} />
 
-      <div className="mt-4 rounded-xl border-l-2 border-violet-500 bg-neutral-900/40 px-4 py-3 text-[11px] leading-relaxed text-neutral-500">
+      <div className="mt-6 rounded-xl border-l-2 border-violet-500 bg-neutral-900/40 px-4 py-3 text-[11px] leading-relaxed text-neutral-500">
         <i className="fa-solid fa-circle-info mr-1.5 text-violet-400" />
         本站仅提供图片存储与分发服务，不拥有所展示内容的任何版权。所有图片版权归原作者或上传者所有。
         如发现内容侵犯您的合法权益，请点击右上角举报按钮提交投诉，我们将在收到通知后尽快核实并删除相关内容。
-      </div>
-
-      <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-neutral-800/60 pt-4 text-[11px] text-neutral-600">
-        <Link to="/" className="font-brand text-neutral-500 transition hover:text-violet-300">
-          © {new Date().getFullYear()} Open<span className="text-violet-400">img</span>
-        </Link>
-        <div className="flex-1" />
-        {data.uploader && <span>由 {data.uploader} 上传</span>}
-        <span className="text-neutral-700">·</span>
-        <span>{new Date(data.created_at).toLocaleString("zh-CN")}</span>
       </div>
 
       {reporting && <ReportDialog code={code} onClose={() => setReporting(false)} />}
@@ -146,19 +151,21 @@ export default function SharePage() {
 
 function Shell({
   children,
+  footer,
   theme,
   onToggle,
   onReport,
 }: {
   children: React.ReactNode;
+  footer?: React.ReactNode;
   theme: string;
   onToggle: () => void;
   onReport?: () => void;
 }) {
   return (
-    <div className="min-h-screen bg-neutral-950">
-      <div className="mx-auto w-full max-w-3xl px-4 py-5">
-        <div className="mb-4 flex items-center gap-2.5">
+    <div className="flex min-h-screen flex-col bg-neutral-950">
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-5">
+        <div className="mb-6 flex items-center gap-2.5">
           <a href="/" className="flex items-center gap-2.5">
             <Logo size={24} asLink={false} />
             <span className="font-brand text-base">
@@ -184,7 +191,20 @@ function Shell({
             <i className={`fa-solid ${theme === "dark" ? "fa-sun" : "fa-moon"} text-xs`} />
           </button>
         </div>
-        {children}
+
+        <div>{children}</div>
+
+        {/* mt-auto is what pins the last row to the bottom edge on a short
+            page — a small image used to leave the footer floating mid-screen
+            with dead space under it. On a tall page the auto margin collapses
+            to nothing and pt-6 keeps it off the content above. */}
+        {footer && (
+          <div className="mt-auto pt-6">
+            <div className="flex flex-wrap items-center gap-2 border-t border-neutral-800/60 pt-4 text-[11px] text-neutral-600">
+              {footer}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -306,7 +326,7 @@ function ShareRow({ url, title }: { url: string; title: string }) {
   ];
 
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+    <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
       {targets.map((s) => (
         <a
           key={s.label}

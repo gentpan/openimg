@@ -70,13 +70,14 @@ func (s *Server) decorate(images []models.Image) []imageOut {
 				item.Variants[v] = storage.URLFor(p, key, s.PublicBaseURL)
 			}
 		}
-		// Prefer the smallest generated thumbnail; fall back to the original
-		// so a gallery still renders while derivatives are still queued.
+		// Prefer the grid tier, then the legacy 200px one that images
+		// uploaded before the switch still carry, then the original so a
+		// gallery keeps rendering while derivatives are queued.
 		if img.ShortCode != "" {
 			item.ShortURL = storage.JoinURL(s.PublicBaseURL, img.ShortCode)
 		}
 		item.Thumb = item.URL
-		for _, v := range []string{models.VariantW200, models.VariantW600} {
+		for _, v := range []string{models.VariantW600, models.VariantW200} {
 			if u, ok := item.Variants[v]; ok {
 				item.Thumb = u
 				break

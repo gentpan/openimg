@@ -96,17 +96,17 @@ func TestProcessGeneratesVariants(t *testing.T) {
 	}
 	// Only the grid thumbnail is produced up front. The larger tiers are the
 	// caller's job now, via MakeThumbnail.
-	v, ok := res.Variants[models.VariantW200]
+	v, ok := res.Variants[models.VariantW600]
 	if !ok {
-		t.Fatal("missing grid thumbnail w200")
+		t.Fatal("missing grid thumbnail w600")
 	}
 	if v.Ext != "webp" {
-		t.Errorf("w200 ext = %q, want webp", v.Ext)
+		t.Errorf("w600 ext = %q, want webp", v.Ext)
 	}
-	if v.Width != 200 {
-		t.Errorf("w200 width = %d, want 200", v.Width)
+	if v.Width != GridThumbWidth {
+		t.Errorf("w600 width = %d, want %d", v.Width, GridThumbWidth)
 	}
-	for _, unwanted := range []string{models.VariantW600, models.VariantW1200} {
+	for _, unwanted := range []string{models.VariantW200, models.VariantW1200} {
 		if _, ok := res.Variants[unwanted]; ok {
 			t.Errorf("%s generated at upload; it should be on demand only", unwanted)
 		}

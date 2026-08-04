@@ -453,8 +453,11 @@ func MakeAvatar(buf []byte) (*Output, error) {
 	}, nil
 }
 
-// GridThumbWidth is the tier generated at upload time.
-const GridThumbWidth = 200
+// GridThumbWidth is the tier generated at upload time. 600 rather than 200
+// because the gallery grid is five columns of a 1280px container — roughly
+// 230 CSS px per card, which a 2x display renders at 460 physical pixels. A
+// 200px thumbnail was being upscaled past 2x on every card.
+const GridThumbWidth = 600
 
 // addGridThumb produces the grid thumbnail, skipping sources already at or
 // below that width — those render fine as-is.
@@ -467,7 +470,7 @@ func addGridThumb(res *Result, buf []byte, params *vips.ImportParams, width int)
 		log.Printf("imageproc: grid thumbnail failed: %v", err)
 		return
 	}
-	res.Variants[models.VariantW200] = out
+	res.Variants[models.VariantW600] = out
 }
 
 // MakeThumbnail renders one display size on demand. Called from the API when a

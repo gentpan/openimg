@@ -101,19 +101,20 @@ func main() {
 	var stats struct{ touched, skipped, failed int; before, after int64 }
 	for i := range images {
 		img := &images[i]
+		// Read before repair(), which updates SizeStored in place — including
+		// in dry-run, so the totals show what would happen.
+		before := img.SizeStored
 		res, err := repair(ctx, gdb, registry, img, *apply)
-		stats.before += img.SizeStored
+		stats.before += before
+		stats.after += img.SizeStored
 		switch {
 		case err != nil:
 			stats.failed++
 			fmt.Printf("  ✗ %-44s %v\n", trim(img.OrigName, 44), err)
-			stats.after += img.SizeStored
 		case res == "":
 			stats.skipped++
-			stats.after += img.SizeStored
 		default:
 			stats.touched++
-			stats.after += img.SizeStored // repair() 已就地更新
 			fmt.Printf("  ✓ %-44s %s\n", trim(img.OrigName, 44), res)
 		}
 	}

@@ -33,6 +33,15 @@ function describeEndpoint(endpoint: string): string {
  * bucket that can't be written to is worse than no bucket, because uploads
  * would fail only after the user believes they're set up.
  */
+/** "https://cdn.imgla.com/" → "cdn.imgla.com" */
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return "";
+  }
+}
+
 export default function StorageProfiles() {
   const [profiles, setProfiles] = useState<StorageProfile[]>([]);
   const [editing, setEditing] = useState<StorageProfile | "new" | null>(null);
@@ -141,13 +150,28 @@ export default function StorageProfiles() {
                     </span>
                   )}
                 </div>
+                {/* The platform pool's bucket, endpoint and access key belong
+                    to us, not to the user: nothing they can act on, and an
+                    endpoint of 127.0.0.1 reads as misconfigured. What they can
+                    act on is the host their images are served from. Their own
+                    buckets show the full config — that is the thing they came
+                    to this page to check. */}
                 <div className="mt-1 text-[10px] text-neutral-600 truncate">
-                  {p.bucket}
-                  {p.endpoint && ` · ${p.endpoint}`}
+                  {p.is_platform ? (
+                    <>
+                      <i className="fa-solid fa-globe mr-1 text-neutral-700" />
+                      {hostOf(p.public_base_url) || "平台托管"}
+                    </>
+                  ) : (
+                    <>
+                      {p.bucket}
+                      {p.endpoint && ` · ${p.endpoint}`}
+                    </>
+                  )}
                 </div>
                 <div className="text-[10px] text-neutral-600">
                   {p.image_count} 张 · {formatBytes(p.stored_bytes, 0)}
-                  {p.access_key_mask && ` · ${p.access_key_mask}`}
+                  {!p.is_platform && p.access_key_mask && ` · ${p.access_key_mask}`}
                 </div>
                 {p.last_error && <div className="mt-1 text-[10px] text-red-400">{p.last_error}</div>}
               </div>

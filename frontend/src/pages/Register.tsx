@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import { authApi } from "../api";
 import { AuthShell, Field, inputCls } from "./Login";
 import OAuthButtons from "./OAuthButtons";
 
@@ -10,15 +11,43 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sentTo, setSentTo] = useState("");
+  const [cooldown, setCooldown] = useState(0);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((n) => n - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
+  async function sendCode() {
+    if (!email.includes("@")) {
+      setErr("请先填写邮箱");
+      return;
+    }
+    setSending(true);
+    setErr(null);
+    try {
+      const r = await authApi.registerCode(email);
+      setSentTo(email);
+      setCooldown(r.resend_in);
+    } catch (e) {
+      setErr(String(e instanceof Error ? e.message : e));
+    } finally {
+      setSending(false);
+    }
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setErr(null);
     try {
-      await register(email, password, name || undefined);
+      await register(email, password, code, name || undefined);
       nav("/", { replace: true });
     } catch (e) {
       setErr(String(e instanceof Error ? e.message : e));
@@ -39,8 +68,39 @@ export default function RegisterPage() {
         <Field label="密码（至少 8 位）">
           <input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} autoComplete="new-password" />
         </Field>
+        <Field label="邮箱验证码">
+          <div className="flex gap-1.5">
+            <input
+              value={code}
+              inputMode="numeric"
+              maxLength={6}
+              required
+              autoComplete="one-time-code"
+              placeholder="6 位数字"
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className={`${inputCls} flex-1 min-w-0 tabular-nums`}
+            />
+            <button
+              type="button"
+              onClick={sendCode}
+              disabled={sending || cooldown > 0}
+              className="shrink-0 rounded-lg bg-neutral-800 px-3 text-xs text-neutral-300 transition hover:bg-neutral-700 disabled:text-neutral-500 disabled:hover:bg-neutral-800"
+            >
+              {sending ? "发送中…" : cooldown > 0 ? `${cooldown}s` : sentTo ? "重新发送" : "发送验证码"}
+            </button>
+          </div>
+          {sentTo && (
+            <div className="mt-1.5 text-[11px] text-neutral-500">
+              验证码已发送到 <span className="text-neutral-300">{sentTo}</span>，5 分钟内有效
+            </div>
+          )}
+        </Field>
         {err && <div className="text-sm text-red-400">{err}</div>}
-        <button type="submit" disabled={busy} className="w-full rounded-lg bg-violet-600 px-4 py-3 text-sm font-medium text-white hover:bg-violet-500 disabled:bg-neutral-700">
+        <button
+          type="submit"
+          disabled={busy || code.length !== 6 || password.length < 8}
+          className="w-full rounded-lg bg-violet-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-violet-500 disabled:bg-neutral-800 disabled:text-neutral-500"
+        >
           {busy ? "注册中…" : "创建账号"}
         </button>
       </form>

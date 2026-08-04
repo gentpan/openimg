@@ -34,6 +34,7 @@ const (
 	OTPPurposePasskey  = "passkey"
 	OTPPurposePurge    = "purge"
 	OTPPurposeReset    = "reset"
+	OTPPurposeRegister = "register"
 )
 
 // OTPPurposeLabel is the human name used in the subject line and the UI.
@@ -47,6 +48,8 @@ func OTPPurposeLabel(p string) string {
 		return "清空图库"
 	case OTPPurposeReset:
 		return "重置密码"
+	case OTPPurposeRegister:
+		return "注册"
 	default:
 		return "登录"
 	}
@@ -54,7 +57,8 @@ func OTPPurposeLabel(p string) string {
 
 func ValidOTPPurpose(p string) bool {
 	switch p {
-	case OTPPurposeLogin, OTPPurposePassword, OTPPurposePasskey, OTPPurposePurge, OTPPurposeReset:
+	case OTPPurposeLogin, OTPPurposePassword, OTPPurposePasskey, OTPPurposePurge, OTPPurposeReset,
+		OTPPurposeRegister:
 		return true
 	}
 	return false

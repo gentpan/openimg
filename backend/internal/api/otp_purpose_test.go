@@ -17,6 +17,8 @@ func TestOTPHashIsPurposeScoped(t *testing.T) {
 		models.OTPPurposePassword,
 		models.OTPPurposePasskey,
 		models.OTPPurposePurge,
+		models.OTPPurposeReset,
+		models.OTPPurposeRegister,
 	}
 	seen := map[string]string{}
 	for _, p := range purposes {
@@ -40,7 +42,7 @@ func TestValidOTPPurposeRejectsUnknown(t *testing.T) {
 			t.Errorf("ValidOTPPurpose(%q) = true, want false", bad)
 		}
 	}
-	for _, ok := range []string{"login", "password", "passkey", "purge"} {
+	for _, ok := range []string{"login", "password", "passkey", "purge", "reset", "register"} {
 		if !models.ValidOTPPurpose(ok) {
 			t.Errorf("ValidOTPPurpose(%q) = false, want true", ok)
 		}

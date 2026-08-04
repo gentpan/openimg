@@ -18,6 +18,7 @@ import (
 type registerReq struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=8,max=128"`
+	Code     string `json:"code" binding:"required,len=6"`
 	Name     string `json:"name"`
 	Ref      string `json:"ref"`
 }
@@ -79,7 +80,11 @@ func toPublic(u *models.User, group *models.UserGroup) publicUser {
 func (s *Server) handleRegister(c *gin.Context) {
 	var req registerReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		msg := "请填写邮箱和至少 8 位的密码"
+		if len(strings.TrimSpace(req.Code)) != 6 {
+			msg = "请输入 6 位邮箱验证码"
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": msg})
 		return
 	}
 	email := strings.ToLower(strings.TrimSpace(req.Email))
@@ -90,7 +95,16 @@ func (s *Server) handleRegister(c *gin.Context) {
 
 	var existing models.User
 	if err := s.DB.Where("email = ?", email).First(&existing).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "email already registered"})
+		c.JSON(http.StatusConflict, gin.H{"error": "该邮箱已注册，请直接登录"})
+		return
+	}
+
+	// The code proves the address exists and belongs to whoever is signing up.
+	// Without it the site accepts accounts on addresses their owner has never
+	// seen — which is how a free host ends up sending mail nobody asked for and
+	// gets its domain listed for it.
+	if status, msg := s.consumeOTP(email, req.Code, models.OTPPurposeRegister); msg != "" {
+		c.JSON(status, gin.H{"error": msg})
 		return
 	}
 
@@ -105,6 +119,7 @@ func (s *Server) handleRegister(c *gin.Context) {
 	s.DB.Where("name = ?", "free").First(&freeGroup)
 
 	u := models.NewUser(email, name, hash)
+	u.EmailVerified = true
 	u.SignupIP = c.ClientIP()
 	if freeGroup.ID != uuid.Nil {
 		u.GroupID = &freeGroup.ID
@@ -184,4 +199,38 @@ func (s *Server) handleMe(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, toPublic(u, group))
+}
+
+type registerCodeReq struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+// POST /auth/register/code — mail a code to an address that wants to sign up.
+//
+// Unlike password recovery, this one says plainly when an address is already
+// registered. Signup cannot hide that fact anyway — the account-creation step
+// has to reject a duplicate — and pretending otherwise only sends someone to
+// wait for a code that was never going to work.
+func (s *Server) handleRegisterCode(c *gin.Context) {
+	var req registerCodeReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请输入有效的邮箱"})
+		return
+	}
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+
+	var existing models.User
+	if err := s.DB.Where("email = ?", email).First(&existing).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "该邮箱已注册，请直接登录"})
+		return
+	}
+	if status, msg := s.issueOTP(c, email, models.OTPPurposeRegister); msg != "" {
+		c.JSON(status, gin.H{"error": msg})
+		return
+	}
+	c.JSON(http.StatusAccepted, gin.H{
+		"sent":      true,
+		"ttl_secs":  int(otpTTL.Seconds()),
+		"resend_in": int(otpRateLimitWin.Seconds()),
+	})
 }

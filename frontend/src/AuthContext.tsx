@@ -6,7 +6,7 @@ interface AuthCtx {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<void>;
+  register: (email: string, password: string, code: string, name?: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   requestOtp: (email: string) => Promise<void>;
@@ -44,9 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const u = await authApi.login(e, p);
           setUser(u);
         },
-        register: async (e, p, n) => {
+        register: async (e, p, code, n) => {
           const ref = readRef();
-          const u = await authApi.register(e, p, n, ref);
+          const u = await authApi.register(e, p, code, n, ref);
           if (ref) clearRef();
           setUser(u);
         },

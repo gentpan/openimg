@@ -90,6 +90,7 @@ func (s *Server) Router() *gin.Engine {
 		s.reportLimiter.middleware("举报过于频繁，请稍后再试"), s.handleReport)
 
 	// Auth (public + protected)
+	r.POST("/auth/register/code", s.handleRegisterCode)
 	r.POST("/auth/register", s.handleRegister)
 	r.POST("/auth/login", s.handleLogin)
 	r.GET("/auth/providers", s.handleListProviders)

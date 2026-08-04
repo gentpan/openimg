@@ -47,8 +47,19 @@ async function jfetch<T>(path: string, opts: RequestInit = {}): Promise<T> {
 
 // ----- Auth -----
 export const authApi = {
-  register: (email: string, password: string, name?: string, ref?: string) =>
-    jfetch<User>("/auth/register", { method: "POST", body: JSON.stringify({ email, password, name, ref }) }),
+  /** Mails a signup code. Says plainly when the address is already taken —
+   *  signup cannot hide that, and pretending otherwise sends the user off to
+   *  wait for a code that was never going to work. */
+  registerCode: (email: string) =>
+    jfetch<{ sent: true; ttl_secs: number; resend_in: number }>("/auth/register/code", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+  register: (email: string, password: string, code: string, name?: string, ref?: string) =>
+    jfetch<User>("/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ email, password, code, name, ref }),
+    }),
   login: (email: string, password: string) =>
     jfetch<User>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   logout: () => jfetch<{ ok: boolean }>("/auth/logout", { method: "POST" }),

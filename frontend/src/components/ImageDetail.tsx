@@ -57,6 +57,22 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
     }
   }
 
+  // The preview must not be the original. This panel is ~400px wide and the
+  // original can be several megabytes — one of the images on the live site is
+  // a 4.2 MB PNG whose 6 KB thumbnail renders identically at this size.
+  //
+  // Ordered by fitness for that width, not by quality: w600 is the closest
+  // match, the full-size re-encodes are correct but oversized, and w200 is the
+  // last resort before falling back to the original.
+  const previewSrc =
+    variants.w600 ??
+    variants.w1200 ??
+    variants.avif ??
+    variants.webp ??
+    variants.w200 ??
+    img.thumb_url ??
+    img.url;
+
   const links = [
     ...(img.short_url ? [{ key: "short", label: "短链", value: img.short_url }] : []),
     { key: "url", label: "URL", value: img.url },
@@ -81,7 +97,12 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
         </div>
 
         <div className="p-4">
-          <img src={img.url} alt={img.orig_name} className="w-full rounded-xl mb-4 bg-neutral-950" />
+          <img
+            src={previewSrc}
+            alt={img.orig_name}
+            loading="lazy"
+            className="w-full rounded-xl mb-4 bg-neutral-950"
+          />
 
           <dl className="space-y-1 text-[11px] mb-4">
             <Row label="尺寸" value={`${img.width} × ${img.height}`} />

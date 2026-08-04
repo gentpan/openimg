@@ -77,10 +77,18 @@ export function BarMeter({
   }, []);
 
   const clamped = Math.max(0, Math.min(100, percent));
-  // Any non-zero usage lights at least one bar, so "barely used" never reads
-  // as "unused".
-  const filled = clamped <= 0 ? 0 : Math.max(1, Math.round((clamped / 100) * bars));
-  const shown = reduced || mounted ? filled : 0;
+
+  // Fill to the exact fraction, letting the last lit segment be partial.
+  //
+  // Rounding to whole segments quantises the bar to 100/bars — at 50 segments
+  // that is 2% a step, so 3.3% rounds up and draws 4% next to a label reading
+  // 3.3%. The number and the picture then disagree about the same fact, and
+  // the picture is the one people trust.
+  const exact = (clamped / 100) * bars;
+  const whole = Math.floor(exact);
+  // A sliver rather than nothing, so "barely used" never reads as "unused".
+  const partial = clamped <= 0 ? 0 : Math.max(exact - whole, whole === 0 ? 0.35 : 0);
+  const animated = reduced || mounted;
 
   const on = tone === "amber" ? "bg-amber-400" : "bg-violet-400";
   // 15% of a brand colour over a white card is white. The unlit cells are
@@ -89,13 +97,21 @@ export function BarMeter({
 
   return (
     <div className={`flex items-stretch gap-[2px] ${className}`} aria-hidden="true">
-      {Array.from({ length: bars }, (_, i) => (
-        <div
-          key={i}
-          className={`flex-1 rounded-full transition-colors duration-300 ${i < shown ? on : off}`}
-          style={{ transitionDelay: reduced ? "0ms" : `${i * 14}ms` }}
-        />
-      ))}
+      {Array.from({ length: bars }, (_, i) => {
+        // Full, partly full, or empty.
+        const fill = !animated ? 0 : i < whole ? 1 : i === whole ? partial : 0;
+        return (
+          <div key={i} className={`relative flex-1 overflow-hidden rounded-full ${off}`}>
+            <span
+              className={`absolute inset-y-0 left-0 rounded-full ${on} transition-[width] duration-300`}
+              style={{
+                width: `${fill * 100}%`,
+                transitionDelay: reduced ? "0ms" : `${i * 14}ms`,
+              }}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }

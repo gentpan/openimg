@@ -122,6 +122,21 @@ public struct Account: Codable, Sendable {
     public let email: String
     public let name: String
     public let role: String
+    /// Absolute, and not always on our own origin: an uploaded avatar lives on
+    /// the CDN, but one that came from Google or GitHub still points at their
+    /// host. Optional because the server omits the key when it is empty.
+    public let avatarURL: String?
+
+    /// What to draw when there is no picture. Prefers the nickname over the
+    /// address so a letter the user chose wins over one they did not.
+    public var initial: String {
+        String((name.isEmpty ? email : name).prefix(1)).uppercased()
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, email, name, role
+        case avatarURL = "avatar_url"
+    }
 }
 
 /// The link shapes the web UI offers, so a menu bar app can put the same set

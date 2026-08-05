@@ -91,6 +91,14 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 6) {
             Label("账号", systemImage: "person.crop.circle").font(.headline)
             if let a = model.account {
+                HStack(spacing: 12) {
+                    Avatar(account: a, size: 52, client: try? model.client())
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(a.name.isEmpty ? a.email : a.name).font(.title3)
+                        Text(a.email).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.bottom, 4)
                 Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 4) {
                     row("昵称", a.name.isEmpty ? "（未设置）" : a.name)
                     row("邮箱", a.email)

@@ -164,14 +164,7 @@ struct Sidebar: View {
         VStack(alignment: .leading, spacing: 6) {
             if let a = model.account {
                 HStack(spacing: 8) {
-                    Circle()
-                        .fill(Color.brand.opacity(0.18))
-                        .frame(width: 26, height: 26)
-                        .overlay {
-                            Text(String((a.name.isEmpty ? a.email : a.name).prefix(1)).uppercased())
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(Color.brand)
-                        }
+                    Avatar(account: a, client: try? model.client())
                     VStack(alignment: .leading, spacing: 0) {
                         Text(a.name.isEmpty ? a.email : a.name)
                             .font(.callout)

@@ -170,6 +170,26 @@ if let q = try? dec.decode(Quota.self, from: Data(quotaJSON.utf8)) {
     check("配额解析", false)
 }
 
+// 服务端的 avatar_url 带 omitempty：没有头像的账号响应里根本没有这个键，
+// 声明成非可选会让整条账号解析失败，而症状是"登录不上"而不是"头像没了"。
+section("账号解析")
+
+let withAvatar = #"{"id":"1","email":"a@b.c","name":"西风","role":"admin","avatar_url":"https://cdn/x.avif"}"#
+if let a = try? dec.decode(Account.self, from: Data(withAvatar.utf8)) {
+    check("带头像可解析", a.avatarURL == "https://cdn/x.avif")
+    check("首字母取昵称而非邮箱", a.initial == "西")
+} else {
+    check("带头像可解析", false)
+}
+
+let noAvatar = #"{"id":"1","email":"zoe@b.c","name":"","role":"user"}"#
+if let a = try? dec.decode(Account.self, from: Data(noAvatar.utf8)) {
+    check("缺 avatar_url 仍可解析", a.avatarURL == nil)
+    check("无昵称时首字母回退到邮箱", a.initial == "Z")
+} else {
+    check("缺 avatar_url 仍可解析", false)
+}
+
 // MARK: - Result
 
 print("\n\(checks - failures)/\(checks) 通过")

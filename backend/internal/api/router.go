@@ -29,6 +29,12 @@ type Server struct {
 	Storage *storage.Registry
 	// FrontendDir, when set, is the built SPA this process also serves.
 	FrontendDir string
+
+	// AppleAppID is "TEAMID.bundleid" for the Mac app, e.g.
+	// "ABCDE12345.io.openimg.mac". Empty means the associated-domains document
+	// is not served at all — see apple_assoc.go for why a placeholder would be
+	// worse than nothing.
+	AppleAppID string
 	// ReactionSalt keeps hashed visitor addresses non-portable.
 	ReactionSalt string
 	Cipher       *crypto.Cipher
@@ -250,6 +256,10 @@ func (s *Server) Router() *gin.Engine {
 	// domain and makes the short link a genuine 302 instead of a page that
 	// loads React and then navigates.
 	r.GET("/:code", s.handleShortLink)
+	// Before NoRoute: the SPA fallback would answer this path with index.html,
+	// which Apple rejects.
+	s.registerAppleAssociation(r)
+
 	r.NoRoute(s.serveAppOrNotFound)
 	return r
 }

@@ -19,15 +19,6 @@ public struct GridFit: Equatable, Sendable {
     /// so the layout fell back to `minCell` and the grid has to scroll.
     public let scrolls: Bool
 
-    /// How far a cell may depart from square.
-    ///
-    /// Filling both axes exactly is only a good idea when the result is roughly
-    /// square. Three pictures in a wide window "fill" it as three 255x509
-    /// slivers, which is worse than not filling. With a full page the solver
-    /// lands near 1:1 on its own and this never binds; it exists for the tail.
-    private static let minAspect = 0.78
-    private static let maxAspect = 1.18
-
     /// - Parameters:
     ///   - count: how many tiles have to fit.
     ///   - size: the area available to the grid, insets already removed.
@@ -65,11 +56,23 @@ public struct GridFit: Equatable, Sendable {
                            cellWidth: cw, cellHeight: cw, scrolls: true)
         }
 
-        let ch = min(max(b.h, b.w * minAspect), b.w * maxAspect)
-        // Floored to whole points: `.fixed` columns that sum to a hair over the
-        // proposed width make LazyVGrid drop a column, which would undo the
-        // whole calculation over a rounding error.
+        // Square, always.
+        //
+        // Letting the cell stretch to fill both axes exactly buys a few points
+        // of height and costs the thing a contact sheet is for: a wall of
+        // pictures that scans as a grid rather than as rows of slightly
+        // different shapes. The side is `tile` — the smaller of the two — which
+        // is precisely the quantity the search above maximised, so this is not
+        // a concession, it is what was being solved for.
+        //
+        // What is given up is a sliver of the remaining axis. At the default
+        // window that is one point of 637.
+        //
+        // Floored to whole points: `.fixed` columns summing to a hair over the
+        // proposed width make LazyVGrid drop a column, undoing the whole
+        // calculation over a rounding error.
+        let side = floor(b.tile)
         return GridFit(columns: b.c, rows: b.r,
-                       cellWidth: floor(b.w), cellHeight: floor(ch), scrolls: false)
+                       cellWidth: side, cellHeight: side, scrolls: false)
     }
 }

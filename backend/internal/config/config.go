@@ -20,6 +20,10 @@ type Config struct {
 	TempDir       string
 	PublicBaseURL string
 	FrontendDir   string
+	// AppleAppID is "TEAMID.bundleid" for the Mac app. Set it to serve the
+	// associated-domains document that lets the app use a passkey natively
+	// instead of through a web sheet. Unset, the document is not served.
+	AppleAppID string
 	CookieDomain  string
 	CookieSecure  bool
 
@@ -81,6 +85,7 @@ func Load() Config {
 		// Optional. Set it to the frontend's dist/ and this process serves the
 		// SPA too, which is what lets short links live at the domain root.
 		FrontendDir:      os.Getenv("FRONTEND_DIR"),
+		AppleAppID:       os.Getenv("APPLE_APP_ID"),
 		CookieDomain:     getenv("COOKIE_DOMAIN", ""),
 		CookieSecure:     secure,
 		JWTSecret:        mustGet("JWT_SECRET"),

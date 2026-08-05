@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Passkeys. Without this the platform credential API fails with
+       ASAuthorizationError 1004 ("the calling process does not have an
+       application identifier") no matter how the request is built — measured,
+       not assumed.
+
+       It only takes effect when the app is signed with a real team's
+       certificate: the entitlement is checked against the application
+       identifier, and an ad-hoc signature has none. It also needs the server
+       half — https://openimg.io/.well-known/apple-app-site-association must
+       list TEAMID.io.openimg.mac (see backend/internal/api/apple_assoc.go). -->
+  <key>com.apple.developer.associated-domains</key>
+  <array>
+    <string>webcredentials:openimg.io</string>
+  </array>
+
+  <!-- The keychain item that holds the access token. The ad-hoc build falls
+       back to the legacy keychain because kSecUseDataProtectionKeychain wants
+       a team id; a properly signed build uses this group and stops needing
+       that fallback. -->
+  <key>keychain-access-groups</key>
+  <array>
+    <string>$(AppIdentifierPrefix)io.openimg.mac</string>
+  </array>
+</dict>
+</plist>

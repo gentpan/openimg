@@ -90,10 +90,13 @@ struct Lightbox: View {
             full = nil
             loadingFull = true
             defer { loadingFull = false }
-            // The 600px derivative, not the original: this pane is at most a
-            // thousand points wide, and one of the pictures on the live site is
-            // a 20 MB PNG that looks identical here at 40 KB.
-            full = await ThumbnailCache.shared.image(for: img.thumbURL, client: try? model.client())
+            // The original, not the 600px derivative. This used to fetch the
+            // derivative on the grounds that the pane is only about a thousand
+            // points wide — which ignored that a point is two pixels on every
+            // display this app runs on, so 600 was upscaled to 2000 and looked
+            // it. Enlarging a picture is the one place that should show what
+            // was actually uploaded.
+            full = await ThumbnailCache.full.image(for: img.url, client: try? model.client())
         }
     }
 

@@ -124,6 +124,10 @@ type loginFinishReq struct {
 	Email      string                                `json:"email"` // optional for discoverable
 	Flow       string                                `json:"flow" binding:"required"`
 	Credential *protocol.CredentialAssertionResponse `json:"credential" binding:"required"`
+	// Set by a native client. WebAuthn is finished the same way either
+	// way; what differs is what the caller can hold onto afterwards — a Mac
+	// app has no cookie jar, so it gets a handoff code instead of a session.
+	Native bool `json:"native"`
 }
 
 func (s *Server) handlePasskeyLoginFinish(c *gin.Context) {
@@ -168,6 +172,18 @@ func (s *Server) handlePasskeyLoginFinish(c *gin.Context) {
 
 	if u.Status != models.UserActive {
 		c.JSON(http.StatusForbidden, gin.H{"error": "account suspended"})
+		return
+	}
+	// A native client takes the same one-time code the OAuth flow hands back,
+	// and redeems it at /auth/native/exchange for a personal access token.
+	// Reusing that path rather than minting a token here keeps every native
+	// credential coming out of one place, with one expiry and one naming rule.
+	//
+	// No cookie is issued in this branch: the request came from an app, and a
+	// session it cannot present is a session that only widens what a stolen
+	// response is worth.
+	if req.Native {
+		c.JSON(http.StatusOK, gin.H{"code": s.nativeCodes.issue(u.ID)})
 		return
 	}
 	if err := s.Auth.IssueSession(c, u); err != nil {

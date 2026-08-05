@@ -14,11 +14,19 @@ import OpenimgKit
 /// should give it back when the system asks rather than when it feels like it.
 @MainActor
 final class ThumbnailCache {
-    static let shared = ThumbnailCache()
+    /// Grid thumbnails: many, small.
+    static let shared = ThumbnailCache(limit: 400)
+
+    /// Full-resolution originals, kept apart from the grid's cache and kept
+    /// short. One of the pictures on the live site is a 20 MB PNG; 400 of those
+    /// is a number NSCache should never be asked to hold, and the viewer only
+    /// ever needs the current image and the one either side of it.
+    static let full = ThumbnailCache(limit: 6)
+
     private let cache = NSCache<NSString, NSImage>()
     private var inFlight: [String: Task<NSImage?, Never>] = [:]
 
-    private init() { cache.countLimit = 400 }
+    private init(limit: Int) { cache.countLimit = limit }
 
     func image(for url: String, client: OpenimgClient?) async -> NSImage? {
         if let hit = cache.object(forKey: url as NSString) { return hit }

@@ -80,13 +80,35 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
-# Ad-hoc signature. Not a substitute for a Developer ID — it lets the app run on
-# this machine, nothing more — but an unsigned bundle is refused outright on
-# Apple silicon, so it is required even locally.
-codesign --force --sign - --identifier io.openimg.mac "$APP" 2>/dev/null
+# Signing.
+#
+# Ad-hoc by default: it lets the app run on this machine and nothing more, but
+# an unsigned bundle is refused outright on Apple silicon, so it is required
+# even locally.
+#
+# Set SIGN_IDENTITY to a real certificate ("Developer ID Application: Name
+# (TEAMID)") to get an application identifier, which is what the passkey and
+# data-protection-keychain entitlements are checked against. Ad-hoc has no team
+# id, so entitlements embedded into an ad-hoc build are ignored — the passkey
+# API answers ASAuthorizationError 1004 and the keychain answers -34018.
+#
+#   SIGN_IDENTITY="Developer ID Application: 你的名字 (ABCDE12345)" ./package-mac.sh
+#
+# List what is available with: security find-identity -v -p codesigning
+ENTITLEMENTS="$ROOT/Resources/OpenimgMac.entitlements"
+if [ -n "${SIGN_IDENTITY:-}" ]; then
+  codesign --force --options runtime --timestamp \
+           --sign "$SIGN_IDENTITY" \
+           --entitlements "$ENTITLEMENTS" \
+           --identifier io.openimg.mac "$APP"
+else
+  # No --entitlements here on purpose: ad-hoc cannot honour them, and embedding
+  # ones that silently do nothing makes the build look configured when it is not.
+  codesign --force --sign - --identifier io.openimg.mac "$APP" 2>/dev/null
+fi
 
 echo "已打包：$APP"
-codesign -dv "$APP" 2>&1 | grep -E "Identifier|Signature" | sed 's/^/  /'
+codesign -dv "$APP" 2>&1 | grep -E "Identifier|Signature|TeamIdentifier" | sed 's/^/  /'
 echo
 echo "运行：open '$APP'"
 echo "退出：pkill -x OpenimgMac"

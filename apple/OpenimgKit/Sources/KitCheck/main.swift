@@ -204,8 +204,8 @@ check("横向不溢出",
       Double(f50.columns) * f50.cellWidth + 12 * Double(f50.columns - 1) <= 972.5)
 check("纵向不溢出",
       Double(f50.rows) * f50.cellHeight + 12 * Double(f50.rows - 1) <= 637.5)
-check("格子接近正方（\(Int(f50.cellWidth))x\(Int(f50.cellHeight))）",
-      f50.cellHeight / f50.cellWidth > 0.78 && f50.cellHeight / f50.cellWidth < 1.18)
+check("格子是正方（\(Int(f50.cellWidth))x\(Int(f50.cellHeight))）",
+      f50.cellWidth == f50.cellHeight)
 check("格子不至于太小", f50.cellWidth >= 72)
 
 // 换页大小：都要能铺满，且张数越多格子越小
@@ -226,8 +226,7 @@ check("滚动时格子仍不小于下限", tiny.cellWidth >= 72)
 
 // 少量图片时不该被拉成长条
 let three = GridFit.solve(count: 3, in: deskGrid, spacing: 12, minCell: 72)
-check("3 张时格子不被拉成长条",
-      three.cellHeight / three.cellWidth > 0.78 && three.cellHeight / three.cellWidth < 1.18)
+check("3 张时也是正方", three.cellWidth == three.cellHeight)
 
 // 退化输入
 check("0 张不崩", GridFit.solve(count: 0, in: deskGrid, spacing: 12, minCell: 72).columns >= 1)

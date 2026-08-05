@@ -3,7 +3,9 @@ import AppKit
 import SwiftUI
 import OpenimgKit
 
-enum Tab: String, CaseIterable, Identifiable {
+/// Trailing underscore because `Section` is a SwiftUI type and shadowing it
+/// makes every `Section { }` in a List fail to resolve.
+enum Section_: String, CaseIterable, Identifiable, Hashable {
     case gallery, upload, settings
     var id: String { rawValue }
     var label: String {
@@ -38,7 +40,7 @@ final class AppModel: ObservableObject {
     @Published var quota: Quota?
 
     // Navigation
-    @Published var tab: Tab = .gallery
+    @Published var section: Section_ = .gallery
     @Published var status = ""
     @Published var busy = false
 
@@ -85,12 +87,12 @@ final class AppModel: ObservableObject {
     /// Called at launch. Silent on failure — an expired token should land the
     /// user on the settings tab, not greet them with a red banner.
     func restore() async {
-        guard !token.isEmpty else { tab = .settings; return }
-        await connect(announce: false)
-        if !connected { tab = .settings }
+        guard !token.isEmpty else { section = .settings; return }
+        await connect(quiet: true)
+        if !connected { section = .settings }
     }
 
-    func connect(announce: Bool = true) async {
+    func connect(quiet: Bool = false) async {
         busy = true
         defer { busy = false }
         do {
@@ -111,13 +113,13 @@ final class AppModel: ObservableObject {
             account = me
             quota = try? await c.quota()
             await load(resetPage: true)
-            if announce {
-                status = "已连接 \(me.email)\(warning)"
-                tab = .gallery
+            if !quiet {
+                announce("已连接 \(me.email)\(warning)")
+                section = .gallery
             }
         } catch {
             account = nil
-            status = message(error)
+            announce(message(error))
         }
     }
 
@@ -129,8 +131,8 @@ final class AppModel: ObservableObject {
         images = []
         total = 0
         selection = []
-        tab = .settings
-        status = "已断开"
+        section = .settings
+        announce("已断开")
     }
 
     // MARK: - Gallery
@@ -150,7 +152,7 @@ final class AppModel: ObservableObject {
             // to delete the wrong thing.
             selection = []
         } catch {
-            status = message(error)
+            announce(message(error))
         }
     }
 
@@ -200,12 +202,12 @@ final class AppModel: ObservableObject {
                 let chunk = Array(ids[start..<min(start + 500, ids.count)])
                 deleted += try await client().bulkDelete(ids: chunk).deleted
             }
-            status = "已删除 \(deleted) 张"
+            announce("已删除 \(deleted) 张")
             detail = nil
             quota = try? await client().quota()
             await load()
         } catch {
-            status = message(error)
+            announce(message(error))
         }
     }
 
@@ -235,7 +237,7 @@ final class AppModel: ObservableObject {
         for (i, url) in urls.enumerated() {
             uploadProgress = "\(i + 1)/\(urls.count) \(url.lastPathComponent)"
             if let reason = rejectLocally(url) {
-                status = "\(url.lastPathComponent)：\(reason)"
+                announce("\(url.lastPathComponent)：\(reason)")
                 continue
             }
             do {
@@ -243,7 +245,7 @@ final class AppModel: ObservableObject {
                 lastLink = linkFormat.render(res.image)
                 done += 1
             } catch {
-                status = message(error)
+                announce(message(error))
                 break // 配额、每日上限、令牌失效——后续文件必然同样失败
             }
         }
@@ -252,7 +254,7 @@ final class AppModel: ObservableObject {
             status = done == 1 ? "已上传，链接已复制" : "已上传 \(done) 张，最后一条链接已复制"
             quota = try? await client().quota()
             await load(resetPage: true)
-            tab = .gallery
+            section = .gallery
         }
     }
 
@@ -281,6 +283,20 @@ final class AppModel: ObservableObject {
         guard !text.isEmpty else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
+    }
+
+    private var toastTask: Task<Void, Never>?
+
+    /// Shows a message and clears it on its own. A status line that never goes
+    /// away turns into furniture and stops being read.
+    func announce(_ text: String, seconds: Double = 4) {
+        withAnimation(.spring(duration: 0.3)) { status = text }
+        toastTask?.cancel()
+        toastTask = Task {
+            try? await Task.sleep(for: .seconds(seconds))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.25)) { status = "" }
+        }
     }
 
     func message(_ error: Error) -> String {

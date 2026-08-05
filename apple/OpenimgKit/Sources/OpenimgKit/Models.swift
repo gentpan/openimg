@@ -46,6 +46,18 @@ public struct UploadResponse: Codable, Sendable {
 public enum SortKey: String, CaseIterable, Sendable, Identifiable {
     case newest, oldest, largest, smallest, widest, name
     public var id: String { rawValue }
+    /// SF Symbol for menus. Chosen to read at a glance in a compact picker,
+    /// where the label is often truncated.
+    public var icon: String {
+        switch self {
+        case .newest: "arrow.down.to.line"
+        case .oldest: "arrow.up.to.line"
+        case .largest: "arrow.up.right.square"
+        case .smallest: "arrow.down.right.square"
+        case .widest: "aspectratio"
+        case .name: "textformat.abc"
+        }
+    }
     public var label: String {
         switch self {
         case .newest: "最新上传"

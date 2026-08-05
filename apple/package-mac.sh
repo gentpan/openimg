@@ -40,8 +40,9 @@ BIN="$(xcrun swift build --package-path "$PKG" -c "$CONFIG" --show-bin-path)/Ope
 [[ -x "$BIN" ]] || { echo "找不到产物：$BIN" >&2; exit 1; }
 
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/OpenimgMac"
+cp "$ROOT/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 
 # No LSUIElement: this is a windowed app, so it should take a Dock icon and its
 # own menu bar like any other. The earlier menu-bar-only build set it, and
@@ -60,6 +61,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleShortVersionString</key>  <string>0.1.0</string>
   <key>CFBundleVersion</key>             <string>1</string>
   <key>LSMinimumSystemVersion</key>      <string>14.0</string>
+  <key>CFBundleIconFile</key>            <string>AppIcon</string>
   <key>NSHighResolutionCapable</key>     <true/>
 </dict>
 </plist>

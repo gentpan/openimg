@@ -51,7 +51,7 @@ export default function Nav() {
         <a href="/" className="flex items-center gap-2.5 shrink-0">
           <Logo size={24} asLink={false} />
           <span className="text-base font-brand">
-            Open<span className="text-violet-400">img</span>
+            Open<span className="text-brand-400">img</span>
           </span>
         </a>
 
@@ -65,7 +65,7 @@ export default function Nav() {
             </>
           )}
           {user?.role === "admin" && (
-            <Link to="/admin" className="text-violet-400 hover:underline hidden sm:inline">
+            <Link to="/admin" className="text-brand-400 hover:underline hidden sm:inline">
               管理
             </Link>
           )}
@@ -82,7 +82,7 @@ export default function Nav() {
                 className={`rounded-full px-2.5 py-0.5 transition whitespace-nowrap ${
                   user.checked_in_today
                     ? "bg-neutral-900 text-neutral-600 cursor-default"
-                    : "bg-violet-600 text-white hover:bg-violet-500"
+                    : "bg-brand-600 text-brand-ink hover:bg-brand-500"
                 }`}
               >
                 {busy ? (
@@ -105,7 +105,7 @@ export default function Nav() {
                 className={`rounded-full px-2 py-0.5 transition ${
                   low
                     ? "bg-amber-900/30 text-amber-200 hover:bg-amber-900/50"
-                    : "bg-violet-900/30 text-violet-200 hover:bg-violet-900/50"
+                    : "bg-brand-900/30 text-brand-200 hover:bg-brand-900/50"
                 }`}
               >
                 <i className="fa-solid fa-database text-[10px] mr-1" />
@@ -115,13 +115,13 @@ export default function Nav() {
                 onClick={toggle}
                 title={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
                 aria-label={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
-                className="w-6 h-6 rounded-full text-neutral-500 hover:text-violet-300 hover:bg-neutral-900 transition"
+                className="w-6 h-6 rounded-full text-neutral-500 hover:text-brand-300 hover:bg-neutral-900 transition"
               >
                 <i className={`fa-solid ${theme === "dark" ? "fa-sun" : "fa-moon"} text-[11px]`} />
               </button>
               <Link
                 to="/settings"
-                className="flex items-center gap-1.5 text-neutral-400 hover:text-violet-300 min-w-0"
+                className="flex items-center gap-1.5 text-neutral-400 hover:text-brand-300 min-w-0"
               >
                 <Avatar user={user} size={20} />
                 <span className="truncate max-w-[8rem]">{user.name || user.email}</span>
@@ -136,11 +136,11 @@ export default function Nav() {
                 onClick={toggle}
                 title={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
                 aria-label={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
-                className="w-6 h-6 rounded-full text-neutral-500 hover:text-violet-300 hover:bg-neutral-900 transition"
+                className="w-6 h-6 rounded-full text-neutral-500 hover:text-brand-300 hover:bg-neutral-900 transition"
               >
                 <i className={`fa-solid ${theme === "dark" ? "fa-sun" : "fa-moon"} text-[11px]`} />
               </button>
-              <Link to="/login" className="text-violet-400 hover:underline">
+              <Link to="/login" className="text-brand-400 hover:underline">
                 登录
               </Link>
               <Link to="/register" className="text-neutral-500 hover:text-neutral-200">
@@ -159,7 +159,7 @@ function NavItem({ to, icon, label, active }: { to: string; icon: string; label:
     <Link
       to={to}
       title={label}
-      className={`transition ${active ? "text-violet-300" : "text-neutral-400 hover:text-violet-300"}`}
+      className={`transition ${active ? "text-brand-300" : "text-neutral-400 hover:text-brand-300"}`}
     >
       <i className={`fa-solid ${icon}`} />
       <span className="ml-1.5 hidden md:inline">{label}</span>

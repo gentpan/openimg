@@ -38,13 +38,13 @@ export default function AdminLayout() {
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center gap-3 mb-5">
           <h1 className="flex items-center gap-2.5 text-lg font-brand text-neutral-100">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-violet-400">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-brand-400">
               <i className="fa-solid fa-shield-halved text-sm" />
             </span>
             管理后台
           </h1>
           <div className="flex-1" />
-          <Link to="/" className="text-xs text-neutral-500 hover:text-violet-300">
+          <Link to="/" className="text-xs text-neutral-500 hover:text-brand-300">
             返回站点 →
           </Link>
         </div>
@@ -56,7 +56,7 @@ export default function AdminLayout() {
               onClick={() => setTab(t.key)}
               className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition ${
                 tab === t.key
-                  ? "bg-violet-600 text-white"
+                  ? "bg-brand-600 text-brand-ink"
                   : "bg-neutral-900 text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800"
               }`}
             >
@@ -148,7 +148,7 @@ function UsersTab() {
 
   return (
     <Card>
-      {msg && <div className="mb-3 text-xs text-violet-300">{msg}</div>}
+      {msg && <div className="mb-3 text-xs text-brand-300">{msg}</div>}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="text-[10px] text-neutral-600">
@@ -165,14 +165,14 @@ function UsersTab() {
               <tr key={u.id} className="text-neutral-400">
                 <td className="py-2 pr-3">
                   <div className="text-neutral-200">{u.email}</div>
-                  {u.role === "admin" && <span className="text-[9px] text-violet-400">管理员</span>}
+                  {u.role === "admin" && <span className="text-[9px] text-brand-400">管理员</span>}
                 </td>
                 <td className="py-2 pr-3">
                   <select
                     value={u.group_id || ""}
                     disabled={busy}
                     onChange={(e) => patch(u.id, { group_id: e.target.value })}
-                    className="rounded-md bg-neutral-800 px-2 py-1 text-[11px] outline-none border border-transparent focus:border-violet-500"
+                    className="rounded-md bg-neutral-800 px-2 py-1 text-[11px] outline-none border border-transparent focus:border-brand-500"
                   >
                     <option value="">无</option>
                     {groups.map((g) => (
@@ -204,7 +204,7 @@ function UsersTab() {
                   <div className="text-neutral-600 font-mono">{u.last_login_ip || "—"}</div>
                 </td>
                 <td className="py-2 whitespace-nowrap">
-                  <button onClick={() => grant(u)} disabled={busy} className="text-violet-400 hover:underline mr-2">
+                  <button onClick={() => grant(u)} disabled={busy} className="text-brand-400 hover:underline mr-2">
                     调整空间
                   </button>
                   {u.status === "active" ? (
@@ -290,7 +290,7 @@ function GroupsTab() {
                     }
                     disabled={busy}
                     onBlur={(e) => save(g, f.key, e.target.value, f.unit)}
-                    className="w-24 rounded-md bg-neutral-800 px-2 py-1 text-[11px] text-right outline-none border border-transparent focus:border-violet-500"
+                    className="w-24 rounded-md bg-neutral-800 px-2 py-1 text-[11px] text-right outline-none border border-transparent focus:border-brand-500"
                   />
                   <span className="text-[10px] text-neutral-600 w-6">{f.unit === "bytes" ? "MB" : ""}</span>
                 </div>
@@ -311,7 +311,7 @@ function GroupsTab() {
                     setBusy(false);
                   }
                 }}
-                className="accent-violet-600"
+                className="accent-brand-800"
               />
             </div>
             <div className="flex items-center justify-between gap-2">
@@ -328,7 +328,7 @@ function GroupsTab() {
                     setBusy(false);
                   }
                 }}
-                className="w-40 rounded-md bg-neutral-800 px-2 py-1 text-[11px] outline-none border border-transparent focus:border-violet-500"
+                className="w-40 rounded-md bg-neutral-800 px-2 py-1 text-[11px] outline-none border border-transparent focus:border-brand-500"
               />
             </div>
           </div>
@@ -381,7 +381,7 @@ function ImagesTab() {
             onClick={() => setStatus(o.v)}
             className={`px-2.5 py-1 rounded-md text-xs transition ${
               status === o.v
-                ? "bg-violet-600/20 text-violet-300 border border-violet-500/30"
+                ? "bg-brand-600/20 text-brand-300 border border-brand-500/30"
                 : "bg-neutral-800 text-neutral-400 hover:text-neutral-100 border border-transparent"
             }`}
           >
@@ -396,7 +396,7 @@ function ImagesTab() {
             onClick={() => setDetail(img)}
             title={`${img.orig_name}\n${img.owner_email}`}
             className={`group relative block rounded-xl overflow-hidden border transition ${
-              detail?.id === img.id ? "border-violet-500" : "border-neutral-800 hover:border-neutral-700"
+              detail?.id === img.id ? "border-brand-500" : "border-neutral-800 hover:border-neutral-700"
             }`}
           >
             <img src={img.thumb_url} alt="" loading="lazy" className="w-full aspect-square object-cover" />
@@ -473,7 +473,7 @@ function AdminImageDetail({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <img src={img.thumb_url} alt="" className="mb-4 w-full rounded-xl bg-neutral-950 object-contain max-h-56" />
 
-          <div className="mb-3 rounded-xl border border-violet-900/40 bg-violet-950/20 px-3 py-2.5">
+          <div className="mb-3 rounded-xl border border-brand-900/40 bg-brand-950/20 px-3 py-2.5">
             <div className="text-[10px] text-neutral-500">上传者</div>
             <div className="mt-0.5 text-xs text-neutral-100 break-all">
               {img.owner_name ? `${img.owner_name} · ` : ""}
@@ -485,7 +485,7 @@ function AdminImageDetail({
                 e.preventDefault();
                 navigator.clipboard?.writeText(img.owner_email);
               }}
-              className="mt-1 inline-block text-[10px] text-violet-400 hover:underline"
+              className="mt-1 inline-block text-[10px] text-brand-400 hover:underline"
             >
               <i className="fa-solid fa-copy mr-1" />
               复制邮箱
@@ -567,7 +567,7 @@ function ReportsTab({ onChange }: { onChange: (n: number) => void }) {
             onClick={() => setStatus(o.v)}
             className={`px-2.5 py-1 rounded-md text-xs transition ${
               status === o.v
-                ? "bg-violet-600/20 text-violet-300 border border-violet-500/30"
+                ? "bg-brand-600/20 text-brand-300 border border-brand-500/30"
                 : "bg-neutral-800 text-neutral-400 hover:text-neutral-100 border border-transparent"
             }`}
           >
@@ -593,7 +593,7 @@ function ReportsTab({ onChange }: { onChange: (n: number) => void }) {
                   {reportCategoryLabel(r.category)}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs text-neutral-200 group-hover:text-violet-300">
+                  <span className="block truncate text-xs text-neutral-200 group-hover:text-brand-300">
                     {r.reason || "（无补充说明）"}
                   </span>
                   <span className="mt-1 block text-[10px] text-neutral-600">
@@ -604,7 +604,7 @@ function ReportsTab({ onChange }: { onChange: (n: number) => void }) {
                     )}
                   </span>
                 </span>
-                <i className="fa-solid fa-chevron-right mt-1 shrink-0 text-[9px] text-neutral-700 group-hover:text-violet-400" />
+                <i className="fa-solid fa-chevron-right mt-1 shrink-0 text-[9px] text-neutral-700 group-hover:text-brand-400" />
               </button>
 
               {status === "open" && (
@@ -633,7 +633,7 @@ function ReportsTab({ onChange }: { onChange: (n: number) => void }) {
                   <div className="flex-1" />
                   <button
                     onClick={() => setDetail(r)}
-                    className="inline-flex h-7 items-center justify-center rounded-md px-2 text-[11px] text-neutral-500 transition hover:text-violet-300"
+                    className="inline-flex h-7 items-center justify-center rounded-md px-2 text-[11px] text-neutral-500 transition hover:text-brand-300"
                   >
                     详情
                   </button>
@@ -749,7 +749,7 @@ function ReportDetail({
                   href={`/${report.short_code}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[10px] text-violet-400 hover:underline"
+                  className="text-[10px] text-brand-400 hover:underline"
                 >
                   打开分享页 →
                 </a>
@@ -764,7 +764,7 @@ function ReportDetail({
             ) : (
               <button
                 onClick={() => setRevealed(true)}
-                className="flex h-32 w-full items-center justify-center rounded-lg border border-dashed border-neutral-700 text-xs text-neutral-500 transition hover:border-violet-500 hover:text-violet-300"
+                className="flex h-32 w-full items-center justify-center rounded-lg border border-dashed border-neutral-700 text-xs text-neutral-500 transition hover:border-brand-500 hover:text-brand-300"
               >
                 <i className="fa-solid fa-eye mr-1.5" />
                 点击查看被举报的图片

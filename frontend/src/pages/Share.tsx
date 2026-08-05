@@ -45,7 +45,7 @@ export default function SharePage() {
             <i className="fa-solid fa-link-slash text-xl text-neutral-500" />
           </div>
           <div className="text-sm text-neutral-300">{err}</div>
-          <Link to="/" className="mt-3 inline-block text-xs text-violet-400 hover:underline">
+          <Link to="/" className="mt-3 inline-block text-xs text-brand-400 hover:underline">
             前往 Openimg 首页 →
           </Link>
         </div>
@@ -57,7 +57,7 @@ export default function SharePage() {
     return (
       <Shell theme={theme} onToggle={toggle}>
         <div className="py-24 text-center">
-          <RingSpinner className="h-6 w-6 text-violet-400" />
+          <RingSpinner className="h-6 w-6 text-brand-400" />
         </div>
       </Shell>
     );
@@ -82,8 +82,8 @@ export default function SharePage() {
       onReport={() => setReporting(true)}
       footer={
         <>
-          <Link to="/" className="font-brand text-neutral-500 transition hover:text-violet-300">
-            © {new Date().getFullYear()} Open<span className="text-violet-400">img</span>
+          <Link to="/" className="font-brand text-neutral-500 transition hover:text-brand-300">
+            © {new Date().getFullYear()} Open<span className="text-brand-400">img</span>
           </Link>
           <div className="flex-1" />
           {data.uploader && <span>由 {data.uploader} 上传</span>}
@@ -110,7 +110,7 @@ export default function SharePage() {
         <div className="flex flex-wrap items-center gap-3 border-t border-neutral-800/60 px-4 py-3">
           <Meta icon="fa-file" text={formatBytes(data.size)} />
           <Meta icon="fa-image" text={`${data.width} × ${data.height}`} />
-          <span className="rounded-md bg-violet-900/40 px-2 py-0.5 text-[10px] font-medium text-violet-300">
+          <span className="rounded-md bg-brand-900/40 px-2 py-0.5 text-[10px] font-medium text-brand-300">
             {data.ext.toUpperCase()}
           </span>
           {data.views > 0 && <Meta icon="fa-eye" text={`${data.views} 次访问`} />}
@@ -122,7 +122,7 @@ export default function SharePage() {
           <a
             href={data.url}
             download={data.orig_name}
-            className="inline-flex h-8 items-center justify-center rounded-lg bg-violet-600 px-3 text-xs font-medium text-white transition hover:bg-violet-500"
+            className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink transition hover:bg-brand-500"
           >
             <i className="fa-solid fa-download mr-1.5" />
             下载
@@ -138,8 +138,8 @@ export default function SharePage() {
 
       <ShareRow url={data.short_url} title={data.orig_name} />
 
-      <div className="mt-6 rounded-xl border-l-2 border-violet-500 bg-neutral-900/40 px-4 py-3 text-[11px] leading-relaxed text-neutral-500">
-        <i className="fa-solid fa-circle-info mr-1.5 text-violet-400" />
+      <div className="mt-6 rounded-xl border-l-2 border-brand-500 bg-neutral-900/40 px-4 py-3 text-[11px] leading-relaxed text-neutral-500">
+        <i className="fa-solid fa-circle-info mr-1.5 text-brand-400" />
         本站仅提供图片存储与分发服务，不拥有所展示内容的任何版权。所有图片版权归原作者或上传者所有。
         如发现内容侵犯您的合法权益，请点击右上角举报按钮提交投诉，我们将在收到通知后尽快核实并删除相关内容。
       </div>
@@ -169,7 +169,7 @@ function Shell({
           <a href="/" className="flex items-center gap-2.5">
             <Logo size={24} asLink={false} />
             <span className="font-brand text-base">
-              Open<span className="text-violet-400">img</span>
+              Open<span className="text-brand-400">img</span>
             </span>
           </a>
           <div className="flex-1" />
@@ -186,7 +186,7 @@ function Shell({
             onClick={onToggle}
             title={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
             aria-label={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-900 hover:text-violet-300"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-900 hover:text-brand-300"
           >
             <i className={`fa-solid ${theme === "dark" ? "fa-sun" : "fa-moon"} text-xs`} />
           </button>
@@ -257,12 +257,12 @@ function Reactions({
             disabled={busy}
             title={mine ? `取消${r.label}` : r.label}
             className={`inline-flex h-7 items-center gap-1 rounded-full px-2 text-sm transition disabled:opacity-60 ${
-              mine ? "bg-violet-600/25 ring-1 ring-violet-500/40" : "hover:bg-neutral-800"
+              mine ? "bg-brand-600/25 ring-1 ring-brand-500/40" : "hover:bg-neutral-800"
             }`}
           >
             <span>{r.emoji}</span>
             {n > 0 && (
-              <span className={`text-[10px] tabular-nums ${mine ? "text-violet-300" : "text-neutral-500"}`}>
+              <span className={`text-[10px] tabular-nums ${mine ? "text-brand-300" : "text-neutral-500"}`}>
                 {n}
               </span>
             )}
@@ -286,7 +286,7 @@ function FormatRow({ label, value, first }: { label: string; value: string; firs
 
   return (
     <div className={`flex items-stretch ${first ? "" : "border-t border-neutral-800/60"}`}>
-      <div className="flex w-32 shrink-0 items-center bg-violet-600 px-3 text-xs font-medium text-white sm:w-40">
+      <div className="flex w-32 shrink-0 items-center bg-brand-600 px-3 text-xs font-medium text-brand-ink sm:w-40">
         {label}
       </div>
       <input
@@ -299,7 +299,7 @@ function FormatRow({ label, value, first }: { label: string; value: string; firs
         onClick={copy}
         title="复制"
         className={`flex w-11 shrink-0 items-center justify-center text-xs transition ${
-          copied ? "bg-violet-600 text-white" : "bg-neutral-900/40 text-neutral-500 hover:text-violet-300"
+          copied ? "bg-brand-600 text-brand-ink" : "bg-neutral-900/40 text-neutral-500 hover:text-brand-300"
         }`}
       >
         <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"}`} />
@@ -334,7 +334,7 @@ function ShareRow({ url, title }: { url: string; title: string }) {
           target="_blank"
           rel="noopener noreferrer"
           title={s.label}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition hover:border-violet-500 hover:text-violet-300"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition hover:border-brand-500 hover:text-brand-300"
         >
           <i className={`${s.icon} text-sm`} />
         </a>
@@ -347,7 +347,7 @@ function ShareRow({ url, title }: { url: string; title: string }) {
           } catch {}
         }}
         title="复制短链"
-        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition hover:border-violet-500 hover:text-violet-300"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition hover:border-brand-500 hover:text-brand-300"
       >
         <i className="fa-solid fa-link text-sm" />
       </button>
@@ -411,16 +411,16 @@ function ReportDialog({ code, onClose }: { code: string; onClose: () => void }) 
                   onClick={() => setCategory(c.key)}
                   className={`flex w-full items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-xs transition ${
                     on
-                      ? "border-violet-500/50 bg-violet-600/15 text-violet-200"
+                      ? "border-brand-500/50 bg-brand-600/15 text-brand-200"
                       : "border-neutral-800 bg-neutral-950/40 text-neutral-300 hover:border-neutral-700"
                   }`}
                 >
                   <span
                     className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border ${
-                      on ? "border-violet-400" : "border-neutral-600"
+                      on ? "border-brand-400" : "border-neutral-600"
                     }`}
                   >
-                    {on && <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />}
+                    {on && <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />}
                   </span>
                   {c.label}
                 </button>
@@ -437,14 +437,14 @@ function ReportDialog({ code, onClose }: { code: string; onClose: () => void }) 
             rows={3}
             maxLength={500}
             placeholder="请描述具体问题…"
-            className="placeholder-faint w-full resize-none rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-xs outline-none focus:border-violet-500"
+            className="placeholder-faint w-full resize-none rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-xs outline-none focus:border-brand-500"
           />
 
           <input
             value={contact}
             onChange={(e) => setContact(e.target.value)}
             placeholder="联系方式（可选，便于回复处理结果）"
-            className="placeholder-faint mt-2 h-8 w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 text-xs outline-none focus:border-violet-500"
+            className="placeholder-faint mt-2 h-8 w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 text-xs outline-none focus:border-brand-500"
           />
 
           {err && <div className="mt-2 text-[11px] text-red-400">{err}</div>}

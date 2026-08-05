@@ -67,7 +67,7 @@ function RoundButton({
 }) {
   const cls =
     "group relative flex items-center justify-center w-12 h-12 rounded-full border border-neutral-700 " +
-    "bg-neutral-800/40 hover:bg-neutral-800 hover:border-violet-500/50 transition-all duration-200 " +
+    "bg-neutral-800/40 hover:bg-neutral-800 hover:border-brand-500/50 transition-all duration-200 " +
     "hover:-translate-y-0.5 active:translate-y-0";
 
   const inner = (
@@ -131,7 +131,7 @@ function GithubIcon() {
 
 function PasskeyIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-[19px] w-[19px] fill-violet-300" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="h-[19px] w-[19px] fill-brand-300" aria-hidden="true">
       <path d="M12 2a5 5 0 0 0-5 5c0 1.9 1.06 3.55 2.62 4.4A7.01 7.01 0 0 0 5 18v2a1 1 0 0 0 1 1h7.35a4.5 4.5 0 0 1-.3-1.5H7v-1a5 5 0 0 1 5-5c.36 0 .71.04 1.05.11A4.5 4.5 0 0 1 16.5 11c.17 0 .34.01.5.03V7a5 5 0 0 0-5-5zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" />
       <path d="M16.5 12a3.5 3.5 0 0 0-1.5 6.66V22l1.5-1.2 1.5 1.2v-3.34A3.5 3.5 0 0 0 16.5 12zm0 2a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" />
     </svg>

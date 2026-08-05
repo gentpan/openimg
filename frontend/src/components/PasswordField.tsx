@@ -39,7 +39,7 @@ function score(pw: string): { level: 0 | 1 | 2 | 3 | 4; label: string } {
   return { level, label: ["", "很弱", "较弱", "一般", "很强"][level] };
 }
 
-const BAR = ["bg-neutral-700", "bg-red-500", "bg-amber-500", "bg-violet-500", "bg-emerald-500"];
+const BAR = ["bg-neutral-700", "bg-red-500", "bg-amber-500", "bg-brand-500", "bg-emerald-500"];
 
 /**
  * Password input with a visibility toggle, a generator, and a strength bar.
@@ -93,7 +93,7 @@ export default function PasswordField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           autoComplete={autoComplete}
-          className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2.5 pr-[4.5rem] text-sm outline-none transition placeholder-faint focus:border-violet-500"
+          className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2.5 pr-[4.5rem] text-sm outline-none transition placeholder-faint focus:border-brand-500"
         />
         <div className="absolute inset-y-0 right-1.5 flex items-center gap-0.5">
           {showGenerate && (
@@ -102,7 +102,7 @@ export default function PasswordField({
               onClick={generate}
               title="随机生成一个 20 位强密码"
               aria-label="随机生成密码"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-800 hover:text-violet-300"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-800 hover:text-brand-300"
             >
               <i className="fa-solid fa-dice text-xs" />
             </button>
@@ -112,7 +112,7 @@ export default function PasswordField({
             onClick={() => setVisible((v) => !v)}
             title={visible ? "隐藏密码" : "显示密码"}
             aria-label={visible ? "隐藏密码" : "显示密码"}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-800 hover:text-violet-300"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-800 hover:text-brand-300"
           >
             <i className={`fa-solid ${visible ? "fa-eye-slash" : "fa-eye"} text-xs`} />
           </button>

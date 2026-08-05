@@ -41,7 +41,7 @@ export default function SettingsPage() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center text-neutral-500">
-        请先 <Link to="/login" className="text-violet-400 hover:underline mx-1">登录</Link>
+        请先 <Link to="/login" className="text-brand-400 hover:underline mx-1">登录</Link>
       </div>
     );
   }
@@ -67,7 +67,7 @@ export default function SettingsPage() {
       <Nav />
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
         <h1 className="mb-5 flex items-center gap-2.5 text-lg font-brand text-neutral-100">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-violet-400">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-brand-400">
             <i className="fa-solid fa-gear text-sm" />
           </span>
           账号设置
@@ -104,7 +104,7 @@ export default function SettingsPage() {
               {user.email_verified && <Tag color="emerald">已验证</Tag>}
             </span>
           } />
-          <Row label="角色" value={<Tag color="violet">{user.role}</Tag>} />
+          <Row label="角色" value={<Tag color="brand">{user.role}</Tag>} />
           {user.group && <Row label="用户组" value={user.group} />}
         </Section>
 
@@ -223,7 +223,7 @@ function Profile() {
         onClick={() => fileRef.current?.click()}
         disabled={busy}
         title="点击更换头像"
-        className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-neutral-800 bg-neutral-800 transition hover:border-violet-500 disabled:opacity-60"
+        className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-neutral-800 bg-neutral-800 transition hover:border-brand-500 disabled:opacity-60"
       >
         <Avatar user={user} size={64} />
         <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
@@ -300,9 +300,9 @@ function NicknameField() {
         onChange={(e) => setValue(e.target.value)}
         onBlur={save}
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-        className="w-44 h-8 rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 text-xs outline-none focus:border-violet-500 placeholder-faint transition"
+        className="w-44 h-8 rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 text-xs outline-none focus:border-brand-500 placeholder-faint transition"
       />
-      {state === "saving" && <RingSpinner className="h-3 w-3 text-violet-400" />}
+      {state === "saving" && <RingSpinner className="h-3 w-3 text-brand-400" />}
       {state === "saved" && <i className="fa-solid fa-check text-[10px] text-emerald-400" />}
       {state === "error" && <span className="text-[10px] text-red-400">{err}</span>}
       {state === "idle" && (
@@ -404,7 +404,7 @@ function ChangePassword({ onClose }: { onClose: () => void }) {
             maxLength={6}
             placeholder="6 位数字"
             onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            className="flex-1 min-w-0 h-8 rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 text-xs tabular-nums tracking-[0.2em] outline-none focus:border-violet-500 placeholder-faint placeholder:tracking-normal"
+            className="flex-1 min-w-0 h-8 rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 text-xs tabular-nums tracking-[0.2em] outline-none focus:border-brand-500 placeholder-faint placeholder:tracking-normal"
           />
           <button
             onClick={sendCode}
@@ -449,7 +449,7 @@ function ChangePassword({ onClose }: { onClose: () => void }) {
           <button
             onClick={submit}
             disabled={!ready || busy}
-            className="inline-flex h-8 items-center justify-center rounded-lg bg-violet-600 px-3 text-xs font-medium text-white hover:bg-violet-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
+            className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
           >
             {busy ? <RingSpinner className="h-3.5 w-3.5" /> : "确认修改"}
           </button>
@@ -480,7 +480,7 @@ function Section({
         {icon && (
           <span
             className={`mt-px flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-              danger ? "bg-red-950/40 text-red-400" : "bg-neutral-800/70 text-violet-400"
+              danger ? "bg-red-950/40 text-red-400" : "bg-neutral-800/70 text-brand-400"
             }`}
           >
             <i className={`fa-solid ${icon} text-xs`} />
@@ -542,7 +542,7 @@ function ConnectionRow({
               ? "text-red-400 hover:bg-red-900/30 border border-red-900/40"
               : connected
               ? "text-neutral-400 hover:text-neutral-200"
-              : "bg-violet-600 text-white hover:bg-violet-500"
+              : "bg-brand-600 text-brand-ink hover:bg-brand-500"
           } ${actionBusy ? "opacity-60" : ""}`}
         >
           {actionBusy ? "…" : actionLabel}
@@ -553,11 +553,11 @@ function ConnectionRow({
   );
 }
 
-function Tag({ color, children }: { color: "emerald" | "violet"; children: React.ReactNode }) {
+function Tag({ color, children }: { color: "emerald" | "brand"; children: React.ReactNode }) {
   const cls =
     color === "emerald"
       ? "bg-emerald-900/60 text-emerald-300"
-      : "bg-violet-900/60 text-violet-300";
+      : "bg-brand-900/60 text-brand-300";
   return <span className={`text-[10px] rounded-full px-2 py-0.5 ${cls}`}>{children}</span>;
 }
 
@@ -662,7 +662,7 @@ function PasskeySection() {
       <div className="space-y-2">
         {list.map((pk) => (
           <div key={pk.id} className="flex items-center gap-3 py-2 border-b border-neutral-900 last:border-b-0">
-            <div className="text-violet-400">
+            <div className="text-brand-400">
               <i className="fa-solid fa-fingerprint" aria-hidden></i>
             </div>
             <div className="flex-1">
@@ -685,7 +685,7 @@ function PasskeySection() {
       <button
         onClick={() => setEnroll(true)}
         disabled={busy}
-        className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-lg bg-violet-600 px-3 text-xs font-medium text-white hover:bg-violet-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
+        className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
       >
         <i className="fa-solid fa-plus" aria-hidden></i>
         {busy ? "等待授权…" : "添加 Passkey"}

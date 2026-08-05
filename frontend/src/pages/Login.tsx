@@ -103,7 +103,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setReset(true)}
-              className="text-xs text-neutral-500 hover:text-violet-300 transition"
+              className="text-xs text-neutral-500 hover:text-brand-300 transition"
             >
               忘记密码？
             </button>
@@ -111,7 +111,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-lg bg-violet-600 px-4 py-3 text-sm font-medium text-white hover:bg-violet-500 disabled:bg-neutral-700"
+            className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-700 disabled:text-neutral-500"
           >
             {busy ? "登录中…" : "登录"}
           </button>
@@ -124,7 +124,7 @@ export default function LoginPage() {
 
       <div className="mt-5 text-sm text-neutral-500 text-center">
         没账号？{" "}
-        <Link to="/register" className="text-violet-400 hover:underline">
+        <Link to="/register" className="text-brand-400 hover:underline">
           注册
         </Link>
       </div>
@@ -138,7 +138,7 @@ function ModeBtn({ active, onClick, children }: { active: boolean; onClick: () =
       type="button"
       onClick={onClick}
       className={`flex-1 rounded-md px-3 py-1.5 transition ${
-        active ? "bg-violet-600/20 text-violet-300" : "text-neutral-500 hover:text-neutral-300"
+        active ? "bg-brand-600/20 text-brand-300" : "text-neutral-500 hover:text-neutral-300"
       }`}
     >
       {children}
@@ -156,7 +156,7 @@ export function AuthShell({ title, children }: { title: string; children: React.
         onClick={toggle}
         title={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
         aria-label={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
-        className="absolute top-4 right-4 w-8 h-8 rounded-full text-neutral-500 hover:text-violet-300 hover:bg-neutral-900 transition"
+        className="absolute top-4 right-4 w-8 h-8 rounded-full text-neutral-500 hover:text-brand-300 hover:bg-neutral-900 transition"
       >
         <i className={`fa-solid ${theme === "dark" ? "fa-sun" : "fa-moon"} text-xs`} />
       </button>
@@ -165,7 +165,7 @@ export function AuthShell({ title, children }: { title: string; children: React.
           <Logo size={36} />
           <div>
             <h1 className="text-xl font-brand leading-tight">
-              {title} Open<span className="text-violet-400">img</span>
+              {title} Open<span className="text-brand-400">img</span>
             </h1>
           </div>
         </div>
@@ -191,7 +191,7 @@ export function Field({ label, children }: { label: string; children: React.Reac
 }
 
 export const inputCls =
-  "w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm placeholder-neutral-600 outline-none focus:border-violet-500";
+  "w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm placeholder-neutral-600 outline-none focus:border-brand-500";
 
 /**
  * Password recovery.
@@ -300,7 +300,7 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
         <button
           type="submit"
           disabled={busy || code.length !== 6 || pw.length < 8}
-          className="w-full rounded-lg bg-violet-600 px-4 py-3 text-sm font-medium text-white hover:bg-violet-500 disabled:bg-neutral-800 disabled:text-neutral-500"
+          className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500"
         >
           {busy ? "设置中…" : "设置新密码并登录"}
         </button>

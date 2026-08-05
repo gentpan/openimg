@@ -1,8 +1,17 @@
 import SwiftUI
 
 extension Color {
-    /// The brand purple, same value as the site's violet anchors.
-    static let brand = Color(red: 0x79 / 255, green: 0x50 / 255, blue: 0xF2 / 255)
+    /// The brand green, same value as the site's `--color-brand-600`.
+    static let brand = Color(red: 0x5D / 255, green: 0xE3 / 255, blue: 0x1D / 255)
+
+    /// What goes *on* a brand fill.
+    ///
+    /// The old purple had a relative luminance of 0.135, so white on it was
+    /// 5.7:1 and every filled control could be labelled in white. This green is
+    /// 0.574 — white lands at 1.68:1, which is not "a bit low", it is illegible.
+    /// Near-black with a trace of the brand hue reads as part of the control
+    /// rather than as borrowed body text, and measures 10.65:1.
+    static let brandInk = Color(red: 0x0A / 255, green: 0x1B / 255, blue: 0x02 / 255)
 }
 
 // MARK: - Surfaces
@@ -96,7 +105,7 @@ struct Pill: View {
                 Text(text)
             }
             .font(.callout.weight(active ? .medium : .regular))
-            .foregroundStyle(active ? .white : .secondary)
+            .foregroundStyle(active ? AnyShapeStyle(Color.brandInk) : AnyShapeStyle(.secondary))
             .padding(.horizontal, 12)
             .padding(.vertical, 5)
             .background {

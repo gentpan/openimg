@@ -55,7 +55,7 @@ export default function UploadPage() {
             <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
               <div className="flex items-center justify-between text-xs mb-2">
                 <span className="text-neutral-400">剩余空间</span>
-                <Link to="/space" className="text-violet-400 hover:underline text-[11px]">
+                <Link to="/space" className="text-brand-400 hover:underline text-[11px]">
                   {quota.checkin.checked_in_today ? "空间明细 →" : "去签到领空间 →"}
                 </Link>
               </div>
@@ -65,7 +65,7 @@ export default function UploadPage() {
               </div>
               <div className="mt-2.5 h-1 rounded-full bg-neutral-800 overflow-hidden">
                 <div
-                  className={`h-full transition-all ${pct >= 90 ? "bg-amber-500" : "bg-violet-500"}`}
+                  className={`h-full transition-all ${pct >= 90 ? "bg-amber-500" : "bg-brand-500"}`}
                   style={{ width: `${Math.min(100, pct)}%` }}
                 />
               </div>
@@ -93,7 +93,7 @@ export default function UploadPage() {
                 <div className="text-[10px] text-neutral-600 mt-0.5">点击查看详情与各格式链接</div>
               </div>
               <div className="flex-1" />
-              <Link to="/gallery" className="text-[11px] text-violet-400 hover:underline">
+              <Link to="/gallery" className="text-[11px] text-brand-400 hover:underline">
                 全部图库 →
               </Link>
             </div>
@@ -103,7 +103,7 @@ export default function UploadPage() {
                   key={img.id}
                   onClick={() => setDetail(img)}
                   title={`${img.orig_name} · ${formatBytes(img.size_stored, 0)}`}
-                  className="group relative rounded-lg overflow-hidden border border-neutral-800 hover:border-violet-500 transition"
+                  className="group relative rounded-lg overflow-hidden border border-neutral-800 hover:border-brand-500 transition"
                 >
                   <img
                     src={img.thumb_url}

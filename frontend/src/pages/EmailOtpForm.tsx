@@ -70,7 +70,7 @@ export default function EmailOtpForm() {
         <button
           type="submit"
           disabled={busy || !email}
-          className="w-full rounded-lg bg-violet-600 px-4 py-3 text-sm font-medium text-white hover:bg-violet-500 disabled:bg-neutral-700"
+          className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-700 disabled:text-neutral-500"
         >
           {busy ? "发送中…" : "发送验证码"}
         </button>
@@ -100,7 +100,7 @@ export default function EmailOtpForm() {
       <button
         type="submit"
         disabled={busy || code.length !== 6}
-        className="w-full rounded-lg bg-violet-600 px-4 py-3 text-sm font-medium text-white hover:bg-violet-500 disabled:bg-neutral-700"
+        className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-700 disabled:text-neutral-500"
       >
         {busy ? "验证中…" : "登录"}
       </button>
@@ -126,7 +126,7 @@ export default function EmailOtpForm() {
                 setBusy(false);
               }
             }}
-            className="text-violet-400 hover:underline"
+            className="text-brand-400 hover:underline"
           >
             重新发送
           </button>

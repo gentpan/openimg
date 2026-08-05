@@ -3,7 +3,7 @@
  *
  * The source artwork hard-codes hsl(228,97%,42%); swapped to `fill-current` so
  * it takes the colour of whatever button or panel it sits in instead of
- * dropping a stray blue into a violet UI.
+ * dropping a stray blue into a green UI.
  */
 export function RingSpinner({ className = "h-4 w-4" }: { className?: string }) {
   return (

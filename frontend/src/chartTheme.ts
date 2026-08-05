@@ -16,8 +16,8 @@ import { useTheme } from "./ThemeContext";
  * below the 3:1 that non-text graphics need to be distinguishable.
  */
 export interface ChartTheme {
-  VIOLET: string;
-  VIOLET_DIM: string;
+  BRAND: string;
+  BRAND_DIM: string;
   SERIES: string[];
   GRID: string;
   TICK: string;
@@ -36,24 +36,24 @@ export interface ChartTheme {
 }
 
 const DARK = {
-  VIOLET: "#8e47ff",
-  VIOLET_DIM: "rgba(142, 71, 255, 0.15)",
-  SERIES: ["#8e47ff", "#34d399", "#fbbf24", "#60a5fa", "#fb7185", "#a78bfa", "#2dd4bf"],
+  BRAND: "#5de31d",
+  BRAND_DIM: "rgba(93, 227, 29, 0.15)",
+  SERIES: ["#5de31d", "#38bdf8", "#fbbf24", "#f472b6", "#a78bfa", "#2dd4bf", "#fb923c"],
   GRID: "rgba(64, 64, 64, 0.35)",
   TICK: "#737373",
-  COMPOSITION: ["#8e47ff", "#e879f9", "#6ee7b7"],
-  FORMATS: ["#60a5fa", "#fbbf24", "#a78bfa", "#84cc16", "#fb7185", "#2dd4bf"],
+  COMPOSITION: ["#5de31d", "#38bdf8", "#fbbf24"],
+  FORMATS: ["#5de31d", "#38bdf8", "#fbbf24", "#f472b6", "#a78bfa", "#2dd4bf"],
   SAVED: "#34d399",
 };
 
 const LIGHT = {
-  VIOLET: "#7c2ee0",
-  VIOLET_DIM: "rgba(124, 46, 224, 0.18)",
-  SERIES: ["#7c2ee0", "#059669", "#d97706", "#2563eb", "#e11d48", "#7c3aed", "#0d9488"],
+  BRAND: "#46b312",
+  BRAND_DIM: "rgba(70, 179, 18, 0.18)",
+  SERIES: ["#46b312", "#0284c7", "#d97706", "#db2777", "#7c3aed", "#0d9488", "#ea580c"],
   GRID: "rgba(17, 24, 39, 0.12)",
   TICK: "#6b7280",
-  COMPOSITION: ["#7c2ee0", "#c026d3", "#059669"],
-  FORMATS: ["#2563eb", "#d97706", "#7c3aed", "#4d7c0f", "#e11d48", "#0d9488"],
+  COMPOSITION: ["#46b312", "#0284c7", "#d97706"],
+  FORMATS: ["#46b312", "#0284c7", "#d97706", "#db2777", "#7c3aed", "#0d9488"],
   SAVED: "#059669",
 };
 

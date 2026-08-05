@@ -68,7 +68,7 @@ export default function UploadPanel() {
                 ? "bg-red-900/40 text-red-300"
                 : finished
                   ? "bg-emerald-900/40 text-emerald-300"
-                  : "bg-violet-900/40 text-violet-300"
+                  : "bg-brand-900/40 text-brand-300"
             }`}
           >
             {errorCount > 0 ? (
@@ -91,7 +91,7 @@ export default function UploadPanel() {
             {!finished && (
               <div className="mt-1 h-0.5 rounded-full bg-neutral-800 overflow-hidden">
                 <div
-                  className="h-full bg-violet-500 transition-all duration-300"
+                  className="h-full bg-brand-500 transition-all duration-300"
                   style={{ width: `${overallProgress}%` }}
                 />
               </div>
@@ -131,7 +131,7 @@ export default function UploadPanel() {
                         key={f.key}
                         onClick={() => setFormat(f.key)}
                         className={`px-1.5 py-0.5 rounded-md text-[10px] transition ${
-                          format === f.key ? "bg-violet-600 text-white" : "text-neutral-500 hover:text-neutral-100"
+                          format === f.key ? "bg-brand-600 text-brand-ink" : "text-neutral-500 hover:text-neutral-100"
                         }`}
                       >
                         {f.label}
@@ -140,7 +140,7 @@ export default function UploadPanel() {
                   </div>
                   <button
                     onClick={() => copy(allLinks, "all")}
-                    className="rounded-lg bg-violet-600 px-2.5 py-1 text-[10px] font-medium text-white hover:bg-violet-500 transition whitespace-nowrap"
+                    className="rounded-lg bg-brand-600 px-2.5 py-1 text-[10px] font-medium text-brand-ink hover:bg-brand-500 transition whitespace-nowrap"
                   >
                     <i className={`fa-solid ${copied === "all" ? "fa-check" : "fa-copy"} mr-1`} />
                     {copied === "all" ? "已复制" : `复制 ${done.length} 条`}
@@ -241,7 +241,7 @@ function Row({
         ) : (
           <div className="mt-1 h-0.5 rounded-full bg-neutral-800 overflow-hidden">
             <div
-              className="h-full bg-violet-500 transition-all duration-300"
+              className="h-full bg-brand-500 transition-all duration-300"
               style={{ width: `${item.state === "queued" ? 0 : item.progress}%` }}
             />
           </div>
@@ -255,7 +255,7 @@ function Row({
             title="复制链接"
             className={`w-6 h-6 rounded-md text-[10px] transition ${
               copied === item.id
-                ? "bg-violet-600 text-white"
+                ? "bg-brand-600 text-brand-ink"
                 : "text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
             }`}
           >

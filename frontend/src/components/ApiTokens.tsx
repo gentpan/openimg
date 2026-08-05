@@ -52,8 +52,8 @@ export default function ApiTokens() {
   return (
     <div>
       {fresh && (
-        <div className="mb-3 rounded-xl border border-violet-500/30 bg-violet-950/20 p-3">
-          <div className="text-[11px] text-violet-200 mb-2">
+        <div className="mb-3 rounded-xl border border-brand-500/30 bg-brand-950/20 p-3">
+          <div className="text-[11px] text-brand-200 mb-2">
             <i className="fa-solid fa-triangle-exclamation mr-1" />
             这个 Token 只显示这一次，请立即保存
           </div>
@@ -72,7 +72,7 @@ export default function ApiTokens() {
                   setTimeout(() => setCopied(false), 1500);
                 } catch {}
               }}
-              className="shrink-0 rounded-md bg-violet-600 px-2.5 py-1.5 text-[10px] text-white hover:bg-violet-500 transition"
+              className="shrink-0 rounded-md bg-brand-600 px-2.5 py-1.5 text-[10px] text-brand-ink hover:bg-brand-500 transition"
             >
               <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"} mr-1`} />
               {copied ? "已复制" : "复制"}
@@ -127,12 +127,12 @@ export default function ApiTokens() {
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && create()}
           placeholder="Token 名称，如 PicGo"
-          className="flex-1 rounded-lg bg-neutral-900 border border-neutral-800 h-8 px-2.5 text-xs outline-none focus:border-violet-500 placeholder-faint"
+          className="flex-1 rounded-lg bg-neutral-900 border border-neutral-800 h-8 px-2.5 text-xs outline-none focus:border-brand-500 placeholder-faint"
         />
         <select
           value={days}
           onChange={(e) => setDays(Number(e.target.value))}
-          className="h-8 rounded-lg bg-neutral-900 border border-neutral-800 px-2 text-xs outline-none focus:border-violet-500"
+          className="h-8 rounded-lg bg-neutral-900 border border-neutral-800 px-2 text-xs outline-none focus:border-brand-500"
         >
           <option value={0}>永不过期</option>
           <option value={30}>30 天</option>
@@ -142,7 +142,7 @@ export default function ApiTokens() {
         <button
           onClick={create}
           disabled={busy || !name.trim()}
-          className="inline-flex h-8 items-center justify-center rounded-lg bg-violet-600 px-3 text-xs font-medium text-white hover:bg-violet-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition whitespace-nowrap"
+          className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition whitespace-nowrap"
         >
           生成
         </button>

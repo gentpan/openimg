@@ -127,7 +127,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={busy || !ready}
-          className="w-full rounded-lg bg-violet-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-violet-500 disabled:bg-neutral-800 disabled:text-neutral-500"
+          className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-brand-ink transition hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500"
         >
           {busy ? "注册中…" : "创建账号"}
         </button>
@@ -137,7 +137,7 @@ export default function RegisterPage() {
       </div>
       <div className="mt-5 text-sm text-neutral-500 text-center">
         已有账号？{" "}
-        <Link to="/login" className="text-violet-400 hover:underline">
+        <Link to="/login" className="text-brand-400 hover:underline">
           登录
         </Link>
       </div>

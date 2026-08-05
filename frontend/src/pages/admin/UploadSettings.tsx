@@ -59,7 +59,7 @@ export default function UploadSettings() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-sm text-neutral-100">上传保留原图</span>
-              {busy && <RingSpinner className="h-3 w-3 text-violet-400" />}
+              {busy && <RingSpinner className="h-3 w-3 text-brand-400" />}
             </div>
             <p className="mt-1.5 text-[11px] leading-relaxed text-neutral-500">
               开启后，压缩转换的同时额外保存一份未经修改的上传文件，用户可以在图片详情里下载原图。
@@ -99,7 +99,7 @@ function Toggle({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={`relative shrink-0 h-6 w-11 rounded-full transition disabled:opacity-50 ${
-        checked ? "bg-violet-600" : "bg-neutral-700"
+        checked ? "bg-brand-600" : "bg-neutral-700"
       }`}
     >
       <span
@@ -161,7 +161,7 @@ function ImageDomain() {
     <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
       <div className="flex items-center gap-2 mb-1">
         <span className="text-sm text-neutral-100">图片访问域名</span>
-        {busy && <RingSpinner className="h-3 w-3 text-violet-400" />}
+        {busy && <RingSpinner className="h-3 w-3 text-brand-400" />}
       </div>
 
       {!info.configured ? (
@@ -185,12 +185,12 @@ function ImageDomain() {
               onChange={(e) => setValue(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && dirty && save()}
               placeholder="https://imgla.com"
-              className="flex-1 min-w-[14rem] rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 py-1.5 text-xs font-mono outline-none focus:border-violet-500 placeholder-faint"
+              className="flex-1 min-w-[14rem] rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 py-1.5 text-xs font-mono outline-none focus:border-brand-500 placeholder-faint"
             />
             <button
               onClick={save}
               disabled={busy || !dirty || !value.trim()}
-              className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
+              className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
             >
               保存
             </button>

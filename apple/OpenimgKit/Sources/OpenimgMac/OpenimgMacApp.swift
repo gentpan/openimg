@@ -330,7 +330,7 @@ private struct SidebarRow: View {
                 Text(section.label).font(.system(size: 15))
                 Spacer(minLength: 0)
             }
-            .foregroundStyle(active ? .white : .secondary)
+            .foregroundStyle(active ? AnyShapeStyle(Color.brandInk) : AnyShapeStyle(.secondary))
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background {

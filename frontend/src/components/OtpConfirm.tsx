@@ -99,7 +99,7 @@ export default function OtpConfirm({
         <div className="flex items-center gap-2 mb-1">
           <span
             className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs ${
-              danger ? "bg-red-900/40 text-red-300" : "bg-violet-900/40 text-violet-300"
+              danger ? "bg-red-900/40 text-red-300" : "bg-brand-900/40 text-brand-300"
             }`}
           >
             <i className="fa-solid fa-envelope-circle-check" />
@@ -129,7 +129,7 @@ export default function OtpConfirm({
           placeholder="6 位验证码"
           onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
           onKeyDown={(e) => e.key === "Enter" && submit()}
-          className="w-full rounded-lg bg-neutral-950 border border-neutral-800 px-3 py-2 text-center text-lg tracking-[0.4em] tabular-nums outline-none focus:border-violet-500 placeholder-faint placeholder:text-sm placeholder:tracking-normal"
+          className="w-full rounded-lg bg-neutral-950 border border-neutral-800 px-3 py-2 text-center text-lg tracking-[0.4em] tabular-nums outline-none focus:border-brand-500 placeholder-faint placeholder:text-sm placeholder:tracking-normal"
         />
 
         {err && <div className="mt-2 text-[11px] text-red-400">{err}</div>}
@@ -138,7 +138,7 @@ export default function OtpConfirm({
           <button
             onClick={send}
             disabled={sending || cooldown > 0 || busy}
-            className="text-[11px] text-neutral-500 hover:text-violet-300 disabled:hover:text-neutral-500 disabled:opacity-60 transition"
+            className="text-[11px] text-neutral-500 hover:text-brand-300 disabled:hover:text-neutral-500 disabled:opacity-60 transition"
           >
             {cooldown > 0 ? `重新发送 (${cooldown}s)` : "重新发送"}
           </button>
@@ -154,7 +154,7 @@ export default function OtpConfirm({
             onClick={submit}
             disabled={code.length !== 6 || busy}
             className={`rounded-lg px-3 py-1.5 text-xs font-medium text-white transition disabled:bg-neutral-800 disabled:text-neutral-500 ${
-              danger ? "bg-red-600 hover:bg-red-700" : "bg-violet-600 hover:bg-violet-500"
+              danger ? "bg-red-600 hover:bg-red-700" : "bg-brand-600 hover:bg-brand-500"
             }`}
           >
             {busy ? <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" /> : label.action}

@@ -130,7 +130,7 @@ export default function StorageProfiles() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs text-neutral-100">{p.name}</span>
                   {p.is_default && (
-                    <span className="rounded-full bg-violet-900/50 px-1.5 py-0.5 text-[9px] text-violet-300">
+                    <span className="rounded-full bg-brand-900/50 px-1.5 py-0.5 text-[9px] text-brand-300">
                       默认
                     </span>
                   )}
@@ -221,7 +221,7 @@ export default function StorageProfiles() {
       </div>
 
       {editing ? (
-        <div className="rounded-xl border border-violet-500/30 bg-neutral-950/60 p-4">
+        <div className="rounded-xl border border-brand-500/30 bg-neutral-950/60 p-4">
           <div className="text-xs text-neutral-200 mb-3">
             {editing === "new" ? "添加自有存储" : `编辑 ${editing.name}`}
           </div>
@@ -236,7 +236,7 @@ export default function StorageProfiles() {
                 placeholder="https://<account>.r2.cloudflarestorage.com 或 https://s3.example.com"
               />
               {form.endpoint && (
-                <div className="mt-1 text-[10px] text-violet-400/80">
+                <div className="mt-1 text-[10px] text-brand-400/80">
                   <i className="fa-solid fa-wand-magic-sparkles mr-1" />
                   {describeEndpoint(form.endpoint)}
                 </div>
@@ -288,7 +288,7 @@ export default function StorageProfiles() {
             <button
               onClick={() => submit(false)}
               disabled={!!busy}
-              className="inline-flex h-8 items-center justify-center rounded-lg bg-violet-600 px-3 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-50 transition"
+              className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:opacity-50 transition"
             >
               {busy === "save" ? <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" /> : "保存"}
             </button>
@@ -337,7 +337,7 @@ function Field({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg bg-neutral-900 border border-neutral-800 h-8 px-2.5 text-xs outline-none focus:border-violet-500 placeholder-faint"
+        className="w-full rounded-lg bg-neutral-900 border border-neutral-800 h-8 px-2.5 text-xs outline-none focus:border-brand-500 placeholder-faint"
       />
     </div>
   );

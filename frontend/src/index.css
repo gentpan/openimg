@@ -1,17 +1,39 @@
 @import "tailwindcss";
 
-/* Brand violet palette — built around #8E47FF (HSL 263,100%,64%).
-   Overrides Tailwind's default violet so every `text-violet-*` / `bg-violet-*`
-   class in the codebase tracks the brand without having to be edited. */
+/* Brand palette — built around #5DE31D (HSL 101,78%,50%).
+   Its own `brand-*` scale rather than an override of Tailwind's violet, which
+   is what this used to be: the classes are named after the slot, so a scale
+   called violet holding greens is a trap for whoever reads it next.
+
+   #5DE31D sits at 600 because 600 is the resting fill of every solid button
+   (45 uses, none of them text) and 500 is its hover — so 600 is the tier the
+   brand colour is actually seen at.
+
+   The tier that matters most is not in this block. #5DE31D has a relative
+   luminance of 0.574, so white text on it lands at 1.68:1 — against 4.5:1 for
+   AA, it is unreadable rather than merely poor. The old violet was 0.135 and
+   carried white at 5.7:1, which is why the codebase had 24 buttons filled
+   with the brand and labelled in white. Every one of those now takes
+   --color-brand-ink instead, at 10.65:1. This is the whole reason the change
+   is a redesign and not a find-and-replace. */
 @theme {
-  --color-violet-200: #ddc8ff;
-  --color-violet-300: #c5a3ff;
-  --color-violet-400: #a87dff;
-  --color-violet-500: #8e47ff;
-  --color-violet-600: #7c2ee0;
-  --color-violet-700: #5e1cc4;
-  --color-violet-900: #2d0e63;
-  --color-violet-950: #1b0840;
+  --color-brand-200: #d1f8bf;
+  --color-brand-300: #aef18e; /* text on dark — 15.1:1 on the page */
+  --color-brand-400: #90ec65; /* text on dark — 13.8:1 */
+  --color-brand-500: #76e740; /* hover fill, borders, rings */
+  --color-brand-600: #5de31d; /* the brand: resting fill of solid buttons */
+  --color-brand-700: #46b312;
+  /* The one tier that may carry white, at 4.98:1. It exists for the places
+     where the foreground is not ours to set: a native checkbox painted by
+     `accent-color` gets a white tick from the UA whatever we say, so the only
+     lever left is to darken what is under it. Never use it for a control we
+     draw ourselves — those take brand-ink on brand-600. */
+  --color-brand-800: #2f800a;
+  --color-brand-900: #204b0c;
+  --color-brand-950: #152c09;
+  /* What goes *on* a brand fill. Near-black with a trace of the brand hue so
+     it reads as part of the button rather than as borrowed body text. */
+  --color-brand-ink: #0a1b02;
 }
 
 /* ---------------------------------------------------------------------------
@@ -59,10 +81,10 @@
 
   --heat-empty: rgb(38 38 38 / 0.7);
   --heat-zero: #404040;
-  --heat-1: #5e1cc4;
-  --heat-2: #7c2ee0;
-  --heat-3: #8e47ff;
-  --heat-4: #a87dff;
+  --heat-1: #368e0b;
+  --heat-2: #48ba12;
+  --heat-3: #5de31d;
+  --heat-4: #90ec65;
 }
 
 :root[data-theme="light"] {
@@ -76,7 +98,7 @@
   --color-neutral-400: #374151;
   --color-neutral-500: #4b5563; /* secondary text */
   --color-neutral-600: #5d6675; /* tertiary — the most-used class; clears AA on
-                                   white and on the violet-tinted cards */
+                                   white and on the brand-tinted cards */
   /* Surfaces and edges.
      These are one step darker than a straight inversion would give, because
      the dark theme separates panels by *lightening* them against near-black —
@@ -89,20 +111,19 @@
   --color-neutral-900: #eef1f5; /* raised surface; /40 over white ≈ #f9fafc */
   --color-neutral-950: #ffffff; /* page */
 
-  /* Violet keeps its identity, but the tiers used as *light text on a dark
+  /* The brand keeps its identity, but the tiers used as *light text on a dark
      chip* have to become dark text on a light chip, and the tier used as a
-     dark chip background has to become a light one. The 500/600/700 tiers are
-     untouched: they are solid fills carrying white text, which reads correctly
-     against either theme. */
-  --color-violet-200: #5b21b6;
-  --color-violet-300: #6d28d9;
-  --color-violet-400: #7c2ee0;
+     dark chip background has to become a light one. #5DE31D on white is
+     1.79:1, so the text tiers cannot simply carry over. */
+  --color-brand-200: #215b06;
+  --color-brand-300: #2b7507;
+  --color-brand-400: #30800a;
   /* Tinted-chip slots, same alpha reasoning as the semantic ramps below.
-     violet-500/600/700 are deliberately absent: 24 solid buttons fill with
-     bg-violet-500 and carry white text, and darkening those would change the
-     brand in both themes. */
-  --color-violet-900: #c4b5fd;
-  --color-violet-950: #a78bfa;
+     brand-500/600/700 are deliberately absent: they are solid fills, and now
+     that what sits on them is brand-ink rather than white, they read the same
+     in both themes — which is the point of having picked a dark foreground. */
+  --color-brand-900: #9dee77;
+  --color-brand-950: #7de949;
 
   /* Same reasoning for the semantic ramps: the pale tiers were picked to glow
      on near-black and are unreadable on white.
@@ -142,10 +163,10 @@
 
   --heat-empty: #f3f4f6;
   --heat-zero: #e5e7eb;
-  --heat-1: #ddd6fe;
-  --heat-2: #c4b5fd;
-  --heat-3: #8b5cf6;
-  --heat-4: #6d28d9;
+  --heat-1: #d7f5c6;
+  --heat-2: #a5e881;
+  --heat-3: #4bbb14;
+  --heat-4: #2b7507;
 }
 
 /* Reserve the scrollbar gutter on every page. Without this, navigating from a
@@ -169,8 +190,8 @@ html, body {
    page changes at once anyway, so the eye reads it as a switch either way. */
 
 ::selection {
-  background: var(--color-violet-500);
-  color: #ffffff;
+  background: var(--color-brand-500);
+  color: var(--color-brand-ink);
 }
 
 /* Brand typeface. Ubuntu covers Latin only, so CJK falls through to the system
@@ -219,3 +240,17 @@ html, body {
 .heat-2     { background-color: var(--heat-2); }
 .heat-3     { background-color: var(--heat-3); }
 .heat-4     { background-color: var(--heat-4); }
+
+/* On a near-white card the brand fill itself is only 1.68:1 against the
+   surface, so the *shape* of a filled button is hard to make out even though
+   its label sits at 10.65:1. WCAG 1.4.11 wants 3:1 for the boundary of a
+   control, so in the light theme every brand fill takes a darker rim. The dark
+   theme needs nothing — #5DE31D on the page is 11.96:1 on its own.
+
+   An outline rather than a border so it costs no layout: these are 30-odd
+   buttons whose padding is already tuned. */
+:root[data-theme="light"] [class*="bg-brand-500"],
+:root[data-theme="light"] [class*="bg-brand-600"] {
+  outline: 1px solid var(--color-brand-800);
+  outline-offset: -1px;
+}

@@ -88,7 +88,7 @@ func OTPEmailHTML(code string, ttlMinutes int) string {
             请在登录页输入下方验证码完成登录。验证码 %d 分钟内有效。
           </p>
           <div style="background:#f5f0ff;border:1px solid #e0d4ff;border-radius:8px;padding:18px;text-align:center">
-            <div style="font-family:'SF Mono',Monaco,monospace;font-size:32px;letter-spacing:8px;color:#7c3aed;font-weight:600">%s</div>
+            <div style="font-family:'SF Mono',Monaco,monospace;font-size:32px;letter-spacing:8px;color:#2B7507;font-weight:600">%s</div>
           </div>
           <p style="margin:24px 0 0;color:#9b9b9b;font-size:12px;line-height:1.5">
             如果不是你本人操作，请忽略此邮件。任何人（包括 Openimg 工作人员）都不会向你索要这个验证码。

@@ -46,7 +46,7 @@ export default function Uploader({ compact = false }: { compact?: boolean }) {
       onClick={() => user && inputRef.current?.click()}
       className={`relative rounded-2xl border-2 border-dashed transition cursor-pointer ${
         dragging
-          ? "border-violet-500 bg-violet-950/20"
+          ? "border-brand-500 bg-brand-950/20"
           : "border-neutral-800 bg-neutral-900/40 hover:border-neutral-700 hover:bg-neutral-900/60"
       } ${compact ? "py-8 sm:py-10" : "py-10 sm:py-16"} px-6 text-center`}
     >
@@ -63,10 +63,10 @@ export default function Uploader({ compact = false }: { compact?: boolean }) {
       />
       <div
         className={`mx-auto mb-4 flex items-center justify-center rounded-2xl transition ${
-          dragging ? "bg-violet-900/40" : "bg-neutral-900"
+          dragging ? "bg-brand-900/40" : "bg-neutral-900"
         } ${compact ? "w-12 h-12" : "w-16 h-16"}`}
       >
-        <i className={`fa-solid fa-cloud-arrow-up text-violet-500 ${compact ? "text-xl" : "text-2xl"}`} />
+        <i className={`fa-solid fa-cloud-arrow-up text-brand-500 ${compact ? "text-xl" : "text-2xl"}`} />
       </div>
 
       {user ? (
@@ -86,7 +86,7 @@ export default function Uploader({ compact = false }: { compact?: boolean }) {
             <Link
               to="/register"
               onClick={(e) => e.stopPropagation()}
-              className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 transition"
+              className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-medium text-brand-ink hover:bg-brand-500 transition"
             >
               免费注册
             </Link>

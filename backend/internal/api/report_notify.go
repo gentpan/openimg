@@ -116,7 +116,7 @@ func reportEmailHTML(label string, rep *models.Report, img *models.Image, imageU
 			esc(label) + `</div>`,
 
 		// The reason is why the mail exists, so it gets the most weight.
-		`<div style="background:#f8f9fa;border-left:3px solid #7c3aed;border-radius:0 6px 6px 0;padding:12px 14px;margin-bottom:20px">`,
+		`<div style="background:#f8f9fa;border-left:3px solid #5DE31D;border-radius:0 6px 6px 0;padding:12px 14px;margin-bottom:20px">`,
 		`<div style="color:#6b7280;font-size:11px;margin-bottom:4px">举报理由</div>`,
 		`<div style="color:#111827;font-size:14px;line-height:1.6">` + reason + `</div>`,
 		`</div>`,
@@ -130,10 +130,10 @@ func reportEmailHTML(label string, rep *models.Report, img *models.Image, imageU
 
 		`<div style="background:#f8f9fa;border-radius:6px;padding:12px 14px;margin:20px 0">`,
 		`<div style="color:#6b7280;font-size:11px;margin-bottom:6px">图片直链 · 请自行判断是否打开</div>`,
-		`<a href="` + esc(imageURL) + `" style="color:#7c3aed;font-size:12px;word-break:break-all;text-decoration:none">` + esc(imageURL) + `</a>`,
+		`<a href="` + esc(imageURL) + `" style="color:#2B7507;font-size:12px;word-break:break-all;text-decoration:none">` + esc(imageURL) + `</a>`,
 		`</div>`,
 
-		`<a href="` + esc(adminURL) + `" style="display:inline-block;background:#7c3aed;color:#ffffff;` +
+		`<a href="` + esc(adminURL) + `" style="display:inline-block;background:#5DE31D;color:#0A1B02;` +
 			`text-decoration:none;padding:11px 20px;border-radius:8px;font-size:14px;font-weight:500">前往后台处理</a>`,
 
 		`</td></tr>`,

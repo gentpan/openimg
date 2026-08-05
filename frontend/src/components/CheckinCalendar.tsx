@@ -26,7 +26,7 @@ export default function CheckinCalendar({
         value: r.bytes,
         tooltip: (
           <>
-            <span className="text-violet-300">
+            <span className="text-brand-300">
               {r.bytes > 0 ? `+${formatBytes(r.bytes)}` : "已达上限，未发放"}
             </span>
             <span className="text-neutral-600 ml-1.5">连续 {r.streak} 天</span>
@@ -45,7 +45,7 @@ export default function CheckinCalendar({
       emptyLabel="未签到"
       summary={
         <>
-          {records.length} 天签到 · 累计 <span className="text-violet-400">+{formatBytes(total)}</span>
+          {records.length} 天签到 · 累计 <span className="text-brand-400">+{formatBytes(total)}</span>
         </>
       }
     />

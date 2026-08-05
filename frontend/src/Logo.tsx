@@ -85,7 +85,7 @@ export default function Logo({ size = 28, className = "", asLink = true }: LogoP
 }
 
 
-const BRAND = "#7950F2";
+const BRAND = "#5DE31D";
 
 // Kept in sync with public/favicon.svg by hand — that file is the source of
 // the generated PNG/ICO set, this constant is what React renders.

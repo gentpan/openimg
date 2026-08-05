@@ -96,7 +96,7 @@ export default function LoginMethods() {
                   href={info.console_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[10px] text-violet-400 hover:underline"
+                  className="text-[10px] text-brand-400 hover:underline"
                 >
                   去申请 <i className="fa-solid fa-arrow-up-right-from-square text-[8px]" />
                 </a>
@@ -141,7 +141,7 @@ export default function LoginMethods() {
               <button
                 onClick={() => save(p)}
                 disabled={busy === p || !status.can_store}
-                className="mt-3 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition"
+                className="mt-3 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition"
               >
                 {busy === p ? <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" /> : "保存"}
               </button>
@@ -206,7 +206,7 @@ function CopyRow({ value }: { value: string }) {
           } catch {}
         }}
         className={`shrink-0 w-7 h-7 rounded-md text-[10px] transition ${
-          copied ? "bg-violet-600 text-white" : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+          copied ? "bg-brand-600 text-brand-ink" : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
         }`}
       >
         <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"}`} />
@@ -236,7 +236,7 @@ function Field({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg bg-neutral-900 border border-neutral-800 px-2.5 py-1.5 text-xs outline-none focus:border-violet-500 placeholder-faint"
+        className="w-full rounded-lg bg-neutral-900 border border-neutral-800 px-2.5 py-1.5 text-xs outline-none focus:border-brand-500 placeholder-faint"
       />
     </div>
   );

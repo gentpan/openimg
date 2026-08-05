@@ -130,13 +130,13 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
                     readOnly
                     value={l.value}
                     onFocus={(e) => e.currentTarget.select()}
-                    className="flex-1 min-w-0 rounded-md bg-neutral-950 border border-neutral-800 px-2 py-1.5 text-[11px] text-neutral-400 outline-none focus:border-violet-500"
+                    className="flex-1 min-w-0 rounded-md bg-neutral-950 border border-neutral-800 px-2 py-1.5 text-[11px] text-neutral-400 outline-none focus:border-brand-500"
                   />
                   <button
                     onClick={() => copy(l.value, l.key)}
                     className={`shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-md text-[10px] transition ${
                       copied === l.key
-                        ? "bg-violet-600 text-white"
+                        ? "bg-brand-600 text-brand-ink"
                         : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
                     }`}
                   >
@@ -163,7 +163,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded-md bg-violet-600/20 border border-violet-500/30 px-2 py-1 text-[10px] text-violet-300 hover:bg-violet-600/30 transition"
+                      className="inline-flex items-center gap-1 rounded-md bg-brand-600/20 border border-brand-500/30 px-2 py-1 text-[10px] text-brand-300 hover:bg-brand-600/30 transition"
                     >
                       <i className="fa-solid fa-check text-[8px]" />
                       {w}px
@@ -177,7 +177,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
                     disabled={making !== null}
                     className="inline-flex items-center justify-center gap-1 rounded-md bg-neutral-800 px-2 py-1 text-[10px] text-neutral-300 hover:bg-neutral-700 disabled:opacity-50 transition min-w-[3.5rem]"
                   >
-                    {making === w ? <Spinner className="h-3 w-3 text-violet-400" /> : <>生成 {w}px</>}
+                    {making === w ? <Spinner className="h-3 w-3 text-brand-400" /> : <>生成 {w}px</>}
                   </button>
                 );
               })}

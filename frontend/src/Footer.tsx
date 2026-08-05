@@ -37,7 +37,7 @@ export default function Footer() {
               openimg.io, and it avoids a full page reload. */}
           <Link to="/" className="font-brand hover:opacity-80 transition-opacity">
             <span className="text-neutral-100">Open</span>
-            <span className="text-violet-400">img</span>
+            <span className="text-brand-400">img</span>
           </Link>
           <span className="ml-1.5 text-neutral-600">All Rights Reserved.</span>
         </div>
@@ -56,7 +56,7 @@ export default function Footer() {
               // The box stays 5×5 and only the glyph scales, so growing one
               // icon never nudges its neighbours along the row.
               className={`flex h-5 w-5 items-center justify-center text-neutral-500 transition-[color,transform] duration-200 hover:scale-150 ${
-                s.hover ?? "hover:text-violet-300"
+                s.hover ?? "hover:text-brand-300"
               }`}
             >
               {s.icon}
@@ -84,7 +84,7 @@ const SOCIALS: { label: string; href: string; icon: React.ReactNode; hover?: str
 function Stat({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
     <div className="flex items-center gap-2.5">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-900 text-violet-400">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-900 text-brand-400">
         <i className={`fa-solid ${icon} text-[11px]`} />
       </span>
       <span className="min-w-0">

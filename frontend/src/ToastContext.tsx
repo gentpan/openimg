@@ -79,7 +79,7 @@ export function useToast() {
 const STYLES: Record<ToastKind, { icon: string; chip: string }> = {
   success: { icon: "fa-circle-check", chip: "bg-emerald-900/40 text-emerald-300" },
   error: { icon: "fa-circle-exclamation", chip: "bg-red-900/40 text-red-300" },
-  info: { icon: "fa-circle-info", chip: "bg-violet-900/40 text-violet-300" },
+  info: { icon: "fa-circle-info", chip: "bg-brand-900/40 text-brand-300" },
 };
 
 /**

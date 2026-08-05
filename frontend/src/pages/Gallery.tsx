@@ -153,13 +153,13 @@ export default function GalleryPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="搜索文件名"
-              className="rounded-lg bg-neutral-900 border border-neutral-800 pl-8 pr-3 py-1.5 text-xs outline-none focus:border-violet-500 transition w-44"
+              className="rounded-lg bg-neutral-900 border border-neutral-800 pl-8 pr-3 py-1.5 text-xs outline-none focus:border-brand-500 transition w-44"
             />
           </div>
 
           <Link
             to="/upload"
-            className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-500 transition"
+            className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-brand-ink hover:bg-brand-500 transition"
           >
             <i className="fa-solid fa-plus mr-1.5" />
             上传
@@ -177,9 +177,9 @@ export default function GalleryPage() {
               <span
                 className={`w-4 h-4 rounded border flex items-center justify-center text-[8px] transition ${
                   allLoadedSelected
-                    ? "bg-violet-600 border-violet-600 text-white"
+                    ? "bg-brand-600 border-brand-600 text-brand-ink"
                     : selected.size > 0
-                      ? "border-violet-500 text-violet-400"
+                      ? "border-brand-500 text-brand-400"
                       : "border-neutral-600 text-transparent"
                 }`}
               >
@@ -231,11 +231,11 @@ export default function GalleryPage() {
         {images.length === 0 && !busy ? (
           <div className="text-center py-24">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-neutral-900 mb-4">
-              <i className="fa-solid fa-images text-2xl text-violet-500" />
+              <i className="fa-solid fa-images text-2xl text-brand-500" />
             </div>
             <div className="text-sm text-neutral-400">{query ? "没有匹配的图片" : "还没有上传过图片"}</div>
             {!query && (
-              <Link to="/upload" className="mt-3 inline-block text-xs text-violet-400 hover:underline">
+              <Link to="/upload" className="mt-3 inline-block text-xs text-brand-400 hover:underline">
                 去上传第一张 →
               </Link>
             )}
@@ -348,7 +348,7 @@ function PageSizeMenu({
                 setOpen(false);
               }}
               className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition ${
-                n === value ? "text-violet-300 bg-violet-950/30" : "text-neutral-400 hover:bg-neutral-800/60"
+                n === value ? "text-brand-300 bg-brand-950/30" : "text-neutral-400 hover:bg-neutral-800/60"
               }`}
             >
               <span className="tabular-nums">{n}</span>
@@ -397,7 +397,7 @@ function SortMenu({ value, onChange }: { value: SortKey; onChange: (v: SortKey) 
                 setOpen(false);
               }}
               className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition ${
-                s.key === value ? "text-violet-300 bg-violet-950/30" : "text-neutral-400 hover:bg-neutral-800/60"
+                s.key === value ? "text-brand-300 bg-brand-950/30" : "text-neutral-400 hover:bg-neutral-800/60"
               }`}
             >
               <i className={`fa-solid ${s.icon} text-[10px] w-3`} />
@@ -427,7 +427,7 @@ function Card({
   return (
     <div
       className={`group relative rounded-2xl overflow-hidden border transition ${
-        selected ? "border-violet-500" : "border-neutral-800 hover:border-neutral-700"
+        selected ? "border-brand-500" : "border-neutral-800 hover:border-neutral-700"
       } bg-neutral-900/40`}
     >
       <button onClick={onOpen} className="block w-full aspect-square">
@@ -441,7 +441,7 @@ function Card({
         title={selected ? "取消选择" : "选择"}
         className={`absolute top-2 left-2 w-5 h-5 rounded-md border flex items-center justify-center text-[9px] transition ${
           selected
-            ? "bg-violet-600 border-violet-600 text-white"
+            ? "bg-brand-600 border-brand-600 text-brand-ink"
             : `bg-black/50 border-white/50 text-transparent hover:text-white ${
                 anySelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
               }`

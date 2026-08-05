@@ -25,7 +25,7 @@ export default function ReferPage() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center text-neutral-500">
-        请先 <Link to="/login" className="text-violet-400 hover:underline mx-1">登录</Link>
+        请先 <Link to="/login" className="text-brand-400 hover:underline mx-1">登录</Link>
       </div>
     );
   }
@@ -51,10 +51,10 @@ export default function ReferPage() {
         <h1 className="text-lg font-brand text-neutral-100 mb-5">邀请有奖</h1>
 
         {/* Hero */}
-        <div className="rounded-2xl bg-gradient-to-br from-violet-900/40 via-violet-800/20 to-fuchsia-900/30 border border-violet-900/40 p-6 sm:p-8 mb-8 flex flex-col sm:flex-row sm:items-center gap-6">
+        <div className="rounded-2xl bg-gradient-to-br from-brand-900/40 via-brand-800/20 to-fuchsia-900/30 border border-brand-900/40 p-6 sm:p-8 mb-8 flex flex-col sm:flex-row sm:items-center gap-6">
           <div className="flex-1">
             <h2 className="text-2xl sm:text-3xl font-brand leading-tight mb-2">
-              邀请好友，双方各得 <span className="text-violet-300">{bonus} 空间</span>
+              邀请好友，双方各得 <span className="text-brand-300">{bonus} 空间</span>
             </h2>
             <p className="text-sm text-neutral-300/80 mb-5">把链接分享给朋友，他们注册成功后，你和他都立即到账存储空间。</p>
             <div className="flex items-stretch gap-2 max-w-xl">
@@ -66,7 +66,7 @@ export default function ReferPage() {
               />
               <button
                 onClick={copy}
-                className="rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-sm font-medium text-white inline-flex items-center gap-1.5"
+                className="rounded-lg bg-brand-600 hover:bg-brand-500 px-4 py-2 text-sm font-medium text-brand-ink inline-flex items-center gap-1.5"
               >
                 <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"}`} />
                 {copied ? "已复制" : "复制"}
@@ -74,11 +74,11 @@ export default function ReferPage() {
             </div>
             {s?.code && (
               <div className="mt-3 text-xs text-neutral-500">
-                你的推荐码 <span className="font-mono text-violet-300">{s.code}</span>
+                你的推荐码 <span className="font-mono text-brand-300">{s.code}</span>
               </div>
             )}
           </div>
-          <div className="hidden sm:block text-7xl text-violet-300/60">
+          <div className="hidden sm:block text-7xl text-brand-300/60">
             <i className="fa-solid fa-gift" />
           </div>
         </div>
@@ -87,13 +87,13 @@ export default function ReferPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <Card title="他们获得">
             <Bullet>
-              一次性 <b className="text-violet-200">{bonus}</b> — 通过你的链接注册即到账
+              一次性 <b className="text-brand-200">{bonus}</b> — 通过你的链接注册即到账
             </Bullet>
             <Bullet>立即解锁所有免费用户额度</Bullet>
           </Card>
           <Card title="你获得">
             <Bullet>
-              一次性 <b className="text-violet-200">{bonus}</b> — 每位有效注册的好友
+              一次性 <b className="text-brand-200">{bonus}</b> — 每位有效注册的好友
             </Bullet>
             <Bullet>邀请越多，空间越多（受用户组上限约束）</Bullet>
           </Card>
@@ -103,7 +103,7 @@ export default function ReferPage() {
         <h3 className="text-sm uppercase tracking-wide text-neutral-500 mb-3">数据</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
           <Stat icon="fa-user-plus" iconBg="bg-emerald-900/40 text-emerald-300" label="已邀请用户" value={s?.count ?? 0} />
-          <Stat icon="fa-database" iconBg="bg-violet-900/40 text-violet-300" label="累计获得空间" value={formatBytes(s?.total_bytes ?? 0, 0)} />
+          <Stat icon="fa-database" iconBg="bg-brand-900/40 text-brand-300" label="累计获得空间" value={formatBytes(s?.total_bytes ?? 0, 0)} />
           <Stat icon="fa-gift" iconBg="bg-amber-900/40 text-amber-300" label="单次奖励" value={`${bonus} × 2`} />
         </div>
 

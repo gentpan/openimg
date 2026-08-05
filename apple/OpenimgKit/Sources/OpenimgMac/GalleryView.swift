@@ -166,7 +166,8 @@ private struct Card: View {
                     Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 15))
                         .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, selected ? Color.brand : .black.opacity(0.45))
+                        .foregroundStyle(selected ? Color.brandInk : .white,
+                                         selected ? Color.brand : .black.opacity(0.45))
                         .shadow(color: .black.opacity(0.35), radius: 2)
                 }
                 .buttonStyle(.plain)

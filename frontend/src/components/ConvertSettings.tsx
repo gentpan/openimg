@@ -95,7 +95,7 @@ export default function ConvertSettings() {
               onClick={() => save("width", { max_image_width: w.px })}
               className={`inline-flex h-8 items-center justify-center px-3 rounded-lg text-xs transition disabled:cursor-not-allowed ${
                 user.max_image_width === w.px
-                  ? "bg-violet-600/20 text-violet-300 border border-violet-500/30"
+                  ? "bg-brand-600/20 text-brand-300 border border-brand-500/30"
                   : "bg-neutral-800 text-neutral-400 hover:text-neutral-100 border border-transparent"
               }`}
             >
@@ -119,16 +119,16 @@ export default function ConvertSettings() {
               onClick={() => save("variant", { variant_format: v.key })}
               className={`w-full flex items-start gap-2.5 rounded-lg border px-3 py-2 text-left transition disabled:opacity-50 ${
                 user.variant_format === v.key
-                  ? "border-violet-500/40 bg-violet-950/20"
+                  ? "border-brand-500/40 bg-brand-950/20"
                   : "border-neutral-800 bg-neutral-950/40 hover:border-neutral-700"
               }`}
             >
               <span
                 className={`mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border ${
-                  user.variant_format === v.key ? "border-violet-500" : "border-neutral-600"
+                  user.variant_format === v.key ? "border-brand-500" : "border-neutral-600"
                 }`}
               >
-                {user.variant_format === v.key && <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />}
+                {user.variant_format === v.key && <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />}
               </span>
               <span className="min-w-0">
                 <span className="block text-xs text-neutral-200">{v.label}</span>
@@ -175,16 +175,16 @@ function ModeCard({
         active
           ? danger
             ? "border-amber-500/40 bg-amber-950/15"
-            : "border-violet-500/40 bg-violet-950/20"
+            : "border-brand-500/40 bg-brand-950/20"
           : "border-neutral-800 bg-neutral-950/40 hover:border-neutral-700"
       }`}
     >
       <div className="flex items-center gap-1.5 mb-1.5">
         <span className="text-xs text-neutral-100">{title}</span>
         {badge && (
-          <span className="rounded-full bg-violet-900/50 px-1.5 py-0.5 text-[9px] text-violet-300">{badge}</span>
+          <span className="rounded-full bg-brand-900/50 px-1.5 py-0.5 text-[9px] text-brand-300">{badge}</span>
         )}
-        {active && <i className="fa-solid fa-check ml-auto text-[10px] text-violet-400" />}
+        {active && <i className="fa-solid fa-check ml-auto text-[10px] text-brand-400" />}
       </div>
       <ul className="space-y-0.5">
         {lines.map((l) => (

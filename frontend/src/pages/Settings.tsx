@@ -66,32 +66,38 @@ export default function SettingsPage() {
     <div className="min-h-screen flex flex-col bg-neutral-950">
       <Nav />
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
-        <h1 className="text-lg font-brand text-neutral-100 mb-5">账号设置</h1>
+        <h1 className="mb-5 flex items-center gap-2.5 text-lg font-brand text-neutral-100">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-violet-400">
+            <i className="fa-solid fa-gear text-sm" />
+          </span>
+          账号设置
+        </h1>
 
         {info && <div className="mb-4 rounded-lg border border-emerald-900/60 bg-emerald-900/15 px-4 py-2 text-sm text-emerald-300">{info}</div>}
         {err && <div className="mb-4 rounded-lg border border-red-900/60 bg-red-900/15 px-4 py-2 text-sm text-red-300">{err}</div>}
 
-        <Section title="个人资料" subtitle="头像和昵称会显示在页面顶部，昵称可以重复">
+        <Section icon="fa-id-badge" title="个人资料" subtitle="头像和昵称会显示在页面顶部，昵称可以重复">
           <Profile />
         </Section>
 
         <Section
+          icon="fa-hard-drive"
           title="存储位置"
           subtitle="默认存在平台空间；也可以绑定你自己的 R2 / S3，容量不受平台限制"
         >
           <StorageProfiles />
         </Section>
 
-        <Section title="图片压缩与转换" subtitle="只影响之后上传的图片，已上传的不受影响">
+        <Section icon="fa-wand-magic-sparkles" title="图片压缩与转换" subtitle="只影响之后上传的图片，已上传的不受影响">
           <ConvertSettings />
         </Section>
 
-        <Section title="API Token" subtitle="用于 PicGo、Typora、curl 等外部工具上传">
+        <Section icon="fa-key" title="API Token" subtitle="用于 PicGo、Typora、curl 等外部工具上传">
           <ApiTokens />
         </Section>
 
         {/* Account info */}
-        <Section title="账号信息">
+        <Section icon="fa-circle-info" title="账号信息">
           <Row label="邮箱" value={
             <span>
               {user.email}{" "}
@@ -103,7 +109,7 @@ export default function SettingsPage() {
         </Section>
 
         {/* Login methods */}
-        <Section title="登录方式" subtitle="可以同时绑定多种登录方式，任意一种都能登录此账号">
+        <Section icon="fa-right-to-bracket" title="登录方式" subtitle="可以同时绑定多种登录方式，任意一种都能登录此账号">
           {/* Password */}
           <ConnectionRow
             icon={<KeyIcon />}
@@ -154,7 +160,7 @@ export default function SettingsPage() {
 
         <PasskeySection />
 
-        <Section title="危险操作" subtitle="这里的操作不可撤销，请谨慎">
+        <Section icon="fa-triangle-exclamation" danger title="危险操作" subtitle="这里的操作不可撤销，请谨慎">
           <DeleteAccount />
         </Section>
       </div>
@@ -453,12 +459,37 @@ function ChangePassword({ onClose }: { onClose: () => void }) {
   );
 }
 
-function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Section({
+  title,
+  subtitle,
+  icon,
+  danger,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  icon?: string;
+  danger?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <section className="mb-8 rounded-xl border border-neutral-800 bg-neutral-900/40 p-5">
-      <div className="mb-4">
-        <h2 className="text-sm font-medium text-neutral-100">{title}</h2>
-        {subtitle && <p className="text-xs text-neutral-500 mt-0.5">{subtitle}</p>}
+      {/* items-start, not items-center: with a subtitle the block is two lines
+          tall and a centred glyph drifts down past the title it belongs to. */}
+      <div className="mb-4 flex items-start gap-2.5">
+        {icon && (
+          <span
+            className={`mt-px flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+              danger ? "bg-red-950/40 text-red-400" : "bg-neutral-800/70 text-violet-400"
+            }`}
+          >
+            <i className={`fa-solid ${icon} text-xs`} />
+          </span>
+        )}
+        <div className="min-w-0">
+          <h2 className="text-sm font-medium text-neutral-100">{title}</h2>
+          {subtitle && <p className="text-xs text-neutral-500 mt-0.5">{subtitle}</p>}
+        </div>
       </div>
       <div className="space-y-3">{children}</div>
     </section>
@@ -614,7 +645,7 @@ function PasskeySection() {
   }
 
   return (
-    <Section title="Passkey" subtitle="用 Touch ID / Face ID / 安全密钥免密码登录">
+    <Section icon="fa-fingerprint" title="Passkey" subtitle="用 Touch ID / Face ID / 安全密钥免密码登录">
       {enroll && (
         <OtpConfirm
           purpose="passkey"

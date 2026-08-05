@@ -37,7 +37,12 @@ export default function AdminLayout() {
       <Nav />
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center gap-3 mb-5">
-          <h1 className="text-lg font-brand text-neutral-100">管理后台</h1>
+          <h1 className="flex items-center gap-2.5 text-lg font-brand text-neutral-100">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-violet-400">
+              <i className="fa-solid fa-shield-halved text-sm" />
+            </span>
+            管理后台
+          </h1>
           <div className="flex-1" />
           <Link to="/" className="text-xs text-neutral-500 hover:text-violet-300">
             返回站点 →

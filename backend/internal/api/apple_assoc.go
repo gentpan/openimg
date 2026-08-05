@@ -31,18 +31,27 @@ import (
 // project's — a fork signs with its own.
 const appleAssocPath = "/.well-known/apple-app-site-association"
 
-// registerAppleAssociation mounts the document, or nothing when no application
-// identifier is configured.
+// registerAppleAssociation mounts the document, and mounts a 404 in its place
+// when no application identifier is configured.
 //
-// Nothing, deliberately: an empty or placeholder document is worse than a 404,
-// because the system caches what it fetches and a wrong answer sticks around
-// after the real one is deployed.
+// The route is registered either way, and that is the whole point. Skipping it
+// when unconfigured looks like the careful choice — no document is better than
+// a placeholder one, since the system caches what it fetches — but the path
+// then falls through to the SPA handler, which answers 200 with index.html.
+// That is worse than both: Apple fetches it, gets HTML where it wanted JSON,
+// and caches *that*. Measured on the live site before this was fixed:
+//
+//	HTTP/2 200
+//	content-type: text/html; charset=utf-8
+//
+// An explicit 404 is the honest answer for "no Mac app is configured here".
 func (s *Server) registerAppleAssociation(r *gin.Engine) {
 	appID := strings.TrimSpace(s.AppleAppID)
-	if appID == "" {
-		return
-	}
 	r.GET(appleAssocPath, func(c *gin.Context) {
+		if appID == "" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			return
+		}
 		c.Header("Cache-Control", "public, max-age=3600")
 		c.JSON(http.StatusOK, gin.H{
 			"webcredentials": gin.H{

@@ -116,6 +116,34 @@ public struct OpenimgClient: Sendable {
         return try decode(Quota.self, data, resp)
     }
 
+    public func storageSummary() async throws -> StorageSummary {
+        let (data, resp) = try await session.data(for: request("GET", "api/storage/summary"))
+        return try decode(StorageSummary.self, data, resp)
+    }
+
+    public func transactions(limit: Int = 50, offset: Int = 0) async throws -> TransactionPage {
+        let req = request("GET", "api/quota/transactions", query: [
+            .init(name: "limit", value: String(limit)),
+            .init(name: "offset", value: String(offset)),
+        ])
+        let (data, resp) = try await session.data(for: req)
+        return try decode(TransactionPage.self, data, resp)
+    }
+
+    public func checkinHistory(limit: Int = 120) async throws -> [CheckinRecord] {
+        let req = request("GET", "api/checkin/history", query: [.init(name: "limit", value: String(limit))])
+        let (data, resp) = try await session.data(for: req)
+        struct Wrap: Decodable { let records: [CheckinRecord]? }
+        return try decode(Wrap.self, data, resp).records ?? []
+    }
+
+    /// 409 means already checked in today, which is a normal outcome rather
+    /// than an error worth surfacing as one.
+    public func checkin() async throws -> CheckinResult {
+        let (data, resp) = try await session.data(for: request("POST", "api/checkin"))
+        return try decode(CheckinResult.self, data, resp)
+    }
+
     public func images(
         limit: Int = 25,
         offset: Int = 0,

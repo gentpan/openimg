@@ -6,10 +6,11 @@ import OpenimgKit
 /// Trailing underscore because `Section` is a SwiftUI type and shadowing it
 /// makes every `Section { }` in a List fail to resolve.
 enum Section_: String, CaseIterable, Identifiable, Hashable {
-    case gallery, upload, settings
+    case overview, gallery, upload, settings
     var id: String { rawValue }
     var label: String {
         switch self {
+        case .overview: "概览"
         case .gallery: "图库"
         case .upload: "上传"
         case .settings: "设置"
@@ -17,6 +18,7 @@ enum Section_: String, CaseIterable, Identifiable, Hashable {
     }
     var icon: String {
         switch self {
+        case .overview: "chart.bar.doc.horizontal"
         case .gallery: "square.grid.2x2"
         case .upload: "arrow.up.circle"
         case .settings: "gearshape"
@@ -60,6 +62,12 @@ final class AppModel: ObservableObject {
     @Published var selection: Set<String> = []
     @Published var detail: RemoteImage?
     @Published var linkFormat: LinkFormat = .url
+
+    // Stats
+    @Published var summary: StorageSummary?
+    @Published var transactions: [QuotaTransaction] = []
+    @Published var checkins: [CheckinRecord] = []
+    @Published var statsLoading = false
 
     // Upload
     @Published var uploading = false
@@ -149,9 +157,10 @@ final class AppModel: ObservableObject {
             account = me
             quota = try? await c.quota()
             await load(resetPage: true)
+            await loadStats()
             if !quiet {
                 announce("已连接 \(me.email)\(warning)")
-                section = .gallery
+                section = .overview
             }
         } catch {
             account = nil
@@ -173,6 +182,52 @@ final class AppModel: ObservableObject {
         // the same boundary that stops a leaked one from taking over an
         // account — so claiming "signed out" would overstate it.
         announce(OpenimgAuth.signOutIsLocalOnly, seconds: 8)
+    }
+
+    // MARK: - Stats
+
+    var streak: Int { checkins.first?.streak ?? 0 }
+
+    /// The server records days as UTC `yyyy-mm-dd`, so "today" has to be asked
+    /// in UTC too — comparing against a local date puts the app a day out for
+    /// anyone east of Greenwich, which is most of its users.
+    var checkedInToday: Bool {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC")!
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = cal.timeZone
+        return checkins.contains { $0.date == f.string(from: Date()) }
+    }
+
+    func loadStats() async {
+        guard connected else { return }
+        statsLoading = true
+        defer { statsLoading = false }
+        guard let c = try? client() else { return }
+        // Independent panels: one failing endpoint should blank its own card,
+        // not the whole page.
+        async let sum = try? await c.storageSummary()
+        async let tx = try? await c.transactions(limit: 50)
+        async let ck = try? await c.checkinHistory(limit: 130)
+        summary = await sum
+        transactions = await tx?.transactions ?? []
+        checkins = await ck ?? []
+    }
+
+    func checkin() async {
+        busy = true
+        defer { busy = false }
+        do {
+            let r = try await client().checkin()
+            announce(r.capped
+                ? "签到成功，但空间已达上限，本次未发放"
+                : "签到成功，+\(Self.bytes(r.grantedBytes))，连续 \(r.streak) 天")
+            quota = try? await client().quota()
+            await loadStats()
+        } catch {
+            announce(message(error))
+        }
     }
 
     // MARK: - Gallery

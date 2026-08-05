@@ -145,6 +145,19 @@ func (s *Server) Router() *gin.Engine {
 	// already bulk-delete 500 images plainly has access to.
 	machine.GET("/auth/me", s.handleMe)
 	machine.GET("/api/quota", s.handleGetQuota)
+	// The same reasoning extends to the rest of the account's own read-only
+	// numbers: a native client that cannot show storage composition or the
+	// space ledger is missing the half of the product that explains where the
+	// quota went. None of these write anything or reveal anything the token
+	// holder cannot already derive from the image list.
+	machine.GET("/api/quota/transactions", s.handleQuotaTransactions)
+	machine.GET("/api/storage/summary", s.handleStorageSummary)
+	machine.GET("/api/checkin/history", s.handleCheckinHistory)
+	// Check-in is the one write here, and it is safe to expose: the only thing
+	// it can do is grant the token's own owner more space. Daily check-in is
+	// also how space is earned on this site, so a client without it sends the
+	// user back to the browser every day.
+	machine.POST("/api/checkin", s.handleCheckin)
 
 	// API tokens (cookie-only: a token must not be able to mint more tokens)
 	authed.PATCH("/api/preferences", s.handleUpdatePreferences)
@@ -159,10 +172,6 @@ func (s *Server) Router() *gin.Engine {
 	authed.DELETE("/api/tokens/:id", s.handleDeleteToken)
 
 	// Space economy
-	authed.GET("/api/quota/transactions", s.handleQuotaTransactions)
-	authed.GET("/api/storage/summary", s.handleStorageSummary)
-	authed.POST("/api/checkin", s.handleCheckin)
-	authed.GET("/api/checkin/history", s.handleCheckinHistory)
 
 	// Storage profiles (bring your own bucket)
 	authed.GET("/api/storage/profiles", s.handleListProfiles)

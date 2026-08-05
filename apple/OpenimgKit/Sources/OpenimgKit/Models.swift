@@ -147,3 +147,108 @@ public enum LinkFormat: String, CaseIterable, Sendable {
         }
     }
 }
+
+/// `GET /api/storage/summary` — where the quota actually went.
+///
+/// The three size columns are the interesting part: users see "存储占用" larger
+/// than the file they uploaded and have no way to tell whether that is the
+/// primary, the WebP/AVIF derivative, or the thumbnails. This is that answer.
+public struct StorageSummary: Codable, Sendable {
+    public let images: Int
+    public let sizeOrig: Int64
+    public let sizeStored: Int64
+    public let sizePrimary: Int64
+    public let sizeVariants: Int64
+    public let sizeThumbs: Int64
+    public let sizeUnclassified: Int64
+    public let byFormat: [FormatSlice]
+    public let byProfile: [ProfileSlice]
+
+    public struct FormatSlice: Codable, Sendable, Identifiable {
+        public let ext: String
+        public let bytes: Int64
+        public let images: Int
+        public var id: String { ext }
+    }
+    public struct ProfileSlice: Codable, Sendable, Identifiable {
+        public let id: String
+        public let name: String
+        public let kind: String
+        public let bytes: Int64
+        public let images: Int
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case images
+        case sizeOrig = "size_orig"
+        case sizeStored = "size_stored"
+        case sizePrimary = "size_primary"
+        case sizeVariants = "size_variants"
+        case sizeThumbs = "size_thumbs"
+        case sizeUnclassified = "size_unclassified"
+        case byFormat = "by_format"
+        case byProfile = "by_profile"
+    }
+}
+
+public struct QuotaTransaction: Codable, Sendable, Identifiable {
+    public let id: String
+    public let type: String
+    public let bytes: Int64
+    public let quotaAfter: Int64
+    public let usedAfter: Int64
+    public let reason: String
+    public let createdAt: Date
+
+    /// The ledger mixes capacity grants with consumption, and a chart that
+    /// plots them on one axis is meaningless. Grants are positive space you
+    /// gained; the rest is space you spent.
+    public var isGrant: Bool {
+        ["signup_grant", "checkin", "referral", "admin_grant", "delete_refund"].contains(type)
+    }
+    public var label: String {
+        switch type {
+        case "signup_grant": "注册赠送"
+        case "checkin": "每日签到"
+        case "referral": "邀请奖励"
+        case "admin_grant": "管理员调整"
+        case "upload": "上传"
+        case "delete_refund": "删除退还"
+        default: type
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, type, bytes, reason
+        case quotaAfter = "quota_after"
+        case usedAfter = "used_after"
+        case createdAt = "created_at"
+    }
+}
+
+public struct TransactionPage: Codable, Sendable {
+    public let transactions: [QuotaTransaction]?
+    public let total: Int
+}
+
+public struct CheckinRecord: Codable, Sendable, Identifiable {
+    public let id: String
+    /// yyyy-mm-dd in UTC, as stored.
+    public let date: String
+    public let bytes: Int64
+    public let streak: Int
+}
+
+public struct CheckinResult: Codable, Sendable {
+    public let grantedBytes: Int64
+    public let streak: Int
+    public let quotaBytes: Int64
+    public let capped: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case grantedBytes = "granted_bytes"
+        case streak
+        case quotaBytes = "quota_bytes"
+        case capped
+    }
+}

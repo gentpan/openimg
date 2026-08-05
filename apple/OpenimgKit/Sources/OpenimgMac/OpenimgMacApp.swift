@@ -52,6 +52,7 @@ struct RootView: View {
     @ViewBuilder
     private var detail: some View {
         switch model.section {
+        case .overview: OverviewView(model: model)
         case .gallery:  GalleryView(model: model)
         case .upload:   UploadView(model: model)
         case .settings: SettingsView(model: model)

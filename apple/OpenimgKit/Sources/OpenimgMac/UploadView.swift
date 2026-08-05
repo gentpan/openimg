@@ -12,7 +12,7 @@ struct UploadView: View {
                 // A small dashed box centred in a large empty page reads as an
                 // afterthought; on this screen it is the whole point.
                 dropZone
-                conversion
+                settingsHint
                 formatRow
                 limits
             } else {
@@ -125,27 +125,27 @@ struct UploadView: View {
     /// the user is about to upload, and it is the moment they care whether the
     /// file gets re-encoded. The same values live on the account, so a change
     /// made here shows up on the website too.
-    private var conversion: some View {
-        // Labels sit above their own control rather than spanning the row: at
-        // this width a leading label and a trailing hint end up at opposite
-        // edges of the window with the control stranded between them.
-        VStack(spacing: 12) {
-            group("处理方式", model.uploadMode.detail) {
-                PillRow(items: UploadMode.allCases, label: \.label,
-                        selection: preference($model.uploadMode))
+    /// Where the compression controls went.
+    ///
+    /// They used to live here as a second copy of the settings page's card,
+    /// which meant two places to change the same account-level preference and
+    /// two places to keep in sync. The preference applies to every upload from
+    /// every client, so it belongs where account preferences live; what belongs
+    /// here is knowing what it is currently set to.
+    private var settingsHint: some View {
+        HStack(spacing: 6) {
+            Text(model.uploadMode.label)
+            Text("·").foregroundStyle(.quaternary)
+            Text(model.variantFormat.label)
+            if model.maxImageWidth > 0 {
+                Text("·").foregroundStyle(.quaternary)
+                Text("最大 \(model.maxImageWidth)px")
             }
-            HStack(alignment: .top, spacing: 22) {
-                group("衍生格式", nil) {
-                    PillRow(items: VariantFormat.allCases, label: \.label,
-                            selection: preference($model.variantFormat))
-                }
-                group("最大宽度", nil) {
-                    PillRow(items: allowedMaxWidths.map(Width.init), label: \.label,
-                            selection: widthBinding)
-                }
-            }
+            Button("在设置里改") { model.section = .settings }
+                .buttonStyle(LinkButton())
         }
-        .frame(maxWidth: 560)
+        .font(.caption)
+        .foregroundStyle(.secondary)
     }
 
     private func group<C: View>(_ title: String, _ hint: String?,
@@ -166,10 +166,6 @@ struct UploadView: View {
                 set: { b.wrappedValue = $0; Task { await model.savePreferences() } })
     }
 
-    private var widthBinding: Binding<Width> {
-        Binding(get: { Width(model.maxImageWidth) },
-                set: { model.maxImageWidth = $0.px; Task { await model.savePreferences() } })
-    }
 
     struct Width: Hashable, Identifiable {
         let px: Int

@@ -225,7 +225,11 @@ struct Sidebar: View {
 
             VStack(spacing: 4) {
                 ForEach(Section_.allCases) { s in
-                    SidebarRow(section: s, active: model.section == s) { model.section = s }
+                    SidebarRow(
+                        section: s,
+                        active: model.section == s,
+                        busy: s == .upload && model.uploading
+                    ) { model.section = s }
                 }
             }
             .padding(.horizontal, 10)
@@ -274,15 +278,27 @@ struct Sidebar: View {
 private struct SidebarRow: View {
     let section: Section_
     let active: Bool
+    /// Upload keeps working while the user browses elsewhere, so the row is
+    /// where that shows — a spinner buried on the upload page tells nobody
+    /// anything once they have navigated away.
+    var busy = false
     let action: () -> Void
     @State private var hovering = false
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 11) {
-                Image(systemName: section.icon)
+                Image(systemName: active ? section.iconFilled : section.icon)
                     .font(.system(size: 16, weight: .medium))
                     .frame(width: 22)
+                    // Outline morphs into solid on selection.
+                    .contentTransition(.symbolEffect(.replace.downUp))
+                    // A small bounce when it becomes the active one. Tied to
+                    // `active` rather than fired on tap so re-tapping the
+                    // current row does not jiggle for no reason.
+                    .symbolEffect(.bounce.up.byLayer, value: active)
+                    // And a slow pulse while an upload is running.
+                    .symbolEffect(.pulse, isActive: busy)
                 Text(section.label).font(.system(size: 15))
                 Spacer(minLength: 0)
             }

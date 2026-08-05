@@ -24,6 +24,18 @@ enum Section_: String, CaseIterable, Identifiable, Hashable {
         case .settings: "gearshape"
         }
     }
+
+    /// The filled counterpart, used for the selected row. Swapping between the
+    /// two is what `.symbolEffect(.replace)` animates — an outline morphing
+    /// into a solid reads as "this one is on" without any extra chrome.
+    var iconFilled: String {
+        switch self {
+        case .overview: "chart.bar.doc.horizontal.fill"
+        case .gallery: "square.grid.2x2.fill"
+        case .upload: "arrow.up.circle.fill"
+        case .settings: "gearshape.fill"
+        }
+    }
 }
 
 /// State for the whole app.

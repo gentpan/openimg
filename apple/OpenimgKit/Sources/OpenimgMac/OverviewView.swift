@@ -12,21 +12,32 @@ import OpenimgKit
 struct OverviewView: View {
     @ObservedObject var model: AppModel
 
-    private let cardColumns = [GridItem(.adaptive(minimum: 330, maximum: 560), spacing: 16)]
-
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: cardColumns, alignment: .leading, spacing: 16) {
-                quotaCard
-                compositionCard
-                formatCard
-                checkinCard
-                ledgerCard
+            // Two hand-assigned columns rather than a LazyVGrid.
+            //
+            // An adaptive grid centres every cell inside its row, and these
+            // cards differ in height by a factor of four — so the row ended up
+            // as five cards floating at five different heights with a hole down
+            // the right. Columns also let related cards sit together instead of
+            // wherever the flow happens to put them.
+            HStack(alignment: .top, spacing: 16) {
+                VStack(spacing: 16) {
+                    quotaCard
+                    compositionCard
+                    formatCard
+                }
+                VStack(spacing: 16) {
+                    checkinCard
+                    ledgerCard
+                }
             }
-            .padding(18)
+            .frame(maxWidth: 980)
+            .frame(maxWidth: .infinity)   // centres the block in a wide window
+            .padding(.horizontal, 22)
+            .padding(.bottom, 22)
         }
         .task { await model.loadStats() }
-        .refreshable { await model.loadStats() }
     }
 
     // MARK: - Quota
@@ -268,7 +279,11 @@ private struct HeatCalendar: View {
     private let weeks = 17
 
     var body: some View {
-        let byDay = Dictionary(uniqueKeysWithValues: records.map { ($0.date, $0) })
+        // uniquingKeysWith, not uniqueKeysWithValues: the latter traps on a
+        // duplicate key. The server has a unique index on (user, date) so it
+        // should never send two, but crashing on unexpected data is still
+        // crashing — and this is a decorative calendar.
+        let byDay = Dictionary(records.map { ($0.date, $0) }, uniquingKeysWith: { a, _ in a })
         let days = grid()
         let maxBytes = max(1, records.map(\.bytes).max() ?? 1)
 

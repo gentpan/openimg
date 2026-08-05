@@ -85,7 +85,11 @@ export default function Logo({ size = 28, className = "", asLink = true }: LogoP
 }
 
 
-const BRAND = "#5DE31D";
+// The live token, not a literal: the brand hue is user-switchable at runtime
+// (see ThemeContext), and a hard-coded fill would leave the wordmark green on
+// a violet page. The generated favicon/PNG set still carries a literal — those
+// are files, and a file cannot follow a CSS variable.
+const BRAND = "var(--color-brand-600)";
 
 // Kept in sync with public/favicon.svg by hand — that file is the source of
 // the generated PNG/ICO set, this constant is what React renders.

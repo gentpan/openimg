@@ -8,6 +8,9 @@ interface ThemeCtx {
   preference: Theme | "system";
   setPreference: (p: Theme | "system") => void;
   toggle: () => void;
+  /** Which brand hue the page is painted in. Independent of light/dark. */
+  brand: Brand;
+  setBrand: (b: Brand) => void;
 }
 
 const Ctx = createContext<ThemeCtx | null>(null);
@@ -29,6 +32,18 @@ function storedPreference(): Theme | "system" {
   return "system";
 }
 
+export type Brand = "green" | "violet";
+
+const BRAND_KEY = "openimg-brand";
+
+function storedBrand(): Brand {
+  try {
+    return localStorage.getItem(BRAND_KEY) === "violet" ? "violet" : "green";
+  } catch {
+    return "green";
+  }
+}
+
 /**
  * Theme state. The actual colours live in CSS: index.css defines the dark ramp
  * on :root and overrides it under [data-theme="light"], so switching themes is
@@ -40,6 +55,7 @@ function storedPreference(): Theme | "system" {
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreferenceState] = useState<Theme | "system">(storedPreference);
+  const [brand, setBrandState] = useState<Brand>(storedBrand);
   const [systemPref, setSystemPref] = useState<Theme>(systemTheme);
 
   const theme: Theme = preference === "system" ? systemPref : preference;
@@ -54,6 +70,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
+  // Brand is independent of light/dark: index.css defines the green on :root
+  // and the violet under [data-brand="violet"], and both carry their own light
+  // overrides. The attribute is absent for green so the default costs nothing.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (brand === "violet") root.setAttribute("data-brand", "violet");
+    else root.removeAttribute("data-brand");
+  }, [brand]);
+
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute("data-theme", theme);
@@ -63,6 +88,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", theme === "light" ? "#ffffff" : "#0a0a0a");
   }, [theme]);
+
+  function setBrand(b: Brand) {
+    setBrandState(b);
+    try {
+      localStorage.setItem(BRAND_KEY, b);
+    } catch {
+      // Non-persistent is acceptable; the in-memory switch still works.
+    }
+  }
 
   function setPreference(p: Theme | "system") {
     setPreferenceState(p);
@@ -83,6 +117,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         // than cycling through "system" — a toggle that sometimes doesn't
         // change anything is a broken toggle.
         toggle: () => setPreference(theme === "dark" ? "light" : "dark"),
+        brand,
+        setBrand,
       }}
     >
       {children}

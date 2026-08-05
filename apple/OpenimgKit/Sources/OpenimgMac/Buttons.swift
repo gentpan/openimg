@@ -18,7 +18,7 @@ struct BrandButton: ButtonStyle {
             .foregroundStyle(enabled ? AnyShapeStyle(Color.brandInk)
                                      : AnyShapeStyle(.tertiary))
             .padding(.horizontal, 15)
-            .padding(.vertical, 7)
+            .frame(height: Metrics.control)
             .background(
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
                     .fill(enabled ? AnyShapeStyle(Color.brand)
@@ -39,7 +39,7 @@ struct QuietButton: ButtonStyle {
             .font(.callout)
             .foregroundStyle(enabled ? .primary : .tertiary)
             .padding(.horizontal, 13)
-            .padding(.vertical, 6)
+            .frame(height: Metrics.control)
             .background(shape.fill(.white.opacity(
                 configuration.isPressed ? 0.14 : hovering && enabled ? 0.09 : 0.05
             )))
@@ -57,7 +57,7 @@ struct DangerButton: ButtonStyle {
             .font(.callout.weight(.medium))
             .foregroundStyle(Color(red: 1, green: 0.42, blue: 0.42))
             .padding(.horizontal, 13)
-            .padding(.vertical, 6)
+            .frame(height: Metrics.control)
             .background(shape.fill(.red.opacity(configuration.isPressed ? 0.24 : hovering ? 0.18 : 0.12)))
             .overlay(shape.strokeBorder(.red.opacity(0.28), lineWidth: 0.8))
             .onHover { hovering = $0 }

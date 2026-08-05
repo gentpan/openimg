@@ -7,12 +7,26 @@ import SwiftUI
 /// `Color.brandInk` (10.65:1), and white never appears on a brand surface.
 /// That single fact is the whole difference from the violet this replaces,
 /// which was 0.135 and carried white at 4.67:1.
+/// One height for every control that can sit next to another one.
+///
+/// Padding maths gave the toolbar three different heights — a pill row at 32,
+/// a quiet button at 28, a brand button at 30 — which is invisible in isolation
+/// and obvious the moment two of them share a row. A fixed height is also
+/// stable across fonts, where padding is not.
+enum Metrics {
+    static let control: CGFloat = 32
+}
+
 extension Color {
     /// Same value as the site's `--color-brand-600`.
     static let brand = Color(red: 0x5D / 255, green: 0xE3 / 255, blue: 0x1D / 255)
 
     /// What goes *on* a brand fill. Near-black with a trace of the brand hue,
     /// so it reads as part of the control rather than as borrowed body text.
+    /// The grey the toolbar's plain tiles resolve to, as a concrete Color so it
+    /// can be handed to `.tint`, which does not take a hierarchical style.
+    static let secondaryLabel = Color(nsColor: .secondaryLabelColor)
+
     static let brandInk = Color(red: 0x0A / 255, green: 0x1B / 255, blue: 0x02 / 255)
 
     /// "It worked" — kept at a distinctly different hue (teal, 173°) from the
@@ -113,7 +127,7 @@ struct Pill: View {
             .font(.callout.weight(active ? .medium : .regular))
             .foregroundStyle(active ? AnyShapeStyle(Color.brandInk) : AnyShapeStyle(.secondary))
             .padding(.horizontal, 12)
-            .padding(.vertical, 5)
+            .frame(height: Metrics.control - 6)   // 减去 PillRow 外圈的 3pt 内边距
             .background {
                 Capsule().fill(
                     active ? AnyShapeStyle(Color.brand)
@@ -143,7 +157,7 @@ struct ToolTile: View {
             Image(systemName: icon)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(disabled ? .tertiary : .secondary)
-                .frame(width: 30, height: 26)
+                .frame(width: 30, height: Metrics.control - 6)
                 .background {
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .fill(.white.opacity(hovering && !disabled ? 0.10 : 0))

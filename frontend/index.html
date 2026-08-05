@@ -25,6 +25,11 @@
           if (t === "light") {
             document.querySelector('meta[name="theme-color"]').setAttribute("content", "#ffffff");
           }
+          // Brand hue, same reason: applied here so the page never paints green
+          // and then flips to violet after React mounts.
+          if (localStorage.getItem("openimg-brand") === "violet") {
+            document.documentElement.setAttribute("data-brand", "violet");
+          }
         } catch (e) {}
       })();
     </script>

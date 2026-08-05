@@ -178,6 +178,11 @@ struct TopBar: View {
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
+        // A borderless menu paints its label with the *accent* colour, which
+        // this app sets to the brand green — so these two came out green while
+        // the plain tiles beside them stayed grey. Tinting the menu itself is
+        // what actually overrides it; a .foregroundStyle on the label does not.
+        .tint(Color.secondaryLabel)
         .help(help)
     }
 }

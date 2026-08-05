@@ -39,7 +39,7 @@ export default function Home() {
             <Reveal delay={80}>
               <h1 className="text-3xl sm:text-5xl font-brand text-neutral-100 leading-tight">
                 图片托管，
-                <span className="text-brand-400">从此不用操心</span>
+                <span className="text-[var(--color-brand-display)]">从此不用操心</span>
               </h1>
             </Reveal>
             <Reveal delay={160}>

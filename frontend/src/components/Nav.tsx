@@ -15,7 +15,7 @@ import Avatar from "./Avatar";
  */
 export default function Nav() {
   const { user, logout, refresh } = useAuth();
-  const { theme, toggle } = useTheme();
+  const { theme, toggle, brand, setBrand } = useTheme();
   const toast = useToast();
   const { pathname } = useLocation();
   const [busy, setBusy] = useState(false);
@@ -119,6 +119,16 @@ export default function Nav() {
               >
                 <i className={`fa-solid ${theme === "dark" ? "fa-sun" : "fa-moon"} text-[11px]`} />
               </button>
+              <button
+                onClick={() => setBrand(brand === "green" ? "violet" : "green")}
+                title={brand === "green" ? "切换到紫色" : "切换到绿色"}
+                aria-label={brand === "green" ? "切换到紫色" : "切换到绿色"}
+                className="w-6 h-6 rounded-full text-neutral-500 hover:text-brand-300 hover:bg-neutral-900 transition inline-flex items-center justify-center"
+              >
+                {/* The swatch is the brand colour itself — a paint-can icon
+                    would say "theme" without saying which one is on. */}
+                <span className="w-3 h-3 rounded-full bg-brand-600 ring-1 ring-white/25" />
+              </button>
               <Link
                 to="/settings"
                 className="flex items-center gap-1.5 text-neutral-400 hover:text-brand-300 min-w-0"
@@ -139,6 +149,16 @@ export default function Nav() {
                 className="w-6 h-6 rounded-full text-neutral-500 hover:text-brand-300 hover:bg-neutral-900 transition"
               >
                 <i className={`fa-solid ${theme === "dark" ? "fa-sun" : "fa-moon"} text-[11px]`} />
+              </button>
+              <button
+                onClick={() => setBrand(brand === "green" ? "violet" : "green")}
+                title={brand === "green" ? "切换到紫色" : "切换到绿色"}
+                aria-label={brand === "green" ? "切换到紫色" : "切换到绿色"}
+                className="w-6 h-6 rounded-full text-neutral-500 hover:text-brand-300 hover:bg-neutral-900 transition inline-flex items-center justify-center"
+              >
+                {/* The swatch is the brand colour itself — a paint-can icon
+                    would say "theme" without saying which one is on. */}
+                <span className="w-3 h-3 rounded-full bg-brand-600 ring-1 ring-white/25" />
               </button>
               <Link to="/login" className="text-brand-400 hover:underline">
                 登录

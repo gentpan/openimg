@@ -31,6 +31,14 @@
   /* What goes on a brand fill. Near-black with a trace of the brand hue, so it
      reads as part of the control rather than as borrowed body text. */
   --color-brand-ink: #0a1b02;
+  /* Display text and graphics.
+     WCAG asks 4.5:1 of body text but only 3:1 of large text (≥24px, or ≥18.7px
+     bold) and of non-text graphics. On the dark page that distinction buys
+     nothing — every tier already clears both — but on white it is the whole
+     difference between a heading that reads as the brand colour and one that
+     reads as dark olive. Body text keeps brand-400; anything set large takes
+     this. */
+  --color-brand-display: #aef18e;
 }
 
 /* ---------------------------------------------------------------------------
@@ -117,6 +125,7 @@
   --color-brand-200: #215b06;
   --color-brand-300: #2b7507;
   --color-brand-400: #30800a; /* 4.98:1 on white — the AA floor for body text */
+  --color-brand-display: #3ca10c; /* 3.34:1 — the AA floor for large text */
   --color-brand-900: #9dee77;
   --color-brand-950: #7de949;
 
@@ -254,4 +263,60 @@ html, body {
 :root[data-theme="light"] [class*="bg-brand-600"] {
   outline: 1px solid var(--color-brand-800);
   outline-offset: -1px;
+}
+
+/* ---------------------------------------------------------------------------
+   Brand switch
+
+   The whole palette is variables, so an alternate brand is a set of overrides —
+   the same trick the light theme uses, and for the same reason: no `dark:`
+   prefix on 900 utilities and no re-render when it flips.
+
+   The load-bearing variable is --color-brand-ink. Violet has a relative
+   luminance of 0.135 and carries white at 4.67:1; the green is 0.574 and
+   carries white at 1.68:1. So the two brands need *opposite* foregrounds, and
+   every filled control in the codebase already reads its foreground from that
+   one variable. Flipping it to white is what makes violet work without
+   touching a single component.
+   --------------------------------------------------------------------------- */
+
+:root[data-brand="violet"] {
+  --color-brand-200: #ddc8ff;
+  --color-brand-300: #c5a3ff;
+  --color-brand-400: #a87dff;
+  --color-brand-500: #8e47ff; /* hover fill — white 4.67:1 */
+  --color-brand-600: #7c2ee0; /* resting fill — white 6.32:1 */
+  --color-brand-700: #5e1cc4;
+  --color-brand-800: #5e1cc4;
+  --color-brand-900: #2d0e63;
+  --color-brand-950: #1b0840;
+  --color-brand-ink: #ffffff;
+  --color-brand-display: #a87dff;
+
+  --heat-1: #5e1cc4;
+  --heat-2: #7c2ee0;
+  --heat-3: #8e47ff;
+  --heat-4: #a87dff;
+}
+
+:root[data-brand="violet"][data-theme="light"] {
+  --color-brand-200: #5b21b6;
+  --color-brand-300: #6d28d9;
+  --color-brand-400: #7c2ee0;
+  --color-brand-900: #c4b5fd;
+  --color-brand-950: #a78bfa;
+  --color-brand-display: #7c2ee0; /* violet clears 4.5:1 on white unaided */
+
+  --heat-1: #ddd6fe;
+  --heat-2: #c4b5fd;
+  --heat-3: #8b5cf6;
+  --heat-4: #6d28d9;
+}
+
+/* The light-theme rim exists because #5DE31D is only 1.68:1 against a white
+   card, so a filled button's *outline* fails WCAG 1.4.11. Violet is 4.67:1 and
+   needs no help — the rim would just be a stray line. */
+:root[data-brand="violet"][data-theme="light"] [class*="bg-brand-500"],
+:root[data-brand="violet"][data-theme="light"] [class*="bg-brand-600"] {
+  outline: none;
 }

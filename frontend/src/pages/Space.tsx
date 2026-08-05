@@ -6,6 +6,7 @@ import Nav from "../components/Nav";
 import { formatBytes, quotaApi } from "../api";
 import { BarMeter, useCountUp } from "../components/Meters";
 import CheckinCalendar from "../components/CheckinCalendar";
+import CheckinWeek, { MilestoneBar } from "../components/CheckinWeek";
 import type { CheckinRecord, QuotaInfo, QuotaTransaction } from "../types";
 import { RingSpinner } from "../components/Spinner";
 
@@ -17,6 +18,13 @@ const TX_LABELS: Record<string, { label: string; icon: string; tone: string }> =
   upload: { label: "上传占用", icon: "fa-cloud-arrow-up", tone: "text-neutral-400" },
   delete_refund: { label: "删除释放", icon: "fa-trash-can", tone: "text-emerald-300" },
 };
+
+/** Days into the current month-long milestone. */
+function monthDone(streak: number, total: number) {
+  const t = total || 30;
+  if (streak <= 0) return 0;
+  return streak % t === 0 ? t : streak % t;
+}
 
 export default function SpacePage() {
   const { user, loading, refresh } = useAuth();
@@ -136,9 +144,7 @@ export default function SpacePage() {
                 {quota && (
                   <div className="mt-1 text-[11px] text-neutral-600">
                     每天随机 {formatBytes(quota.checkin.min_bytes, 0)} –{" "}
-                    {formatBytes(quota.checkin.max_bytes, 0)}，连续满{" "}
-                    {quota.checkin.streak_bonus_days} 天额外 +
-                    {formatBytes(quota.checkin.streak_bonus, 0)}
+                    {formatBytes(quota.checkin.max_bytes, 0)}
                     <span className="ml-1 text-faint">· 永久累加，不会过期</span>
                   </div>
                 )}
@@ -160,6 +166,18 @@ export default function SpacePage() {
                 )}
               </button>
             </div>
+
+            {quota && (
+              <div className="mb-4 space-y-4">
+                <CheckinWeek records={history} />
+                <MilestoneBar
+                  title="本月进度"
+                  current={monthDone(quota.checkin.streak, quota.checkin.days_per_month)}
+                  total={quota.checkin.days_per_month || 30}
+                  reward={quota.checkin.month_bonus}
+                />
+              </div>
+            )}
 
             <CheckinCalendar records={history} days={56} columns={14} />
           </div>

@@ -128,8 +128,14 @@ type UserGroup struct {
 	// worth coming back for.
 	CheckinMinSpace  int64 `gorm:"not null;default:1048576" json:"checkin_min_space"`
 	CheckinMaxSpace  int64 `gorm:"not null;default:20971520" json:"checkin_max_space"`
-	StreakBonusSpace int64 `gorm:"not null;default:31457280" json:"streak_bonus_space"` // extra once streak >= StreakBonusDays
-	StreakBonusDays  int   `gorm:"not null;default:7" json:"streak_bonus_days"`
+	StreakBonusSpace int64 `gorm:"not null;default:31457280" json:"streak_bonus_space"` // deprecated, see WeekBonusSpace
+	StreakBonusDays  int   `gorm:"not null;default:7" json:"streak_bonus_days"`         // deprecated
+	// Milestone bonuses, paid on the day the streak reaches a whole week or a
+	// whole month — not every day thereafter, which is what the old
+	// StreakBonus* pair did: once a user passed seven days it kept paying the
+	// bonus daily, forever.
+	WeekBonusSpace  int64 `gorm:"not null;default:52428800" json:"week_bonus_space"`   // 50 MiB
+	MonthBonusSpace int64 `gorm:"not null;default:314572800" json:"month_bonus_space"` // 300 MiB
 	ReferralSpace    int64 `gorm:"not null;default:209715200" json:"referral_space"`    // per successful referral
 	MaxTotalSpace    int64 `gorm:"not null;default:10737418240" json:"max_total_space"` // 0 = uncapped
 

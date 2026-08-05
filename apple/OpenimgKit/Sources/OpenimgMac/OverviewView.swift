@@ -84,11 +84,15 @@ struct OverviewView: View {
     private var compositionCard: some View {
         Card("存储构成", "chart.pie") {
             if let s = model.summary {
+                // Distinct hues, not four opacities of one. Shades of the same
+                // colour force the reader back to the legend for every slice;
+                // and with 86 / 13 / 2 the two small ones were near-identical
+                // slivers of purple that nothing distinguished.
                 let parts = [
                     ("主图", s.sizePrimary, Color.brand),
-                    ("衍生图", s.sizeVariants, Color.brand.opacity(0.62)),
-                    ("缩略图", s.sizeThumbs, Color.brand.opacity(0.34)),
-                    ("未分类", s.sizeUnclassified, Color.secondary.opacity(0.35)),
+                    ("衍生图", s.sizeVariants, Color(red: 0.20, green: 0.74, blue: 0.80)),
+                    ("缩略图", s.sizeThumbs, Color(red: 0.98, green: 0.72, blue: 0.25)),
+                    ("未分类", s.sizeUnclassified, Color.white.opacity(0.28)),
                 ].filter { $0.1 > 0 }
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -152,12 +156,12 @@ struct OverviewView: View {
     private var formatCard: some View {
         Card("格式分布", "doc.on.doc") {
             if let s = model.summary, !s.byFormat.isEmpty {
-                Chart(s.byFormat) { f in
+                Chart(Array(s.byFormat.enumerated()), id: \.element.id) { i, f in
                     BarMark(
                         x: .value("占用", f.bytes),
                         y: .value("格式", f.ext.uppercased())
                     )
-                    .foregroundStyle(Color.brand.gradient)
+                    .foregroundStyle(Self.formatPalette[i % Self.formatPalette.count])
                     .cornerRadius(4)
                     .annotation(position: .trailing) {
                         Text(model.bytes(f.bytes))
@@ -178,21 +182,42 @@ struct OverviewView: View {
     // MARK: - Check-in
 
     private var checkinCard: some View {
-        Card("签到", "calendar") {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("\(model.streak)")
-                        .font(.system(size: 30, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Color.brand)
-                    Text("天连续").foregroundStyle(.secondary)
+        Card("签到", "flame.fill") {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(alignment: .center, spacing: 12) {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(.orange)
+                        .frame(width: 44, height: 44)
+                        .background(Circle().fill(.orange.opacity(0.15)))
+                        .shadow(color: .orange.opacity(0.35), radius: 8)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("连续签到").font(.caption).foregroundStyle(.secondary)
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text("\(model.streak)")
+                                .font(.system(size: 26, weight: .semibold, design: .rounded))
+                            Text("天").font(.callout).foregroundStyle(.secondary)
+                        }
+                    }
                     Spacer()
                     Button(model.checkedInToday ? "今天已签到" : "签到") {
                         Task { await model.checkin() }
                     }
-                    .buttonStyle(BrandButton())
+                    .buttonStyle(model.checkedInToday ? AnyButtonStyle(QuietButton())
+                                                      : AnyButtonStyle(BrandButton()))
                     .disabled(model.checkedInToday || model.busy)
                 }
-                HeatCalendar(records: model.checkins)
+
+                Divider().overlay(Color.white.opacity(0.08))
+
+                WeekStrip(days: model.thisWeek)
+                MilestoneBar(
+                    title: "本月进度",
+                    current: model.monthProgress.done,
+                    total: model.monthProgress.total,
+                    reward: model.quota?.checkin?.monthBonus ?? 0,
+                    bytes: model.bytes
+                )
             }
         }
     }
@@ -240,6 +265,16 @@ struct OverviewView: View {
         }
         .frame(height: 90)
     }
+
+    /// Cycled across formats so the bars are told apart by colour as well as
+    /// by length — the shortest two are otherwise a pair of stubs.
+    static let formatPalette: [Color] = [
+        .brand,
+        Color(red: 0.20, green: 0.74, blue: 0.80),
+        Color(red: 0.98, green: 0.72, blue: 0.25),
+        Color(red: 0.40, green: 0.78, blue: 0.45),
+        Color(red: 0.92, green: 0.45, blue: 0.62),
+    ]
 
     private func percent(_ part: Int64, of whole: Int64) -> String {
         guard whole > 0 else { return "—" }

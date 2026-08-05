@@ -24,10 +24,20 @@ import (
 // ErrAlreadyCheckedIn is returned for a second check-in on the same UTC day.
 var ErrAlreadyCheckedIn = errors.New("今天已经签到过了")
 
+// Milestone lengths. A "month" is 30 days rather than a calendar month so the
+// reward does not depend on which month a streak happens to start in —
+// February would otherwise be worth the same as August for two days less work.
+const (
+	DaysPerWeek  = 7
+	DaysPerMonth = 30
+)
+
 // Result describes what a successful check-in granted.
 type Result struct {
 	Granted    int64  `json:"granted_bytes"`
-	BonusPart  int64  `json:"bonus_bytes"` // portion attributable to the streak bonus
+	BonusPart  int64  `json:"bonus_bytes"` // week + month milestones, if any fired
+	WeekBonus  int64  `json:"week_bonus_bytes"`
+	MonthBonus int64  `json:"month_bonus_bytes"`
 	Streak     int    `json:"streak"`
 	Date       string `json:"date"`
 	QuotaAfter int64  `json:"quota_bytes"`
@@ -84,11 +94,19 @@ func Do(db *gorm.DB, user *models.User, group *models.UserGroup) (*Result, error
 	}
 
 	base := randomGrant(group.CheckinMinSpace, group.CheckinMaxSpace)
-	var bonus int64
-	if group.StreakBonusDays > 0 && streak >= group.StreakBonusDays {
-		bonus = group.StreakBonusSpace
+
+	// Milestones, not a permanent raise. The previous rule paid the bonus on
+	// every check-in once the streak passed seven days, so day 400 earned the
+	// same "streak bonus" as day 7 — there was nothing left to keep coming
+	// back for. Now it lands on the day a whole week or a whole month closes.
+	var weekBonus, monthBonus int64
+	if streak > 0 && streak%DaysPerWeek == 0 {
+		weekBonus = group.WeekBonusSpace
 	}
-	want := base + bonus
+	if streak > 0 && streak%DaysPerMonth == 0 {
+		monthBonus = group.MonthBonusSpace
+	}
+	want := base + weekBonus + monthBonus
 	if want <= 0 {
 		return nil, fmt.Errorf("checkin: 当前用户组未配置签到奖励")
 	}
@@ -110,6 +128,14 @@ func Do(db *gorm.DB, user *models.User, group *models.UserGroup) (*Result, error
 	}
 
 	reason := fmt.Sprintf("每日签到（连续 %d 天）", streak)
+	switch {
+	case weekBonus > 0 && monthBonus > 0:
+		reason = fmt.Sprintf("每日签到（连续 %d 天 · 满周 + 满月奖励）", streak)
+	case monthBonus > 0:
+		reason = fmt.Sprintf("每日签到（连续 %d 天 · 满月奖励）", streak)
+	case weekBonus > 0:
+		reason = fmt.Sprintf("每日签到（连续 %d 天 · 满周奖励）", streak)
+	}
 	granted, err := quota.GrantCapacity(db, user.ID, want, models.QuotaCheckin, reason, group.MaxTotalSpace)
 	capped := false
 	if errors.Is(err, quota.ErrCapped) {
@@ -147,16 +173,16 @@ func Do(db *gorm.DB, user *models.User, group *models.UserGroup) (*Result, error
 		quotaAfter = fresh.QuotaBytes
 	}
 
-	effectiveBonus := bonus
-	if granted < want {
+	effectiveBonus := weekBonus + monthBonus
+	if granted < want && effectiveBonus > granted {
 		// Report the bonus actually received, not the nominal one.
-		if effectiveBonus > granted {
-			effectiveBonus = granted
-		}
+		effectiveBonus = granted
 	}
 	return &Result{
 		Granted:    granted,
 		BonusPart:  effectiveBonus,
+		WeekBonus:  weekBonus,
+		MonthBonus: monthBonus,
 		Streak:     streak,
 		Date:       today,
 		QuotaAfter: quotaAfter,

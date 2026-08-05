@@ -276,6 +276,41 @@ final class AppModel: ObservableObject {
         return checkins.contains { $0.date == f.string(from: Date()) }
     }
 
+    /// Monday-first, because that is how the streak reads to a user even
+    /// though the server keys days in UTC.
+    var thisWeek: [CheckinDay] {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC")!
+        cal.firstWeekday = 2
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = cal.timeZone
+
+        let now = Date()
+        let today = f.string(from: now)
+        let claimed = Set(checkins.map(\.date))
+        guard let start = cal.dateInterval(of: .weekOfYear, for: now)?.start else { return [] }
+
+        return (0..<7).compactMap { i in
+            guard let day = cal.date(byAdding: .day, value: i, to: start) else { return nil }
+            let key = f.string(from: day)
+            return CheckinDay(
+                id: key,
+                label: ["一", "二", "三", "四", "五", "六", "日"][i],
+                claimed: claimed.contains(key),
+                isToday: key == today,
+                future: key > today
+            )
+        }
+    }
+
+    /// How far into the current month-long milestone the streak has come.
+    var monthProgress: (done: Int, total: Int) {
+        let total = quota?.checkin?.daysPerMonth ?? 30
+        guard total > 0 else { return (0, 30) }
+        return (streak % total == 0 && streak > 0 ? total : streak % total, total)
+    }
+
     func loadStats() async {
         guard connected else { return }
         statsLoading = true

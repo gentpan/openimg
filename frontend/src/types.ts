@@ -121,6 +121,12 @@ export interface QuotaInfo {
     min_bytes: number;
     max_bytes: number;
     streak_bonus: number;
+    /** Milestone rewards. Paid on the day the streak closes a whole week or
+     *  month — not every day after, which is what streak_bonus used to do. */
+    week_bonus: number;
+    month_bonus: number;
+    days_per_week: number;
+    days_per_month: number;
   };
 }
 

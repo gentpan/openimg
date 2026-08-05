@@ -92,6 +92,27 @@ public struct Quota: Codable, Sendable {
     public let imageCount: Int
     public let uploadsToday: Int
     public let tier: Tier
+    public let checkin: Checkin?
+
+    /// Milestone rewards, so the client can say what the next one is worth
+    /// instead of just counting days at the user.
+    public struct Checkin: Codable, Sendable {
+        public let checkedInToday: Bool
+        public let streak: Int
+        public let weekBonus: Int64
+        public let monthBonus: Int64
+        public let daysPerWeek: Int
+        public let daysPerMonth: Int
+
+        enum CodingKeys: String, CodingKey {
+            case checkedInToday = "checked_in_today"
+            case streak
+            case weekBonus = "week_bonus"
+            case monthBonus = "month_bonus"
+            case daysPerWeek = "days_per_week"
+            case daysPerMonth = "days_per_month"
+        }
+    }
 
     public struct Tier: Codable, Sendable {
         public let name: String
@@ -113,7 +134,7 @@ public struct Quota: Codable, Sendable {
         case availableBytes = "available_bytes"
         case imageCount = "image_count"
         case uploadsToday = "uploads_today"
-        case tier
+        case tier, checkin
     }
 }
 

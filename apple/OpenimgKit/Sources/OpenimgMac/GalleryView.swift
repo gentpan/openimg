@@ -23,15 +23,14 @@ struct GalleryView: View {
             }
             statusBar
         }
-        .inspector(isPresented: Binding(
-            get: { model.detail != nil },
-            set: { if !$0 { model.detail = nil } }
-        )) {
+        // A full-window overlay rather than an inspector column: the point of
+        // opening a picture is to see it bigger, and a 320pt column cannot.
+        .overlay {
             if let img = model.detail {
-                DetailView(model: model, img: img)
-                    .inspectorColumnWidth(min: 280, ideal: 320, max: 420)
+                Lightbox(model: model, img: img)
             }
         }
+        .animation(.easeOut(duration: 0.18), value: model.detail?.id)
     }
 
     /// The capsule row from the reference. It doubles as the selection bar:
@@ -118,8 +117,6 @@ private struct Card: View {
             ZStack(alignment: .topLeading) {
                 Thumbnail(url: img.thumbURL, client: try? model.client())
                     .frame(height: 118)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
 
                 if hovering || selected || !model.selection.isEmpty {
                     Button { model.toggle(img.id) } label: {

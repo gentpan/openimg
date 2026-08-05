@@ -47,18 +47,27 @@ struct Thumbnail: View {
     @State private var image: NSImage?
 
     var body: some View {
-        ZStack {
-            if let image {
-                Image(nsImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } else {
-                Rectangle().fill(Color.secondary.opacity(0.12))
-                ProgressView().controlSize(.small)
+        // Color.clear takes whatever size the parent proposes; the image is
+        // drawn over it and clipped to that. Applying .aspectRatio(.fill)
+        // directly makes the view report the image's own size instead, so the
+        // card grows to the full resolution of its thumbnail and spills over
+        // its neighbours — which is exactly what the grid was doing.
+        Color.clear
+            .overlay {
+                if let image {
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    ZStack {
+                        Rectangle().fill(.white.opacity(0.06))
+                        ProgressView().controlSize(.small)
+                    }
+                }
             }
-        }
-        .task(id: url) {
-            image = await ThumbnailCache.shared.image(for: url, client: client)
-        }
+            .clipped()
+            .task(id: url) {
+                image = await ThumbnailCache.shared.image(for: url, client: client)
+            }
     }
 }

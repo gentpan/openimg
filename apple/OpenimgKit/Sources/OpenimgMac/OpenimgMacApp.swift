@@ -6,6 +6,8 @@ import OpenimgKit
 struct OpenimgMacApp: App {
     @StateObject private var model = AppModel.shared
 
+    init() { BrandFont.register() }
+
     var body: some Scene {
         Window("Openimg", id: "main") {
             RootView(model: model)

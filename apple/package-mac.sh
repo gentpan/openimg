@@ -43,6 +43,10 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/OpenimgMac"
 cp "$ROOT/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
+# Ubuntu, registered at launch by BrandFont. Flat in Resources because
+# Bundle.main.url(forResource:) does not search subdirectories.
+cp "$ROOT"/Resources/Fonts/*.ttf "$APP/Contents/Resources/"
+cp "$ROOT/Resources/Fonts/LICENSE-Ubuntu.txt" "$APP/Contents/Resources/"
 
 # No LSUIElement: this is a windowed app, so it should take a Dock icon and its
 # own menu bar like any other. The earlier menu-bar-only build set it, and

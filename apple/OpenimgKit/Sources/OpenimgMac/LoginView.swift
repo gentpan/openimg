@@ -93,7 +93,14 @@ struct LoginView: View {
                 )
                 .shadow(color: Color.brand.opacity(0.35), radius: 10, y: 4)
 
-            Text("登录 Openimg").font(.title2.weight(.semibold))
+            // "Openimg" in the brand face, the surrounding Chinese in the
+            // system face — Ubuntu has no CJK coverage, and letting it fall
+            // through mid-sentence gives two different-looking words.
+            HStack(spacing: 0) {
+                Text("登录 ").font(.title2.weight(.semibold))
+                Text("Open").font(.brand(22, .bold))
+                Text("img").font(.brand(22, .bold)).foregroundStyle(Color.brand)
+            }
             Text("图片托管与分发").font(.caption).foregroundStyle(.secondary)
         }
         .padding(.bottom, 2)
@@ -204,25 +211,11 @@ private struct OutlineButton: ButtonStyle {
 enum OAuthProvider: String {
     case google, github
 
-    /// Drawn rather than bundled: two vector marks are less weight than an
-    /// asset catalog, and they follow the appearance without needing a
-    /// light and a dark variant each.
     @ViewBuilder
     var mark: some View {
         switch self {
-        case .google:
-            ZStack {
-                Circle().fill(.white)
-                Text("G")
-                    .font(.system(size: 11, weight: .bold, design: .default))
-                    .foregroundStyle(Color(red: 0.26, green: 0.52, blue: 0.96))
-            }
-            .frame(width: 17, height: 17)
-            .overlay(Circle().strokeBorder(.primary.opacity(0.12), lineWidth: 0.5))
-        case .github:
-            Image(systemName: "chevron.left.forwardslash.chevron.right")
-                .font(.system(size: 11, weight: .semibold))
-                .frame(width: 17, height: 17)
+        case .google: GoogleMark().frame(width: 16, height: 16)
+        case .github: GitHubMark().frame(width: 16, height: 16)
         }
     }
 }

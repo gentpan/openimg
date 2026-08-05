@@ -126,3 +126,36 @@ extension View {
         }
     }
 }
+
+// MARK: - Brand typeface
+
+/// Ubuntu, bundled with the app.
+///
+/// The site sets its wordmark in Ubuntu, and a client that renders the same
+/// name in the system face reads as a different product. Ubuntu covers Latin
+/// only, so it is applied to the wordmark rather than to whole strings — CJK
+/// falling through mid-sentence would put two typefaces in one line.
+enum BrandFont {
+    static func register() {
+        for name in ["Ubuntu-Regular", "Ubuntu-Medium", "Ubuntu-Bold"] {
+            guard let url = Bundle.main.url(forResource: name, withExtension: "ttf") else { continue }
+            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+        }
+    }
+}
+
+extension Font {
+    /// Falls back to a rounded system face when the bundle is missing the
+    /// font — a build run straight from SwiftPM has no Resources directory.
+    static func brand(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+        let face = switch weight {
+        case .bold, .heavy, .black: "Ubuntu-Bold"
+        case .medium, .semibold: "Ubuntu-Medium"
+        default: "Ubuntu"
+        }
+        if NSFont(name: face, size: size) != nil {
+            return .custom(face, size: size)
+        }
+        return .system(size: size, weight: weight, design: .rounded)
+    }
+}

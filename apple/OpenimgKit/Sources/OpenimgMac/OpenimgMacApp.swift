@@ -122,7 +122,6 @@ struct TopBar: View {
             Spacer(minLength: 12)
 
             if model.section == .gallery {
-                search
                 ToolCluster {
                     menuTile("arrow.up.arrow.down", "排序") {
                         ForEach(SortKey.allCases) { s in
@@ -163,30 +162,6 @@ struct TopBar: View {
         .padding(.bottom, 12)
     }
 
-    private var search: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 11)).foregroundStyle(.tertiary)
-            TextField("搜索文件名", text: $model.search)
-                .textFieldStyle(.plain)
-                .font(.callout)
-                .onChange(of: model.search) { model.searchChanged() }
-            if !model.search.isEmpty {
-                Button {
-                    model.search = ""
-                    Task { await model.load(resetPage: true) }
-                } label: {
-                    Image(systemName: "xmark.circle.fill").font(.system(size: 11))
-                }
-                .buttonStyle(.plain).foregroundStyle(.tertiary)
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .frame(width: 210)
-        .chromeSurface(Capsule(), elevated: false)
-    }
-
     /// A tile that opens a menu, keeping the tile's own look instead of the
     /// system menu button's chrome.
     private func menuTile<C: View>(_ icon: String, _ help: String,
@@ -216,6 +191,7 @@ struct TopBar: View {
 /// costs more than drawing four rows.
 struct Sidebar: View {
     @ObservedObject var model: AppModel
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -224,7 +200,11 @@ struct Sidebar: View {
                 Text("img").font(.brand(17, .bold)).foregroundStyle(Color.brand)
             }
             .padding(.horizontal, 18)
-            .padding(.bottom, 18)
+            .padding(.bottom, 14)
+
+            search
+                .padding(.horizontal, 10)
+                .padding(.bottom, 10)
 
             VStack(spacing: 4) {
                 ForEach(Section_.allCases) { s in
@@ -241,6 +221,51 @@ struct Sidebar: View {
             account
         }
         .padding(.top, 42) // clears the traffic lights
+    }
+
+    /// Search lives here rather than in the toolbar.
+    ///
+    /// In the toolbar it only existed on the gallery page, so looking for a
+    /// picture from anywhere else meant first navigating to the place that has
+    /// the search box. As a permanent sidebar row it is an entry point: typing
+    /// into it goes to the gallery, because searching is what the gallery is
+    /// for.
+    private var search: some View {
+        HStack(spacing: 7) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 12))
+                .foregroundStyle(searchFocused ? .secondary : .tertiary)
+            TextField("搜索文件名", text: $model.search)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .focused($searchFocused)
+                .onChange(of: model.search) {
+                    if !model.search.isEmpty { model.section = .gallery }
+                    model.searchChanged()
+                }
+                .onSubmit { model.section = .gallery }
+            if !model.search.isEmpty {
+                Button {
+                    model.search = ""
+                    Task { await model.load(resetPage: true) }
+                } label: {
+                    Image(systemName: "xmark.circle.fill").font(.system(size: 11))
+                }
+                .buttonStyle(.plain).foregroundStyle(.tertiary)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(.white.opacity(searchFocused ? 0.09 : 0.05))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(.white.opacity(searchFocused ? 0.16 : 0.07), lineWidth: 0.8)
+        }
+        .animation(.easeOut(duration: 0.12), value: searchFocused)
+        .onTapGesture { searchFocused = true }
     }
 
     @ViewBuilder

@@ -52,6 +52,7 @@ type Server struct {
 	uploadLimiter *rateLimiter
 	reportLimiter *rateLimiter
 	oauthCache    oauthCache
+	nativeCodes   nativeCodes
 	uploadCache   uploadSettingsCache
 }
 
@@ -94,6 +95,7 @@ func (s *Server) Router() *gin.Engine {
 	r.POST("/auth/register", s.handleRegister)
 	r.POST("/auth/login", s.handleLogin)
 	r.GET("/auth/providers", s.handleListProviders)
+	r.POST("/auth/native/exchange", s.handleNativeExchange)
 	r.GET("/auth/google/start", s.handleOAuthStart("google", ""))
 	r.GET("/auth/github/start", s.handleOAuthStart("github", ""))
 	// Callbacks run with optional auth so the link-intent path can find the

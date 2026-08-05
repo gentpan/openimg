@@ -62,6 +62,15 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleVersion</key>             <string>1</string>
   <key>LSMinimumSystemVersion</key>      <string>14.0</string>
   <key>CFBundleIconFile</key>            <string>AppIcon</string>
+  <!-- The OAuth callback lands here. Without this the system has nothing to
+       hand openimg://auth?code=… to, and the sign-in sheet just sits there. -->
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>       <string>io.openimg.mac.auth</string>
+      <key>CFBundleURLSchemes</key>    <array><string>openimg</string></array>
+    </dict>
+  </array>
   <key>NSHighResolutionCapable</key>     <true/>
 </dict>
 </plist>

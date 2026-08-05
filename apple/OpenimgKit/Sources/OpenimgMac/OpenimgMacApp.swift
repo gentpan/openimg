@@ -10,6 +10,7 @@ struct OpenimgMacApp: App {
         Window("Openimg", id: "main") {
             RootView(model: model)
                 .tint(.brand)
+                .windowGlass()
         }
         .defaultSize(width: 1020, height: 680)
         // The title bar carries the toolbar, so drawing a title in it too just
@@ -51,6 +52,15 @@ struct RootView: View {
 
     @ViewBuilder
     private var detail: some View {
+        if !model.connected {
+            LoginView(model: model)
+        } else {
+            sections
+        }
+    }
+
+    @ViewBuilder
+    private var sections: some View {
         switch model.section {
         case .overview: OverviewView(model: model)
         case .gallery:  GalleryView(model: model)
@@ -69,6 +79,7 @@ struct RootView: View {
                     .onSubmit { Task { await model.load(resetPage: true) } }
                     .onChange(of: model.search) { model.searchChanged() }
             }
+            if #available(macOS 26, *) { ToolbarSpacer(.fixed) }
             ToolbarItem {
                 Picker("排序", selection: $model.sort) {
                     ForEach(SortKey.allCases) { Label($0.label, systemImage: $0.icon).tag($0) }
@@ -91,6 +102,7 @@ struct RootView: View {
             }
         }
         if model.connected {
+            if #available(macOS 26, *) { ToolbarSpacer(.fixed) }
             ToolbarItem {
                 Button {
                     model.section = .upload
@@ -111,8 +123,7 @@ struct RootView: View {
                 .font(.callout)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
-                .background(.regularMaterial, in: Capsule())
-                .overlay(Capsule().strokeBorder(.quaternary))
+                .glassChrome(Capsule())
                 .shadow(color: .black.opacity(0.15), radius: 10, y: 4)
                 .padding(.bottom, 22)
                 .transition(.move(edge: .bottom).combined(with: .opacity))

@@ -16,6 +16,10 @@ import Foundation
 /// more tokens, changing the password, and deleting the account are all
 /// cookie-only. A leaked token cannot escalate into an account takeover.
 public enum OpenimgAuth {
+    /// The private URL scheme the OAuth callback redirects to. Must match
+    /// CFBundleURLSchemes in the app bundle, and `NativeScheme` on the server.
+    public static let nativeScheme = "openimg"
+
 
     /// Named per device so signing in again replaces this Mac's token instead
     /// of adding another. The server caps a user at ten, and without this a
@@ -73,6 +77,26 @@ public enum OpenimgAuth {
     public static let signOutIsLocalOnly = """
         令牌已从这台设备移除。它在服务器上仍然有效，直到你在网站的        「账号设置 → API Token」里删除它，或它到期为止。
         """
+
+    /// Trades the one-time code an OAuth callback handed back for a token.
+    ///
+    /// The code is single-use and expires in a minute; it grants nothing on its
+    /// own, which is why it is safe to carry in a URL that other processes on
+    /// the machine could in principle observe.
+    public static func exchange(
+        server: URL, code: String, device: String, session: URLSession = .shared
+    ) async throws -> (token: String, account: Account) {
+        try validate(server)
+        struct Result: Decodable {
+            let plain: String
+            let user: Account
+        }
+        let r: Result = try await post(
+            server: server, path: "auth/native/exchange", session: session,
+            body: ["code": code, "device": device]
+        )
+        return (r.plain, r.user)
+    }
 
     // MARK: - Plumbing
 

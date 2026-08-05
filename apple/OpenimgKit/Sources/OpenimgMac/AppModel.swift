@@ -115,6 +115,40 @@ final class AppModel: ObservableObject {
         if !connected { section = .settings }
     }
 
+    private let oauth = OAuthSignIn()
+
+    var canSubmit: Bool {
+        useToken ? !token.isEmpty : (!email.isEmpty && !password.isEmpty)
+    }
+
+    /// What the primary button and the return key both do, so the form has one
+    /// submit path regardless of which mode it is in.
+    func primaryAction() async {
+        guard canSubmit, !busy else { return }
+        if useToken { await connect() } else { await signIn() }
+    }
+
+    /// Google / GitHub. The sheet returns a one-time code; the token comes from
+    /// trading it, so nothing long-lived ever travels through the URL.
+    func signIn(with provider: OAuthProvider) async {
+        busy = true
+        defer { busy = false }
+        do {
+            guard let code = try await oauth.start(provider: provider.rawValue, server: server) else {
+                return // 用户关掉了登录窗口
+            }
+            guard let url = URL(string: server) else { throw OpenimgError.badServerURL }
+            let (minted, _) = try await OpenimgAuth.exchange(
+                server: url, code: code, device: deviceName
+            )
+            token = minted
+            await connect()
+        } catch {
+            account = nil
+            announce(message(error))
+        }
+    }
+
     /// Exchanges the password for a long-lived token, then connects with it.
     ///
     /// The session the password buys is not what gets stored: it expires in

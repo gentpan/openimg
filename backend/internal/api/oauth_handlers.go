@@ -90,8 +90,14 @@ func (s *Server) handleOAuthStart(provider, intent string) gin.HandlerFunc {
 		c.SetSameSite(http.SameSiteLaxMode)
 		c.SetCookie(stateCookie+"_"+provider, state, stateMaxAge, "/", s.CookieDomain, s.CookieSecure, true)
 		// Set or clear the intent cookie so the callback knows what to do.
-		if intent == "link" {
-			c.SetCookie(intentCookie, "link", stateMaxAge, "/", s.CookieDomain, s.CookieSecure, true)
+		// A native client asks for it by query rather than by route, so the
+		// same /start endpoint serves the website and the Mac app.
+		effective := intent
+		if effective == "" && c.Query("native") != "" {
+			effective = nativeIntentName
+		}
+		if effective != "" {
+			c.SetCookie(intentCookie, effective, stateMaxAge, "/", s.CookieDomain, s.CookieSecure, true)
 		} else {
 			c.SetCookie(intentCookie, "", -1, "/", s.CookieDomain, s.CookieSecure, true)
 		}
@@ -186,6 +192,15 @@ func (s *Server) handleOAuthCallback(provider string) gin.HandlerFunc {
 		if refCode, _ := c.Cookie(refCookieName); refCode != "" {
 			_ = referral.AttachAndReward(s.DB, user, refCode)
 			c.SetCookie(refCookieName, "", -1, "/", s.CookieDomain, s.CookieSecure, false)
+		}
+		// A native client gets a one-time code instead of a session: the sheet
+		// it runs in has its own cookie jar and closes the moment this
+		// redirect fires, so a cookie would be written nowhere useful.
+		if intent == nativeIntentName {
+			c.SetCookie(intentCookie, "", -1, "/", s.CookieDomain, s.CookieSecure, true)
+			c.Redirect(http.StatusFound,
+				NativeScheme+"://auth?code="+url.QueryEscape(s.nativeCodes.issue(user.ID)))
+			return
 		}
 		if err := s.Auth.IssueSession(c, user); err != nil {
 			c.String(http.StatusInternalServerError, "session: %v", err)

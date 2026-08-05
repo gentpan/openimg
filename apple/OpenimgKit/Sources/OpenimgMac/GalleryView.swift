@@ -21,7 +21,6 @@ struct GalleryView: View {
                     }
                     .padding(18)
                 }
-                .background(.background)
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { statusBar }
@@ -83,7 +82,7 @@ struct GalleryView: View {
         .foregroundStyle(.secondary)
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .background(.bar)
+        .glassChrome(Rectangle())
         .overlay(alignment: .top) { Divider() }
     }
 }
@@ -188,7 +187,6 @@ private struct EmptyState: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.background)
     }
 
     private func icon(_ name: String) -> some View {

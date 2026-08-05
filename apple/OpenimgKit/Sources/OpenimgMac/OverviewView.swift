@@ -25,7 +25,6 @@ struct OverviewView: View {
             }
             .padding(18)
         }
-        .background(.background)
         .task { await model.loadStats() }
         .refreshable { await model.loadStats() }
     }
@@ -259,10 +258,7 @@ private struct Card<Content: View>: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        // Border, not a shadow. Both together is the look of a page that has
-        // not decided how it separates things.
-        .background(RoundedRectangle(cornerRadius: 12).fill(.quinary))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.quaternary))
+        .glassCard()
     }
 }
 

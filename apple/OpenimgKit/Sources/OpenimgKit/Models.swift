@@ -138,6 +138,34 @@ public struct Quota: Codable, Sendable {
     }
 }
 
+/// Conversion preferences. These only affect future uploads — flipping a
+/// switch does not re-derive an existing library.
+public enum UploadMode: String, CaseIterable, Sendable, Identifiable {
+    case optimized, original
+    public var id: String { rawValue }
+    public var label: String { self == .optimized ? "压缩优化" : "保留原图" }
+    public var detail: String {
+        self == .optimized
+            ? "重新编码并抹除元数据，通常更小"
+            : "原样保存，保留拍摄参数（定位信息仍会剥离）"
+    }
+}
+
+public enum VariantFormat: String, CaseIterable, Sendable, Identifiable {
+    case none, webp, avif
+    public var id: String { rawValue }
+    public var label: String {
+        switch self {
+        case .none: "不生成"
+        case .webp: "WebP"
+        case .avif: "AVIF"
+        }
+    }
+}
+
+/// Server-side whitelist; anything else is rejected with a 400.
+public let allowedMaxWidths = [0, 1280, 1920, 2560, 3840]
+
 public struct Account: Codable, Sendable {
     public let id: String
     public let email: String
@@ -147,6 +175,9 @@ public struct Account: Codable, Sendable {
     /// the CDN, but one that came from Google or GitHub still points at their
     /// host. Optional because the server omits the key when it is empty.
     public let avatarURL: String?
+    public let uploadMode: String?
+    public let variantFormat: String?
+    public let maxImageWidth: Int?
 
     /// What to draw when there is no picture. Prefers the nickname over the
     /// address so a letter the user chose wins over one they did not.
@@ -157,6 +188,9 @@ public struct Account: Codable, Sendable {
     enum CodingKeys: String, CodingKey {
         case id, email, name, role
         case avatarURL = "avatar_url"
+        case uploadMode = "upload_mode"
+        case variantFormat = "variant_format"
+        case maxImageWidth = "max_image_width"
     }
 }
 

@@ -10,6 +10,7 @@ struct UploadView: View {
             if model.queue.isEmpty {
                 Spacer(minLength: 0)
                 dropZone
+                conversion
                 formatRow
                 limits
                 Spacer(minLength: 0)
@@ -45,7 +46,8 @@ struct UploadView: View {
                 Task { await model.pickAndUpload() }
             }
             .onDrop(of: [.fileURL], isTargeted: $model.dropping) { providers in
-                Task { await model.upload(await urls(from: providers)) }
+                // Dropped folders expand the same way a picked one does.
+                Task { await model.upload(model.expand(await urls(from: providers))) }
                 return true
             }
             .animation(.easeOut(duration: 0.15), value: model.dropping)
@@ -60,8 +62,8 @@ struct UploadView: View {
                     .foregroundStyle(Color.brand)
                     .frame(width: 66, height: 66)
                     .background(Circle().fill(Color.brand.opacity(0.12)))
-                Text("把图片拖到这里").font(.title3.weight(.medium))
-                Text("或点击选择文件").font(.caption).foregroundStyle(.secondary)
+                Text("把图片或文件夹拖到这里").font(.title3.weight(.medium))
+                Text("或点击选择，文件夹会自动展开").font(.caption).foregroundStyle(.secondary)
             }
         } else {
             Label("继续添加", systemImage: "plus")
@@ -115,6 +117,63 @@ struct UploadView: View {
             Text("上传后复制").font(.caption).foregroundStyle(.secondary)
             PillRow(items: LinkFormat.allCases, label: \.label, selection: $model.linkFormat)
         }
+    }
+
+    /// Conversion settings, here rather than only in settings: this is where
+    /// the user is about to upload, and it is the moment they care whether the
+    /// file gets re-encoded. The same values live on the account, so a change
+    /// made here shows up on the website too.
+    private var conversion: some View {
+        // Labels sit above their own control rather than spanning the row: at
+        // this width a leading label and a trailing hint end up at opposite
+        // edges of the window with the control stranded between them.
+        VStack(spacing: 12) {
+            group("处理方式", model.uploadMode.detail) {
+                PillRow(items: UploadMode.allCases, label: \.label,
+                        selection: preference($model.uploadMode))
+            }
+            HStack(alignment: .top, spacing: 22) {
+                group("衍生格式", nil) {
+                    PillRow(items: VariantFormat.allCases, label: \.label,
+                            selection: preference($model.variantFormat))
+                }
+                group("最大宽度", nil) {
+                    PillRow(items: allowedMaxWidths.map(Width.init), label: \.label,
+                            selection: widthBinding)
+                }
+            }
+        }
+        .frame(maxWidth: 560)
+    }
+
+    private func group<C: View>(_ title: String, _ hint: String?,
+                                @ViewBuilder control: () -> C) -> some View {
+        VStack(spacing: 5) {
+            Text(title).font(.caption).foregroundStyle(.secondary)
+            control()
+            if let hint {
+                Text(hint).font(.caption2).foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    /// Saves on change. Wrapping the binding keeps the write next to the value
+    /// it belongs to, instead of an onChange hanging off each control.
+    private func preference<T>(_ b: Binding<T>) -> Binding<T> {
+        Binding(get: { b.wrappedValue },
+                set: { b.wrappedValue = $0; Task { await model.savePreferences() } })
+    }
+
+    private var widthBinding: Binding<Width> {
+        Binding(get: { Width(model.maxImageWidth) },
+                set: { model.maxImageWidth = $0.px; Task { await model.savePreferences() } })
+    }
+
+    struct Width: Hashable, Identifiable {
+        let px: Int
+        init(_ px: Int) { self.px = px }
+        var id: Int { px }
+        var label: String { px == 0 ? "不限" : "\(px)" }
     }
 
     @ViewBuilder

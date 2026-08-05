@@ -56,6 +56,7 @@ func TestTokenReachableRoutes(t *testing.T) {
 		"GET /api/storage/summary",
 		"GET /api/checkin/history",
 		"POST /api/checkin",
+		"PATCH /api/preferences",
 	}
 	have := map[string]bool{}
 	for _, route := range r.Routes() {

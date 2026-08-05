@@ -160,9 +160,16 @@ func (s *Server) Router() *gin.Engine {
 	// also how space is earned on this site, so a client without it sends the
 	// user back to the browser every day.
 	machine.POST("/api/checkin", s.handleCheckin)
+	// Conversion preferences. A write, and the only one here that changes an
+	// account-level setting rather than the user's own images — but what it can
+	// change is whether uploads get re-encoded and which derivative is kept.
+	// A leaked token could make future uploads cost more storage; it cannot
+	// reach credentials, delete the account, or mint more tokens, all of which
+	// stay cookie-only. Worth it so the client can offer the setting where the
+	// user is actually about to upload.
+	machine.PATCH("/api/preferences", s.handleUpdatePreferences)
 
 	// API tokens (cookie-only: a token must not be able to mint more tokens)
-	authed.PATCH("/api/preferences", s.handleUpdatePreferences)
 	authed.PATCH("/api/account/profile", s.handleUpdateNickname)
 	authed.POST("/auth/native/code", s.handleNativeCode)
 	authed.POST("/api/account/otp", s.handleAccountOTP)

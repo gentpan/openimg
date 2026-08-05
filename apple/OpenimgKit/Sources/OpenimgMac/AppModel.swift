@@ -85,6 +85,12 @@ final class AppModel: ObservableObject {
     @Published var checkins: [CheckinRecord] = []
     @Published var statsLoading = false
 
+    // Conversion preferences. Mirrored locally so the controls respond
+    // immediately; the server is the source of truth on next connect.
+    @Published var uploadMode: UploadMode = .optimized
+    @Published var variantFormat: VariantFormat = .webp
+    @Published var maxImageWidth = 0
+
     // Upload
     @Published var uploading = false
     @Published var queue: [UploadItem] = []
@@ -231,6 +237,9 @@ final class AppModel: ObservableObject {
             }
 
             account = me
+            uploadMode = me.uploadMode.flatMap(UploadMode.init) ?? .optimized
+            variantFormat = me.variantFormat.flatMap(VariantFormat.init) ?? .webp
+            maxImageWidth = me.maxImageWidth ?? 0
             quota = try? await c.quota()
             await load(resetPage: true)
             await loadStats()
@@ -438,10 +447,57 @@ final class AppModel: ObservableObject {
     func pickAndUpload() async {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        panel.allowedContentTypes = [.image]
+        // Folders too: a shoot or a screenshot folder is the natural unit, and
+        // making the user open it and select-all first is busywork.
+        panel.canChooseDirectories = true
+        panel.allowedContentTypes = [.image, .folder]
+        panel.message = "选择图片或文件夹"
         guard panel.runModal() == .OK else { return }
-        await upload(panel.urls)
+        await upload(expand(panel.urls))
+    }
+
+    /// Walks folders into the image files inside them.
+    ///
+    /// Sorted by path so a folder arrives in the order the user sees it in
+    /// Finder, and filtered by the tier's own format list rather than by a
+    /// hard-coded set — a group that allows HEIC should be able to send HEIC.
+    func expand(_ urls: [URL]) -> [URL] {
+        var out: [URL] = []
+        let fm = FileManager.default
+        for url in urls {
+            var isDir: ObjCBool = false
+            guard fm.fileExists(atPath: url.path, isDirectory: &isDir) else { continue }
+            if !isDir.boolValue {
+                out.append(url)
+                continue
+            }
+            let walker = fm.enumerator(
+                at: url,
+                includingPropertiesForKeys: [.isRegularFileKey],
+                options: [.skipsHiddenFiles, .skipsPackageDescendants]
+            )
+            while let f = walker?.nextObject() as? URL {
+                guard (try? f.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true,
+                      isUploadable(f) else { continue }
+                out.append(f)
+            }
+        }
+        return out.sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
+    }
+
+    /// Extensions the account's own tier accepts, plus the aliases the server
+    /// folds together — it stores "jpeg" but nobody names a file that way.
+    func isUploadable(_ url: URL) -> Bool {
+        let ext = url.pathExtension.lowercased()
+        guard !ext.isEmpty else { return false }
+        var allowed = Set(quota?.tier.allowedFormats ?? [])
+        if allowed.isEmpty {
+            allowed = ["jpeg", "png", "webp", "gif", "avif", "heic", "bmp", "tiff"]
+        }
+        if allowed.contains("jpeg") { allowed.formUnion(["jpg", "jpe"]) }
+        if allowed.contains("heic") { allowed.insert("heif") }
+        if allowed.contains("tiff") { allowed.insert("tif") }
+        return allowed.contains(ext)
     }
     func upload(_ urls: [URL]) async {
         guard !urls.isEmpty else { return }
@@ -495,6 +551,21 @@ final class AppModel: ObservableObject {
     }
 
     func clearQueue() { queue.removeAll() }
+
+    /// Pushes a preference change. Applied optimistically because these are
+    /// segmented controls — a picker that snaps back while a request is in
+    /// flight feels broken even when nothing is wrong.
+    func savePreferences() async {
+        do {
+            try await client().updatePreferences(
+                uploadMode: uploadMode,
+                variantFormat: variantFormat,
+                maxImageWidth: maxImageWidth
+            )
+        } catch {
+            announce(message(error))
+        }
+    }
 
     /// Rejects what the server would reject anyway.
     ///

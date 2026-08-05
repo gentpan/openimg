@@ -61,7 +61,7 @@ func seedDefaults(db *gorm.DB) {
 		{
 			Name: "trusted", Description: "受信任用户（长期活跃）",
 			MaxFileSize: 50 * mib, DailyUploadCount: 500,
-			AllowedFormats: "jpeg,png,webp,gif,avif,heic",
+			AllowedFormats: "jpeg,png,webp,gif,avif,heic,tiff",
 			MaxWidth:       16000, MaxHeight: 16000,
 			SignupSpace: 5 * gib, CheckinMinSpace: 1 * mib, CheckinMaxSpace: 30 * mib,
 			StreakBonusSpace: 200 * mib, StreakBonusDays: 7,
@@ -71,7 +71,9 @@ func seedDefaults(db *gorm.DB) {
 		{
 			Name: "free", Description: "注册免费用户",
 			MaxFileSize: 20 * mib, DailyUploadCount: 100,
-			AllowedFormats: "jpeg,png,webp,gif,avif",
+			// HEIC because that is what an iPhone shoots by default —
+			// excluding it excludes uploading straight from a photo library.
+			AllowedFormats: "jpeg,png,webp,gif,avif,heic",
 			MaxWidth:       8000, MaxHeight: 8000,
 			SignupSpace: 1 * gib, CheckinMinSpace: 1 * mib, CheckinMaxSpace: 30 * mib,
 			StreakBonusSpace: 30 * mib, StreakBonusDays: 7,

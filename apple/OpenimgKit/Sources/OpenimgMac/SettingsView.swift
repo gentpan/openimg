@@ -10,6 +10,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 14) {
                 accountCard
                 storageCard
+                conversionCard
                 tierCard
                 dangerCard
             }
@@ -76,6 +77,47 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    /// The same three values the upload page offers. Both write to the account,
+    /// so whichever one the user reaches for, the website agrees.
+    private var conversionCard: some View {
+        SettingsCard("图片处理", "wand.and.stars") {
+            VStack(alignment: .leading, spacing: 14) {
+                setting("处理方式", model.uploadMode.detail) {
+                    PillRow(items: UploadMode.allCases, label: \.label, selection: pref($model.uploadMode))
+                }
+                setting("衍生格式", "多存一份现代格式，浏览器优先取它") {
+                    PillRow(items: VariantFormat.allCases, label: \.label, selection: pref($model.variantFormat))
+                }
+                setting("最大宽度", "超过就等比缩小，只影响之后上传的图片") {
+                    PillRow(items: allowedMaxWidths.map(UploadView.Width.init),
+                            label: \.label, selection: widthPref)
+                }
+            }
+        }
+    }
+
+    private func setting<C: View>(_ title: String, _ hint: String,
+                                  @ViewBuilder control: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(title).font(.callout)
+                Spacer()
+                Text(hint).font(.caption2).foregroundStyle(.tertiary)
+            }
+            control()
+        }
+    }
+
+    private func pref<T>(_ b: Binding<T>) -> Binding<T> {
+        Binding(get: { b.wrappedValue },
+                set: { b.wrappedValue = $0; Task { await model.savePreferences() } })
+    }
+
+    private var widthPref: Binding<UploadView.Width> {
+        Binding(get: { UploadView.Width(model.maxImageWidth) },
+                set: { model.maxImageWidth = $0.px; Task { await model.savePreferences() } })
     }
 
     private var tierCard: some View {

@@ -116,6 +116,25 @@ public struct OpenimgClient: Sendable {
         return try decode(Quota.self, data, resp)
     }
 
+    /// Only the fields passed are changed; the server ignores the rest.
+    public func updatePreferences(
+        uploadMode: UploadMode? = nil,
+        variantFormat: VariantFormat? = nil,
+        maxImageWidth: Int? = nil
+    ) async throws {
+        var body: [String: Any] = [:]
+        if let uploadMode { body["upload_mode"] = uploadMode.rawValue }
+        if let variantFormat { body["variant_format"] = variantFormat.rawValue }
+        if let maxImageWidth { body["max_image_width"] = maxImageWidth }
+        guard !body.isEmpty else { return }
+
+        var req = request("PATCH", "api/preferences")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, resp) = try await session.data(for: req)
+        _ = try decode(OK.self, data, resp)
+    }
+
     public func storageSummary() async throws -> StorageSummary {
         let (data, resp) = try await session.data(for: request("GET", "api/storage/summary"))
         return try decode(StorageSummary.self, data, resp)

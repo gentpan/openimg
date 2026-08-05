@@ -75,8 +75,23 @@ final class AppModel: ObservableObject {
 
     // Upload
     @Published var uploading = false
-    @Published var uploadProgress = ""
+    @Published var queue: [UploadItem] = []
     @Published var dropping = false
+
+    /// Overall progress across the batch, weighted by file size — a 40 KB icon
+    /// finishing should not move the bar as far as a 20 MB photo.
+    ///
+    /// Falls back to counting files when no size is known. Reading a file size
+    /// can fail, and a weighted average over all-zero weights is 0/0: the bar
+    /// would sit at empty with half the batch already uploaded.
+    var batchProgress: Double {
+        guard !queue.isEmpty else { return 0 }
+        let total = queue.reduce(0.0) { $0 + Double($1.size) }
+        if total <= 0 {
+            return queue.reduce(0.0) { $0 + $1.fraction } / Double(queue.count)
+        }
+        return queue.reduce(0.0) { $0 + Double($1.size) * $1.fraction } / total
+    }
 
     /// Every size divides evenly by the five-column grid, so a full page never
     /// ends in a short row with holes where the missing cards would be — the
@@ -381,37 +396,58 @@ final class AppModel: ObservableObject {
         guard panel.runModal() == .OK else { return }
         await upload(panel.urls)
     }
-
     func upload(_ urls: [URL]) async {
         guard !urls.isEmpty else { return }
         uploading = true
-        defer { uploading = false; uploadProgress = "" }
+        defer { uploading = false }
+
+        // The whole batch goes on screen up front, so the user can see what was
+        // accepted before anything starts moving.
+        queue = urls.map { UploadItem(url: $0) }
 
         var done = 0
         var lastLink = ""
-        for (i, url) in urls.enumerated() {
-            uploadProgress = "\(i + 1)/\(urls.count) \(url.lastPathComponent)"
+        for i in queue.indices {
+            let url = queue[i].url
             if let reason = rejectLocally(url) {
-                announce("\(url.lastPathComponent)：\(reason)")
+                queue[i].state = .failed(reason)
                 continue
             }
+            queue[i].state = .uploading
             do {
-                let res = try await client().upload(fileURL: url)
+                let id = queue[i].id
+                let res = try await client().upload(fileURL: url) { [weak self] p in
+                    Task { @MainActor in
+                        guard let self, let k = self.queue.firstIndex(where: { $0.id == id })
+                        else { return }
+                        self.queue[k].progress = p
+                    }
+                }
+                queue[i].state = .done
+                queue[i].progress = 1
+                queue[i].deduplicated = res.deduplicated
                 lastLink = linkFormat.render(res.image)
                 done += 1
             } catch {
+                queue[i].state = .failed(message(error))
+                // Quota, daily cap and an invalid token all doom the rest of
+                // the batch, so mark them rather than retrying into the wall.
+                for j in queue.indices where j > i && queue[j].state == .queued {
+                    queue[j].state = .failed("已取消")
+                }
                 announce(message(error))
-                break // 配额、每日上限、令牌失效——后续文件必然同样失败
+                break
             }
         }
         if done > 0 {
             copy(lastLink)
-            status = done == 1 ? "已上传，链接已复制" : "已上传 \(done) 张，最后一条链接已复制"
+            announce(done == 1 ? "已上传，链接已复制" : "已上传 \(done) 张，最后一条链接已复制")
             quota = try? await client().quota()
             await load(resetPage: true)
-            section = .gallery
         }
     }
+
+    func clearQueue() { queue.removeAll() }
 
     /// Rejects what the server would reject anyway.
     ///
@@ -461,6 +497,9 @@ final class AppModel: ObservableObject {
     static func bytes(_ n: Int64) -> String {
         let f = ByteCountFormatter()
         f.countStyle = .binary
+        // Otherwise a zero-byte file reads as "Zero KB", which is both wrong
+        // and the sort of string that makes a UI look unfinished.
+        f.allowsNonnumericFormatting = false
         return f.string(fromByteCount: n)
     }
     func bytes(_ n: Int64) -> String { Self.bytes(n) }

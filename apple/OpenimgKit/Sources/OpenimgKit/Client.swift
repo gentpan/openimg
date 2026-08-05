@@ -200,7 +200,11 @@ public struct OpenimgClient: Sendable {
     /// background URLSession accepts, and a menu bar app that drops its uploads
     /// when the user closes the lid is not much of a menu bar app. The multipart
     /// body is assembled on disk for the same reason.
-    public func upload(fileURL: URL, filename: String? = nil) async throws -> UploadResponse {
+    public func upload(
+        fileURL: URL,
+        filename: String? = nil,
+        onProgress: (@Sendable (Double) -> Void)? = nil
+    ) async throws -> UploadResponse {
         let boundary = "openimg.\(UUID().uuidString)"
         let body = try MultipartBody.write(
             fileURL: fileURL,
@@ -212,7 +216,13 @@ public struct OpenimgClient: Sendable {
 
         var req = request("POST", "api/upload")
         req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        let (data, resp) = try await session.upload(for: req, fromFile: body)
+        // A delegate, because `upload(for:fromFile:)` reports nothing until it
+        // finishes. On a 20 MB file over a slow link that is a UI frozen on
+        // "uploading…" for a minute with no way to tell it apart from a hang.
+        let (data, resp) = try await session.upload(
+            for: req, fromFile: body,
+            delegate: onProgress.map(UploadProgressDelegate.init)
+        )
         return try decode(UploadResponse.self, data, resp)
     }
 
@@ -234,5 +244,22 @@ extension JSONDecoder.DateDecodingStrategy {
             in: try decoder.singleValueContainer(),
             debugDescription: "无法解析时间：\(raw)"
         )
+    }
+}
+
+
+/// Reports upload progress. Separate from the client because URLSession keeps a
+/// strong reference to a task delegate for the life of the task, and hanging
+/// that off a value type would be a retain cycle waiting to happen.
+final class UploadProgressDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    private let onProgress: @Sendable (Double) -> Void
+    init(_ onProgress: @escaping @Sendable (Double) -> Void) { self.onProgress = onProgress }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask,
+                    didSendBodyData bytesSent: Int64,
+                    totalBytesSent: Int64,
+                    totalBytesExpectedToSend: Int64) {
+        guard totalBytesExpectedToSend > 0 else { return }
+        onProgress(Double(totalBytesSent) / Double(totalBytesExpectedToSend))
     }
 }

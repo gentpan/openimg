@@ -45,7 +45,7 @@ struct RootView: View {
         ZStack(alignment: .bottom) {
             if model.connected {
                 HStack(spacing: 0) {
-                    Sidebar(model: model).frame(width: 208)
+                    Sidebar(model: model).frame(width: 224)
                     content
                 }
             } else {
@@ -223,7 +223,7 @@ struct Sidebar: View {
             .padding(.horizontal, 18)
             .padding(.bottom, 18)
 
-            VStack(spacing: 2) {
+            VStack(spacing: 4) {
                 ForEach(Section_.allCases) { s in
                     SidebarRow(section: s, active: model.section == s) { model.section = s }
                 }
@@ -279,18 +279,18 @@ private struct SidebarRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 9) {
+            HStack(spacing: 11) {
                 Image(systemName: section.icon)
-                    .font(.system(size: 13))
-                    .frame(width: 17)
-                Text(section.label).font(.callout)
+                    .font(.system(size: 16, weight: .medium))
+                    .frame(width: 22)
+                Text(section.label).font(.system(size: 15))
                 Spacer(minLength: 0)
             }
             .foregroundStyle(active ? .white : .secondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
             .background {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(active ? AnyShapeStyle(Color.brand.opacity(0.85))
                                  : AnyShapeStyle(Color.white.opacity(hovering ? 0.07 : 0)))
             }

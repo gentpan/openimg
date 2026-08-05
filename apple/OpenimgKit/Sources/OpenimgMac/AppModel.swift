@@ -310,6 +310,17 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// What the refresh control and ⌘R do, which depends on the page: the
+    /// gallery reloads its page, the overview reloads its numbers.
+    func refreshCurrent() async {
+        switch section {
+        case .gallery: await load()
+        case .overview: await loadStats()
+        case .upload, .settings:
+            quota = try? await client().quota()
+        }
+    }
+
     func go(to newPage: Int) async {
         page = min(max(0, newPage), pageCount - 1)
         await load()

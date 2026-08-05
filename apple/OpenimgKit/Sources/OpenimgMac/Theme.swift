@@ -1,88 +1,111 @@
 import SwiftUI
 
 extension Color {
-    /// The brand purple, same value as the site's violet anchors. Declared once
-    /// so the app reads as the same product as the website rather than as
-    /// generic system accent with a different icon.
+    /// The brand purple, same value as the site's violet anchors.
     static let brand = Color(red: 0x79 / 255, green: 0x50 / 255, blue: 0xF2 / 255)
 }
 
-// MARK: - Glass
+// MARK: - Surfaces
+//
+// The app is dark regardless of the system setting, and that is the whole
+// premise rather than a preference. Translucent chrome only reads as glass over
+// something darker than itself; on a light desktop the same materials stack up
+// into a white wall, which is exactly what the first attempt produced. Every
+// value below assumes a dark base, so following the system appearance would
+// mean maintaining two sets of them.
 
-/// Liquid Glass where the OS provides it, a material where it does not.
-///
-/// `glassEffect` arrived in macOS 26. Raising the deployment target to match
-/// would be simpler than these availability checks and would also mean the app
-/// refuses to launch on Sonoma and Sequoia, which is most of the installed
-/// base. `.regularMaterial` gives the same read — translucent chrome with the
-/// content behind showing through — without the specular edge.
 extension View {
-    /// Chrome that floats over content: toolbars, status bars, popovers.
-    @ViewBuilder
-    func glassChrome<S: Shape>(_ shape: S) -> some View {
-        if #available(macOS 26, *) {
-            self.glassEffect(.regular, in: shape)
-        } else {
-            self.background(.regularMaterial, in: shape)
-                .overlay(shape.stroke(.white.opacity(0.12), lineWidth: 0.5))
+    /// The window's own backdrop. Dark enough that the layers above it have
+    /// something to separate from, translucent enough to pick up the desktop.
+    func windowSurface() -> some View {
+        background {
+            ZStack {
+                Rectangle().fill(.ultraThinMaterial)
+                Rectangle().fill(Color.black.opacity(0.38))
+            }
+            .ignoresSafeArea()
         }
     }
 
-    /// Panels that hold content: dashboard cards, drop zones.
+    /// Floating chrome: toolbar clusters, pill rows, the toast.
     ///
-    /// Deliberately quieter than `glassChrome`. A card is a container, not a
-    /// floating control, and giving every panel a specular rim turns a page
-    /// into a pile of glass slabs with nothing to say which one matters.
-    func glassCard(cornerRadius r: CGFloat = 14) -> some View {
-        let shape = RoundedRectangle(cornerRadius: r, style: .continuous)
+    /// A visible top edge and a darker fill, because on a dark base a shadow
+    /// alone does not separate anything — the lift has to come from the rim
+    /// catching light, which is what the reference does.
+    func chromeSurface<S: InsettableShape>(_ shape: S, elevated: Bool = true) -> some View {
+        let tint: Color = .black.opacity(elevated ? 0.28 : 0.16)
         return self
-            .background(shape.fill(.background.opacity(0.55)))
+            .background(shape.fill(tint))
             .background(shape.fill(.ultraThinMaterial))
-            .overlay(shape.strokeBorder(.white.opacity(0.10), lineWidth: 0.8))
-            .overlay(shape.strokeBorder(.primary.opacity(0.06), lineWidth: 0.8))
+            .overlay(shape.strokeBorder(Color.white.opacity(0.10), lineWidth: 0.8))
+    }
+
+    /// Panels that hold content: dashboard cards, drop zones, the login card.
+    /// Quieter than chrome — a container should not compete with the controls
+    /// floating over it.
+    func panelSurface(_ radius: CGFloat = 14) -> some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        return self
+            .background(shape.fill(Color.white.opacity(0.045)))
+            .overlay(shape.strokeBorder(Color.white.opacity(0.08), lineWidth: 0.8))
+    }
+
+    /// The reading area to the right of the sidebar, one step lighter so the
+    /// two columns read as distinct planes without a divider between them.
+    func contentSurface() -> some View {
+        background(Color.white.opacity(0.03))
     }
 }
 
-// MARK: - Controls
+// MARK: - Pills
 
-/// The capsule filter row from the reference: one segment tinted, the rest
-/// transparent until hovered.
-struct PillPicker<T: Hashable & Identifiable>: View {
+/// The capsule filter row from the reference: the active segment carries a
+/// solid fill, the rest stay transparent until hovered.
+struct PillRow<T: Hashable & Identifiable>: View {
     let items: [T]
     let label: (T) -> String
+    var icon: ((T) -> String)? = nil
     @Binding var selection: T
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 3) {
             ForEach(items) { item in
-                Pill(text: label(item), active: item == selection) { selection = item }
+                Pill(
+                    text: label(item),
+                    icon: icon?(item),
+                    active: item == selection
+                ) { selection = item }
             }
         }
         .padding(3)
-        .glassChrome(Capsule())
+        .chromeSurface(Capsule(), elevated: false)
     }
 }
 
 struct Pill: View {
     let text: String
+    var icon: String? = nil
     let active: Bool
     let action: () -> Void
     @State private var hovering = false
 
     var body: some View {
         Button(action: action) {
-            Text(text)
-                .font(.callout.weight(active ? .medium : .regular))
-                .foregroundStyle(active ? Color.brand : .secondary)
-                .padding(.horizontal, 13)
-                .padding(.vertical, 5)
-                .background {
-                    Capsule().fill(
-                        active ? Color.brand.opacity(0.16)
-                               : Color.primary.opacity(hovering ? 0.06 : 0)
-                    )
-                }
-                .contentShape(Capsule())
+            HStack(spacing: 5) {
+                if let icon { Image(systemName: icon).font(.system(size: 10.5)) }
+                Text(text)
+            }
+            .font(.callout.weight(active ? .medium : .regular))
+            .foregroundStyle(active ? .white : .secondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
+            .background {
+                Capsule().fill(
+                    active ? AnyShapeStyle(Color.brand)
+                           : AnyShapeStyle(Color.white.opacity(hovering ? 0.08 : 0))
+                )
+            }
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
@@ -91,19 +114,55 @@ struct Pill: View {
     }
 }
 
-/// A card that lifts slightly under the pointer.
-///
-/// Hover feedback is what separates a grid of pictures from a grid of buttons:
-/// without it there is nothing to say a card is clickable, and macOS users read
-/// static tiles as decoration. Kept to 1.02 and a soft shadow — anything larger
-/// makes a dense grid feel like it is breathing.
-struct HoverLift: ViewModifier {
+/// A toolbar button shaped like the reference's: a square-ish glass tile that
+/// groups with its neighbours rather than a bare system button.
+struct ToolTile: View {
+    let icon: String
+    var help: String = ""
+    var disabled = false
+    let action: () -> Void
     @State private var hovering = false
 
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(disabled ? .tertiary : .secondary)
+                .frame(width: 30, height: 26)
+                .background {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .fill(.white.opacity(hovering && !disabled ? 0.10 : 0))
+                }
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+        .help(help)
+        .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.1), value: hovering)
+    }
+}
+
+/// Wraps a run of tiles into one floating cluster.
+struct ToolCluster<Content: View>: View {
+    @ViewBuilder let content: Content
+    var body: some View {
+        HStack(spacing: 1) { content }
+            .padding(3)
+            .chromeSurface(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
+// MARK: - Hover
+
+/// A card that lifts slightly under the pointer. Without it a grid of pictures
+/// reads as decoration rather than as something clickable.
+struct HoverLift: ViewModifier {
+    @State private var hovering = false
     func body(content: Content) -> some View {
         content
             .scaleEffect(hovering ? 1.02 : 1)
-            .shadow(color: .black.opacity(hovering ? 0.20 : 0), radius: hovering ? 9 : 0, y: 3)
+            .shadow(color: .black.opacity(hovering ? 0.35 : 0), radius: hovering ? 10 : 0, y: 4)
             .animation(.easeOut(duration: 0.14), value: hovering)
             .onHover { hovering = $0 }
     }
@@ -113,28 +172,11 @@ extension View {
     func hoverLift() -> some View { modifier(HoverLift()) }
 }
 
-extension View {
-    /// Lets the desktop show through the window chrome, which is what makes
-    /// the glass read as glass rather than as grey. Landed in macOS 15; before
-    /// that a window is simply opaque, and everything else still works.
-    @ViewBuilder
-    func windowGlass() -> some View {
-        if #available(macOS 15, *) {
-            self.containerBackground(.thinMaterial, for: .window)
-        } else {
-            self
-        }
-    }
-}
-
 // MARK: - Brand typeface
 
-/// Ubuntu, bundled with the app.
-///
-/// The site sets its wordmark in Ubuntu, and a client that renders the same
-/// name in the system face reads as a different product. Ubuntu covers Latin
-/// only, so it is applied to the wordmark rather than to whole strings — CJK
-/// falling through mid-sentence would put two typefaces in one line.
+/// Ubuntu, bundled with the app. The site sets its wordmark in Ubuntu, and a
+/// client that renders the same name in the system face reads as a different
+/// product. Latin only, so it goes on the wordmark rather than whole strings.
 enum BrandFont {
     static func register() {
         for name in ["Ubuntu-Regular", "Ubuntu-Medium", "Ubuntu-Bold"] {
@@ -145,17 +187,14 @@ enum BrandFont {
 }
 
 extension Font {
-    /// Falls back to a rounded system face when the bundle is missing the
-    /// font — a build run straight from SwiftPM has no Resources directory.
     static func brand(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         let face = switch weight {
         case .bold, .heavy, .black: "Ubuntu-Bold"
         case .medium, .semibold: "Ubuntu-Medium"
         default: "Ubuntu"
         }
-        if NSFont(name: face, size: size) != nil {
-            return .custom(face, size: size)
-        }
-        return .system(size: size, weight: weight, design: .rounded)
+        return NSFont(name: face, size: size) != nil
+            ? .custom(face, size: size)
+            : .system(size: size, weight: weight, design: .rounded)
     }
 }

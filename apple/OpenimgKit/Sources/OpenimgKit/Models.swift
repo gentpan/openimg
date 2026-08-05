@@ -141,8 +141,10 @@ public struct Account: Codable, Sendable {
 
 /// The link shapes the web UI offers, so a menu bar app can put the same set
 /// behind one picker instead of inventing its own formatting.
-public enum LinkFormat: String, CaseIterable, Sendable {
+public enum LinkFormat: String, CaseIterable, Sendable, Identifiable {
     case url, markdown, html, bbcode
+
+    public var id: String { rawValue }
 
     public var label: String {
         switch self {

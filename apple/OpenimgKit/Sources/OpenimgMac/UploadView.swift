@@ -6,69 +6,97 @@ struct UploadView: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        VStack(spacing: 16) {
-            Spacer()
-
-            RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6]))
-                .foregroundStyle(model.dropping ? Color.accentColor : Color.secondary.opacity(0.4))
-                .frame(maxWidth: 420, maxHeight: 200)
-                .overlay {
-                    VStack(spacing: 6) {
-                        if model.uploading {
-                            ProgressView()
-                            Text(model.uploadProgress).font(.caption).foregroundStyle(.secondary)
-                        } else {
-                            Image(systemName: "arrow.up.doc")
-                                .font(.system(size: 30))
-                                .foregroundStyle(.tertiary)
-                            Text("把图片拖到这里").font(.title3)
-                            Text("或点击选择文件").font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    guard !model.uploading else { return }
-                    Task { await model.pickAndUpload() }
-                }
-                .onDrop(of: [.fileURL], isTargeted: $model.dropping) { providers in
-                    Task { await model.upload(await urls(from: providers)) }
-                    return true
-                }
-
-            HStack(spacing: 8) {
-                Text("上传后复制").font(.caption).foregroundStyle(.secondary)
-                Picker("", selection: $model.linkFormat) {
-                    ForEach(LinkFormat.allCases, id: \.self) { Text($0.label).tag($0) }
-                }
-                .labelsHidden()
-                .pickerStyle(.segmented)
-                .frame(width: 300)
-            }
-
-            // Shown before the upload rather than after the failure: unlike the
-            // per-minute rate limit, the daily count does not clear until
-            // tomorrow, so hitting it is not something to retry through.
-            if let t = model.quota?.tier {
-                VStack(spacing: 3) {
-                    if t.dailyUploadCount > 0, let used = model.quota?.uploadsToday {
-                        Text("今日还可上传 \(max(0, t.dailyUploadCount - used)) 张")
-                    }
-                    Text("单文件上限 \(model.bytes(t.maxFileSize))　支持 \(t.allowedFormats.joined(separator: " / "))")
-                }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            }
-
-            Spacer()
+        VStack(spacing: 18) {
+            Spacer(minLength: 0)
+            dropZone
+            formatRow
+            limits
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(24)
+        .padding(.horizontal, 28)
+        .padding(.bottom, 20)
     }
 
-    /// NSItemProvider hands back a file URL as its `Data` representation, not
-    /// as a URL — decoding it any other way silently yields nil for every drop.
+    private var dropZone: some View {
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(model.dropping ? Color.brand.opacity(0.12) : .white.opacity(0.035))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(
+                        model.dropping ? Color.brand : .white.opacity(0.14),
+                        style: StrokeStyle(lineWidth: model.dropping ? 2 : 1.2, dash: [7, 5])
+                    )
+            )
+            .frame(maxWidth: 430, maxHeight: 210)
+            .overlay { content }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                guard !model.uploading else { return }
+                Task { await model.pickAndUpload() }
+            }
+            .onDrop(of: [.fileURL], isTargeted: $model.dropping) { providers in
+                Task { await model.upload(await urls(from: providers)) }
+                return true
+            }
+            .animation(.easeOut(duration: 0.15), value: model.dropping)
+    }
+
+    private var content: some View {
+        VStack(spacing: 10) {
+            if model.uploading {
+                ProgressView().controlSize(.large)
+                Text(model.uploadProgress)
+                    .font(.callout).foregroundStyle(.secondary)
+            } else {
+                Image(systemName: "arrow.up.doc")
+                    .font(.system(size: 30, weight: .light))
+                    .foregroundStyle(Color.brand)
+                    .frame(width: 66, height: 66)
+                    .background(Circle().fill(Color.brand.opacity(0.12)))
+                Text("把图片拖到这里").font(.title3.weight(.medium))
+                Text("或点击选择文件").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var formatRow: some View {
+        VStack(spacing: 7) {
+            Text("上传后复制").font(.caption).foregroundStyle(.secondary)
+            PillRow(items: LinkFormat.allCases, label: \.label, selection: $model.linkFormat)
+        }
+    }
+
+    @ViewBuilder
+    private var limits: some View {
+        if let t = model.quota?.tier {
+            HStack(spacing: 16) {
+                if t.dailyUploadCount > 0, let used = model.quota?.uploadsToday {
+                    let left = max(0, t.dailyUploadCount - used)
+                    // Shown before the upload, not after the failure: unlike the
+                    // per-minute limit, the daily count does not clear until
+                    // tomorrow, so it is not something to retry through.
+                    stat("今日剩余", "\(left) 张", warn: left <= 5)
+                }
+                stat("单文件上限", model.bytes(t.maxFileSize))
+                stat("支持格式", t.allowedFormats.prefix(4).joined(separator: " · ").uppercased())
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+            .panelSurface(12)
+        }
+    }
+
+    private func stat(_ k: String, _ v: String, warn: Bool = false) -> some View {
+        VStack(spacing: 2) {
+            Text(k).font(.caption2).foregroundStyle(.tertiary)
+            Text(v).font(.callout.weight(.medium))
+                .foregroundStyle(warn ? .orange : .primary)
+        }
+    }
+
+    /// NSItemProvider returns a file URL as its Data representation; decoding it
+    /// any other way silently yields nil for every drop.
     private func urls(from providers: [NSItemProvider]) async -> [URL] {
         var out: [URL] = []
         for p in providers {

@@ -178,7 +178,7 @@ struct OverviewView: View {
                     Button(model.checkedInToday ? "今天已签到" : "签到") {
                         Task { await model.checkin() }
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(BrandButton())
                     .disabled(model.checkedInToday || model.busy)
                 }
                 HeatCalendar(records: model.checkins)
@@ -258,7 +258,7 @@ private struct Card<Content: View>: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassCard()
+        .panelSurface()
     }
 }
 

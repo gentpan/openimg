@@ -4,14 +4,12 @@ import OpenimgKit
 
 struct GalleryView: View {
     @ObservedObject var model: AppModel
-
-    // Adaptive rather than a fixed five columns: this window is resizable, and
-    // stretching five cards across a widened window makes the thumbnails grow
-    // past the size they were generated at.
-    private let columns = [GridItem(.adaptive(minimum: 150, maximum: 200), spacing: 14)]
+    private let columns = [GridItem(.adaptive(minimum: 158, maximum: 210), spacing: 14)]
 
     var body: some View {
-        Group {
+        VStack(spacing: 0) {
+            if !model.images.isEmpty { filters }
+
             if model.images.isEmpty {
                 EmptyState(model: model)
             } else {
@@ -19,40 +17,41 @@ struct GalleryView: View {
                     LazyVGrid(columns: columns, spacing: 14) {
                         ForEach(model.images) { Card(model: model, img: $0) }
                     }
-                    .padding(18)
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 18)
                 }
             }
+            statusBar
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) { statusBar }
         .inspector(isPresented: Binding(
             get: { model.detail != nil },
             set: { if !$0 { model.detail = nil } }
         )) {
             if let img = model.detail {
                 DetailView(model: model, img: img)
-                    .inspectorColumnWidth(min: 270, ideal: 310, max: 420)
+                    .inspectorColumnWidth(min: 280, ideal: 320, max: 420)
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: model.selection.isEmpty)
     }
 
-    // MARK: - Status bar
-
-    private var statusBar: some View {
+    /// The capsule row from the reference. It doubles as the selection bar:
+    /// once something is picked the same strip carries the actions, so the
+    /// layout does not jump when a checkbox is ticked.
+    private var filters: some View {
         HStack(spacing: 10) {
             if model.selection.isEmpty {
-                Text("\(model.total) 张")
-                if let q = model.quota {
-                    Text("·").foregroundStyle(.quaternary)
-                    Text("已用 \(model.bytes(q.usedBytes))")
-                }
+                PillRow(items: SortKey.allCases, label: \.label,
+                        icon: { $0.icon }, selection: sortBinding)
             } else {
-                Text("已选 \(model.selection.count) 张")
-                    .foregroundStyle(Color.brand)
-                Button("删除", role: .destructive) { Task { await model.deleteSelected() } }
-                    .controlSize(.small)
-                Button("取消") { model.selection = [] }
-                    .controlSize(.small)
+                HStack(spacing: 8) {
+                    Text("已选 \(model.selection.count) 张")
+                        .font(.callout).foregroundStyle(.white)
+                    Button("删除") { Task { await model.deleteSelected() } }
+                        .buttonStyle(DangerButton())
+                    Button("取消") { model.selection = [] }
+                        .buttonStyle(QuietButton())
+                }
+                .padding(.leading, 4)
             }
 
             Spacer()
@@ -60,30 +59,47 @@ struct GalleryView: View {
             Button(model.selection.count == model.images.count ? "取消全选" : "全选本页") {
                 model.toggleAll()
             }
-            .controlSize(.small)
-            .disabled(model.images.isEmpty)
+            .buttonStyle(QuietButton())
+        }
+        .padding(.horizontal, 18)
+        .padding(.bottom, 12)
+        .animation(.easeInOut(duration: 0.16), value: model.selection.isEmpty)
+    }
 
+    private var sortBinding: Binding<SortKey> {
+        Binding(get: { model.sort },
+                set: { model.sort = $0; Task { await model.load(resetPage: true) } })
+    }
+
+    private var statusBar: some View {
+        HStack(spacing: 8) {
+            Text("\(model.total) 张")
+            if let q = model.quota {
+                Text("·").foregroundStyle(.quaternary)
+                Text("已用 \(model.bytes(q.usedBytes))")
+            }
+            Spacer()
             if model.pageCount > 1 {
-                Divider().frame(height: 14)
-                Button { Task { await model.go(to: model.page - 1) } } label: {
-                    Image(systemName: "chevron.left")
+                ToolCluster {
+                    ToolTile(icon: "chevron.left", help: "上一页",
+                             disabled: model.page == 0 || model.busy) {
+                        Task { await model.go(to: model.page - 1) }
+                    }
+                    Text("\(model.page + 1) / \(model.pageCount)")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(minWidth: 46)
+                    ToolTile(icon: "chevron.right", help: "下一页",
+                             disabled: model.page >= model.pageCount - 1 || model.busy) {
+                        Task { await model.go(to: model.page + 1) }
+                    }
                 }
-                .disabled(model.page == 0 || model.busy)
-                Text("\(model.page + 1) / \(model.pageCount)")
-                    .monospacedDigit()
-                Button { Task { await model.go(to: model.page + 1) } } label: {
-                    Image(systemName: "chevron.right")
-                }
-                .disabled(model.page >= model.pageCount - 1 || model.busy)
             }
         }
-        .buttonStyle(.borderless)
         .font(.caption)
         .foregroundStyle(.secondary)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .glassChrome(Rectangle())
-        .overlay(alignment: .top) { Divider() }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 10)
     }
 }
 
@@ -98,44 +114,45 @@ private struct Card: View {
     private var active: Bool { model.detail?.id == img.id }
 
     var body: some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 0) {
             ZStack(alignment: .topLeading) {
                 Thumbnail(url: img.thumbURL, client: try? model.client())
-                    .frame(height: 120)
+                    .frame(height: 118)
                     .frame(maxWidth: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: 9))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 9)
-                            .strokeBorder(
-                                selected || active ? Color.brand : Color.primary.opacity(0.10),
-                                lineWidth: selected || active ? 2 : 1
-                            )
-                    }
+                    .clipped()
 
-                // The checkbox only appears on hover or when something is
-                // already selected. A permanent one on every tile turns a
-                // gallery into a form.
                 if hovering || selected || !model.selection.isEmpty {
-                    Button {
-                        model.toggle(img.id)
-                    } label: {
+                    Button { model.toggle(img.id) } label: {
                         Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                             .font(.system(size: 16))
                             .symbolRenderingMode(.palette)
-                            .foregroundStyle(.white, selected ? Color.brand : .black.opacity(0.35))
+                            .foregroundStyle(.white, selected ? Color.brand : .black.opacity(0.45))
                     }
                     .buttonStyle(.plain)
-                    .padding(6)
+                    .padding(7)
                     .transition(.opacity)
                 }
             }
 
-            Text(img.origName)
-                .font(.caption2)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .foregroundStyle(active ? Color.brand : .secondary)
+            HStack(spacing: 5) {
+                Text(img.origName)
+                    .font(.caption2).lineLimit(1).truncationMode(.middle)
+                Spacer(minLength: 0)
+                Text(img.ext.uppercased())
+                    .font(.system(size: 8.5, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 4).padding(.vertical, 1.5)
+                    .background(Capsule().fill(.white.opacity(0.10)))
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 7)
         }
+        .panelSurface(11)
+        .overlay(
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .strokeBorder(selected || active ? Color.brand : .clear, lineWidth: 1.6)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
         .animation(.easeOut(duration: 0.12), value: hovering)
         .animation(.easeOut(duration: 0.12), value: selected)
         .hoverLift()
@@ -144,7 +161,9 @@ private struct Card: View {
         .onTapGesture { model.detail = active ? nil : img }
         .contextMenu {
             ForEach(LinkFormat.allCases, id: \.self) { f in
-                Button("复制\(f.label)") { model.copy(f.render(img)); model.announce("已复制\(f.label)") }
+                Button("复制\(f.label)") {
+                    model.copy(f.render(img)); model.announce("已复制\(f.label)")
+                }
             }
             Divider()
             Button("在浏览器打开") {
@@ -162,15 +181,9 @@ private struct EmptyState: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             if model.busy {
                 ProgressView()
-            } else if !model.connected {
-                icon("link.badge.plus")
-                Text("还没有连接").font(.title3.weight(.medium))
-                Text("用邮箱和密码登录，之后每次打开都会自动登录").foregroundStyle(.secondary)
-                Button("去登录") { model.section = .settings }
-                    .buttonStyle(.borderedProminent)
             } else if !model.search.isEmpty {
                 icon("magnifyingglass")
                 Text("没有匹配「\(model.search)」的图片").font(.title3.weight(.medium))
@@ -178,12 +191,14 @@ private struct EmptyState: View {
                     model.search = ""
                     Task { await model.load(resetPage: true) }
                 }
+                .buttonStyle(QuietButton())
             } else {
                 icon("photo.on.rectangle.angled")
                 Text("图库还是空的").font(.title3.weight(.medium))
-                Text("拖一张图片进来，或按 ⌘U 选择文件").foregroundStyle(.secondary)
+                Text("拖一张图片进来，或按 ⌘U 选择文件")
+                    .font(.callout).foregroundStyle(.secondary)
                 Button("上传第一张") { model.section = .upload }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(BrandButton())
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -191,8 +206,9 @@ private struct EmptyState: View {
 
     private func icon(_ name: String) -> some View {
         Image(systemName: name)
-            .font(.system(size: 42, weight: .light))
-            .foregroundStyle(Color.brand.opacity(0.5))
-            .padding(.bottom, 2)
+            .font(.system(size: 40, weight: .light))
+            .foregroundStyle(Color.brand.opacity(0.65))
+            .frame(width: 84, height: 84)
+            .background(Circle().fill(Color.brand.opacity(0.10)))
     }
 }

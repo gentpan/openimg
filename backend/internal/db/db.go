@@ -65,7 +65,7 @@ func seedDefaults(db *gorm.DB) {
 			MaxWidth:       16000, MaxHeight: 16000,
 			SignupSpace: 5 * gib, CheckinMinSpace: 1 * mib, CheckinMaxSpace: 30 * mib,
 			StreakBonusSpace: 200 * mib, StreakBonusDays: 7,
-			ReferralSpace: 500 * mib, MaxTotalSpace: 100 * gib,
+			ReferralSpace: 500 * mib, MaxTotalSpace: 0, // uncapped
 			AllowBYOS: true, MaxProfiles: 10,
 		},
 		{
@@ -75,7 +75,7 @@ func seedDefaults(db *gorm.DB) {
 			MaxWidth:       8000, MaxHeight: 8000,
 			SignupSpace: 1 * gib, CheckinMinSpace: 1 * mib, CheckinMaxSpace: 30 * mib,
 			StreakBonusSpace: 30 * mib, StreakBonusDays: 7,
-			ReferralSpace: 200 * mib, MaxTotalSpace: 10 * gib,
+			ReferralSpace: 200 * mib, MaxTotalSpace: 0, // uncapped
 			AllowBYOS: true, MaxProfiles: 3,
 		},
 	}

@@ -10,6 +10,11 @@ import OpenimgKit
 /// never what you want.
 @MainActor
 final class AppModel: ObservableObject {
+    /// Shared because the AppKit window built in the app delegate and the
+    /// MenuBarExtra scene have to show the same state, and there is no
+    /// environment to thread it through from a delegate.
+    static let shared = AppModel()
+
     @Published var server: String = UserDefaults.standard.string(forKey: "server") ?? "https://openimg.io"
     @Published var token: String = ""
     @Published var account: Account?
@@ -47,15 +52,26 @@ final class AppModel: ObservableObject {
         do {
             let c = try client()
             let me = try await c.me()
-            // Only persist once the server has confirmed the token works.
-            // Saving on entry leaves a bad credential in the keychain that the
-            // next launch silently loads and fails with.
-            try store.save(token, server: server)
+
+            // Persist only after the server confirms the token, so a typo never
+            // lands in the keychain for the next launch to load and fail with.
+            //
+            // And persistence is not part of connecting. The token is already
+            // known good here; letting a keychain problem throw would report
+            // "cannot connect" for a session that works perfectly, which is
+            // exactly what -34018 did on an ad-hoc build.
+            var warning = ""
+            do {
+                try store.save(token, server: server)
+            } catch {
+                warning = "（令牌未能保存，下次启动需重新填写）"
+            }
             UserDefaults.standard.set(server, forKey: "server")
+
             account = me
             quota = try? await c.quota()
             recent = (try? await c.images(limit: 12).images) ?? []
-            status = "已连接 \(me.email)"
+            status = "已连接 \(me.email)\(warning)"
         } catch {
             account = nil
             status = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription

@@ -4,13 +4,60 @@ import OpenimgKit
 
 @main
 struct OpenimgMacApp: App {
-    @StateObject private var model = AppModel()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
 
     var body: some Scene {
         MenuBarExtra("Openimg", systemImage: "photo.on.rectangle.angled") {
-            MenuView(model: model)
+            MenuView(model: AppModel.shared)
         }
         .menuBarExtraStyle(.window) // .menu cannot host a drop target or a text field
+    }
+}
+
+/// Opens a real window on launch, and again whenever the app is re-opened.
+///
+/// A status item alone is not a findable UI. On a notched MacBook the menu bar
+/// silently drops whatever does not fit behind the notch — no overflow arrow,
+/// no indication that anything is missing — and with a second display attached
+/// the item may not even be on the screen being looked at. The app is running
+/// correctly and the user has no way to reach it, which is indistinguishable
+/// from it being broken.
+///
+/// So the window is the primary surface and the menu bar item is the shortcut,
+/// not the other way around. Re-running the app brings the window back rather
+/// than starting a second copy, which is also what double-clicking it in Finder
+/// should do.
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var window: NSWindow?
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        showWindow()
+    }
+
+    /// Fires when the app is launched while already running, or its Dock icon
+    /// is clicked. Without this a second `open` would appear to do nothing.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showWindow()
+        return true
+    }
+
+    @MainActor
+    private func showWindow() {
+        if let w = window {
+            w.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        let host = NSHostingController(rootView: MenuView(model: AppModel.shared))
+        let w = NSWindow(contentViewController: host)
+        w.title = "Openimg"
+        w.styleMask = [.titled, .closable, .miniaturizable]
+        w.isReleasedWhenClosed = false // reopened later, so it must survive a close
+        w.center()
+        w.makeKeyAndOrderFront(nil)
+        // LSUIElement apps do not come forward on their own.
+        NSApp.activate(ignoringOtherApps: true)
+        window = w
     }
 }
 

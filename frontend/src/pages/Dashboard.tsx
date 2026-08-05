@@ -4,7 +4,7 @@ import { useAuth } from "../AuthContext";
 import Footer from "../Footer";
 import Nav from "../components/Nav";
 import { formatBytes, imageApi, quotaApi } from "../api";
-import { AreaSpark, BarMeter, useCountUp } from "../components/Meters";
+import { AreaSpark, useCountUp } from "../components/Meters";
 import ActivityCalendar from "../components/ActivityCalendar";
 import ArcGauge, { CategoryBars } from "../components/ArcGauge";
 import type { Image, QuotaInfo, QuotaTransaction } from "../types";
@@ -98,9 +98,10 @@ export default function DashboardPage() {
           <Kpi
             label="可用空间"
             value={formatBytes(quota?.available_bytes ?? user.available_bytes, 0)}
-            sub={`共 ${formatBytes(quota?.quota_bytes ?? user.quota_bytes, 0)}`}
+            sub={`已用 ${formatBytes(usedAnimated, 1)} · ${usedPct.toFixed(0)}% · 共 ${formatBytes(quota?.quota_bytes ?? user.quota_bytes, 0)}`}
             icon="fa-database"
             alert={usedPct >= 90}
+            href="/space"
           />
           <Kpi
             label="图片总数"
@@ -126,28 +127,9 @@ export default function DashboardPage() {
           />
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-3 mb-4">
-        {/* Space usage — segmented meter, fills left to right on load */}
-        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
-          <div className="text-[10px] uppercase tracking-wider text-neutral-600 mb-3">空间用量</div>
-          <div className="flex items-end justify-between gap-4 mb-4">
-            <div>
-              <div className="text-3xl sm:text-4xl font-brand text-neutral-100 tabular-nums">
-                {formatBytes(usedAnimated, 1)}
-              </div>
-              <div className="text-xs text-neutral-600 mt-1">
-                共 {formatBytes(quota?.quota_bytes ?? user.quota_bytes)} · 剩余{" "}
-                {formatBytes(quota?.available_bytes ?? user.available_bytes)}
-              </div>
-            </div>
-            <div className={`text-lg font-brand tabular-nums ${usedPct >= 90 ? "text-amber-400" : "text-accent-400"}`}>
-              {usedPct.toFixed(1)}%
-            </div>
-          </div>
-          <BarMeter percent={usedPct} bars={50} tone={usedPct >= 90 ? "amber" : "accent"} className="h-10" />
-        </div>
-
-        {/* Space earned trend */}
+        <div className="mb-4">
+        {/* Space earned trend — full width now that the usage card it sat beside
+            has gone; that card repeated /space and the KPI above it. */}
         <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
           <div className="flex items-baseline justify-between mb-3">
             <div>
@@ -286,26 +268,39 @@ function Kpi({
   sub,
   icon,
   alert,
+  href,
 }: {
   label: string;
   value: string;
   sub?: string;
   icon: string;
   alert?: boolean;
+  /// When set the whole card is the link to the page that owns this number.
+  href?: string;
 }) {
-  return (
-    <div
-      className={`rounded-2xl border bg-neutral-900/40 px-4 py-3.5 ${
-        alert ? "border-amber-500/40" : "border-neutral-800"
-      }`}
-    >
+  const body = (
+    <>
       <div className="flex items-center gap-1.5 text-[10px] text-neutral-500">
         <i className={`fa-solid ${icon}`} />
         {label}
+        {href && <i className="fa-solid fa-arrow-right ml-auto text-[9px] opacity-0 group-hover:opacity-60 transition" />}
       </div>
       <div className={`mt-1 text-xl font-brand ${alert ? "text-amber-300" : "text-neutral-100"}`}>{value}</div>
       {sub && <div className="mt-0.5 text-[10px] text-neutral-600">{sub}</div>}
-    </div>
+    </>
+  );
+  const shell = `rounded-2xl border bg-neutral-900/40 px-4 py-3.5 ${
+    alert ? "border-amber-500/40" : "border-neutral-800"
+  }`;
+  // With the space-usage panel gone, this card is the only place the overview
+  // reports quota, so it also has to carry the way through to the page that
+  // owns it.
+  return href ? (
+    <Link to={href} className={`group block transition hover:border-neutral-700 ${shell}`}>
+      {body}
+    </Link>
+  ) : (
+    <div className={shell}>{body}</div>
   );
 }
 

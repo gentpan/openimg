@@ -52,6 +52,12 @@ struct OverviewView: View {
                             .font(.system(size: 30, weight: .semibold, design: .rounded))
                             .foregroundStyle(Color.accent)
                         Text("可用").foregroundStyle(.secondary)
+                        Spacer()
+                        // Moved here from the settings page, which carried a
+                        // second copy of this whole card. Settings is for
+                        // things you can change; nothing in it was.
+                        Text("\(q.imageCount) 张")
+                            .font(.callout).foregroundStyle(.secondary)
                     }
                     // A plain bar, not a gauge: this is one number against one
                     // ceiling, and a dial makes the reader do trigonometry to
@@ -60,8 +66,7 @@ struct OverviewView: View {
                         ZStack(alignment: .leading) {
                             Capsule().fill(.quaternary)
                             Capsule()
-                                .fill(LinearGradient(colors: [Color.accent.opacity(0.7), Color.accent],
-                                                     startPoint: .leading, endPoint: .trailing))
+                                .fill(Color.accent)
                                 .frame(width: max(3, geo.size.width * min(1, used)))
                         }
                     }
@@ -314,63 +319,3 @@ private struct Card<Content: View>: View {
 }
 
 /// GitHub-style contribution grid for the check-in streak.
-private struct HeatCalendar: View {
-    let records: [CheckinRecord]
-    private let weeks = 17
-
-    var body: some View {
-        // uniquingKeysWith, not uniqueKeysWithValues: the latter traps on a
-        // duplicate key. The server has a unique index on (user, date) so it
-        // should never send two, but crashing on unexpected data is still
-        // crashing — and this is a decorative calendar.
-        let byDay = Dictionary(records.map { ($0.date, $0) }, uniquingKeysWith: { a, _ in a })
-        let days = grid()
-        let maxBytes = max(1, records.map(\.bytes).max() ?? 1)
-
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 3) {
-                ForEach(0..<weeks, id: \.self) { w in
-                    VStack(spacing: 3) {
-                        ForEach(0..<7, id: \.self) { d in
-                            let idx = w * 7 + d
-                            let key = idx < days.count ? days[idx] : ""
-                            cell(for: byDay[key], date: key, max: maxBytes)
-                        }
-                    }
-                }
-            }
-            HStack(spacing: 4) {
-                Text("少").font(.caption2).foregroundStyle(.tertiary)
-                ForEach([0.15, 0.35, 0.6, 1.0], id: \.self) { level in
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.accent.opacity(level))
-                        .frame(width: 9, height: 9)
-                }
-                Text("多").font(.caption2).foregroundStyle(.tertiary)
-            }
-        }
-    }
-
-    private func cell(for rec: CheckinRecord?, date: String, max maxBytes: Int64) -> some View {
-        let level = rec.map { 0.15 + 0.85 * (Double($0.bytes) / Double(maxBytes)) } ?? 0
-        return RoundedRectangle(cornerRadius: 2)
-            .fill(rec == nil ? AnyShapeStyle(.quaternary) : AnyShapeStyle(Color.accent.opacity(level)))
-            .frame(width: 11, height: 11)
-            .help(rec == nil ? date : "\(date)　+\(ByteCountFormatter.string(fromByteCount: rec!.bytes, countStyle: .binary))")
-    }
-
-    /// Dates for the grid, oldest first, ending today — the server stores days
-    /// as UTC `yyyy-mm-dd`, so the calendar has to match or the columns drift.
-    private func grid() -> [String] {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC")!
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd"
-        fmt.timeZone = cal.timeZone
-
-        let today = Date()
-        return (0..<(weeks * 7)).reversed().compactMap { back in
-            cal.date(byAdding: .day, value: -back, to: today).map(fmt.string(from:))
-        }
-    }
-}

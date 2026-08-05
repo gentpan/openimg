@@ -15,10 +15,9 @@ struct SettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 profileCard
-                storageCard
                 locationCard
                 conversionCard
-                tierCard
+                siteCard
                 dangerCard
             }
             .frame(maxWidth: 560, alignment: .leading)
@@ -160,7 +159,9 @@ struct SettingsView: View {
                         .padding(.vertical, 9)
                     }
                 }
-                siteHint("新增或修改存储位置需要填写密钥，只能在网站上操作")
+                Text("新增或修改存储位置需要填写密钥，见下方「在网站上管理」")
+                    .font(.caption2).foregroundStyle(.tertiary)
+                    .padding(.top, 8)
             } else if model.statsLoading {
                 ProgressView().controlSize(.small).frame(maxWidth: .infinity)
             } else {
@@ -192,38 +193,6 @@ struct SettingsView: View {
         .padding(.top, 8)
     }
 
-    private var storageCard: some View {
-        SettingsCard("空间", "internaldrive") {
-            if let q = model.quota {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(model.bytes(q.availableBytes))
-                            .font(.system(size: 26, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Color.accent)
-                        Text("可用").foregroundStyle(.secondary)
-                        Spacer()
-                        Text("\(q.imageCount) 张").font(.callout).foregroundStyle(.secondary)
-                    }
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(.white.opacity(0.10))
-                            Capsule().fill(Color.accent)
-                                .frame(width: max(4, geo.size.width * min(1,
-                                    q.quotaBytes > 0 ? Double(q.usedBytes) / Double(q.quotaBytes) : 0)))
-                        }
-                    }
-                    .frame(height: 6)
-                    HStack {
-                        Text("已用 \(model.bytes(q.usedBytes))")
-                        Spacer()
-                        Text("总量 \(model.bytes(q.quotaBytes))")
-                    }
-                    .font(.caption).foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
-
     /// The same three values the upload page offers. Both write to the account,
     /// so whichever one the user reaches for, the website agrees.
     private var conversionCard: some View {
@@ -235,9 +204,17 @@ struct SettingsView: View {
                 setting("衍生格式", "多存一份现代格式，浏览器优先取它") {
                     PillRow(items: VariantFormat.allCases, label: \.label, selection: pref($model.variantFormat))
                 }
-                setting("最大宽度", "超过就等比缩小，只影响之后上传的图片") {
+                setting("最大宽度",
+                        model.uploadMode == .original
+                        ? "保留原图时不缩放" : "超过就等比缩小，只影响之后上传的图片") {
                     PillRow(items: allowedMaxWidths.map(UploadView.Width.init),
                             label: \.label, selection: widthPref)
+                        // Original mode ships the bytes untouched, so a width
+                        // here does nothing. The web disables it; leaving it
+                        // live on this end just invites setting a value that
+                        // silently has no effect.
+                        .disabled(model.uploadMode == .original)
+                        .opacity(model.uploadMode == .original ? 0.45 : 1)
                 }
             }
         }
@@ -265,8 +242,16 @@ struct SettingsView: View {
                 set: { model.maxImageWidth = $0.px; Task { await model.savePreferences() } })
     }
 
-    private var tierCard: some View {
-        SettingsCard("上传限制", "slider.horizontal.3") {
+    /// Everything this app cannot do, in one place.
+    ///
+    /// These are the cookie-only routes — a token must not be able to change a
+    /// password, mint more tokens, or read storage credentials, and that is a
+    /// deliberate boundary rather than a gap. But it was previously expressed
+    /// as one grey sentence in the corner of another card, which is the same as
+    /// not saying it: a Mac user is exactly the person who needs an API token,
+    /// and they had no way to find out where to get one.
+    private var siteCard: some View {
+        SettingsCard("在网站上管理", "safari") {
             if let t = model.quota?.tier {
                 VStack(spacing: 0) {
                     row("单文件上限", model.bytes(t.maxFileSize))
@@ -275,13 +260,44 @@ struct SettingsView: View {
                     Divider().overlay(Color.white.opacity(0.06))
                     row("支持格式", t.allowedFormats.joined(separator: " · ").uppercased())
                 }
-                // These are cookie-only on the server — a token deliberately
-                // cannot reach account management — so they are a link out
-                // rather than a control that would fail here.
-                siteHint("修改密码、管理 API Token、删除账号需要在网站上操作")
+                .padding(.bottom, 6)
+            }
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Self.siteLinks, id: \.0) { title, detail, path in
+                    if title != Self.siteLinks.first?.0 {
+                        Divider().overlay(Color.white.opacity(0.06))
+                    }
+                    Button {
+                        if let u = URL(string: model.server + path) {
+                            NSWorkspace.shared.open(u)
+                        }
+                    } label: {
+                        HStack(spacing: 10) {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(title).font(.callout).foregroundStyle(.primary)
+                                Text(detail).font(.caption2).foregroundStyle(.tertiary)
+                            }
+                            Spacer(minLength: 8)
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(.vertical, 9)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
     }
+
+    private static let siteLinks: [(String, String, String)] = [
+        ("API Token", "给 PicGo、Typora、curl 等工具上传用", "/settings"),
+        ("存储位置", "绑定自有 R2 / S3，要填密钥", "/settings"),
+        ("修改密码", "", "/settings"),
+        ("登录方式与 Passkey", "绑定 Google / GitHub，管理 Passkey", "/settings"),
+        ("删除账号", "", "/settings"),
+    ]
 
     private var dangerCard: some View {
         SettingsCard("这台设备", "laptopcomputer") {

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { REPORT_CATEGORIES, formatBytes, shareApi, type SharePayload } from "../api";
 import Logo from "../Logo";
-import { useTheme } from "../ThemeContext";
 import { useToast } from "../ToastContext";
 import { RingSpinner } from "../components/Spinner";
 
@@ -25,7 +24,7 @@ const REACTIONS: { kind: string; emoji: string; label: string }[] = [
 
 export default function SharePage() {
   const { code = "" } = useParams();
-  const { theme, toggle } = useTheme();
+  
   const [data, setData] = useState<SharePayload | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [reporting, setReporting] = useState(false);
@@ -39,7 +38,7 @@ export default function SharePage() {
 
   if (err) {
     return (
-      <Shell theme={theme} onToggle={toggle}>
+      <Shell>
         <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 py-14 sm:py-20 text-center">
           <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-800">
             <i className="fa-solid fa-link-slash text-xl text-neutral-500" />
@@ -55,7 +54,7 @@ export default function SharePage() {
 
   if (!data) {
     return (
-      <Shell theme={theme} onToggle={toggle}>
+      <Shell>
         <div className="py-24 text-center">
           <RingSpinner className="h-6 w-6 text-brand-400" />
         </div>
@@ -76,10 +75,7 @@ export default function SharePage() {
   ];
 
   return (
-    <Shell
-      theme={theme}
-      onToggle={toggle}
-      onReport={() => setReporting(true)}
+    <Shell onReport={() => setReporting(true)}
       footer={
         <>
           <Link to="/" className="font-brand text-neutral-500 transition hover:text-brand-300">
@@ -152,14 +148,10 @@ export default function SharePage() {
 function Shell({
   children,
   footer,
-  theme,
-  onToggle,
   onReport,
 }: {
   children: React.ReactNode;
   footer?: React.ReactNode;
-  theme: string;
-  onToggle: () => void;
   onReport?: () => void;
 }) {
   return (
@@ -182,14 +174,6 @@ function Shell({
               <i className="fa-solid fa-flag" />
             </button>
           )}
-          <button
-            onClick={onToggle}
-            title={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
-            aria-label={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-900 hover:text-brand-300"
-          >
-            <i className={`fa-solid ${theme === "dark" ? "fa-sun" : "fa-moon"} text-xs`} />
-          </button>
         </div>
 
         <div>{children}</div>

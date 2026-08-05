@@ -86,7 +86,7 @@ export default function Logo({ size = 28, className = "", asLink = true }: LogoP
 
 
 // The live token, not a literal: the brand hue is user-switchable at runtime
-// (see ThemeContext), and a hard-coded fill would leave the wordmark green on
+// (see BrandContext), and a hard-coded fill would leave the wordmark green on
 // a violet page. The generated favicon/PNG set still carries a literal — those
 // are files, and a file cannot follow a CSS variable.
 const BRAND = "var(--color-brand-600)";

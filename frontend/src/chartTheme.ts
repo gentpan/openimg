@@ -1,19 +1,15 @@
 import type { ChartOptions } from "chart.js";
-import { useTheme } from "./ThemeContext";
 
 /**
- * Chart colours, per theme.
+ * Chart colours.
  *
  * Chart.js takes concrete colour strings, not CSS variables — it paints to a
  * canvas, where `var(--x)` means nothing. So unlike the rest of the app, which
- * flips by swapping variables, charts need their palette handed to them at
- * render time. Hence a hook rather than the module-level constants these
- * replaced: those were evaluated once at import and could never change.
+ * flips by swapping variables, charts get their palette handed to them at
+ * render time.
  *
- * The dark values are exactly what the charts used before the light theme
- * existed. The light ones are the same hues stepped down to the 600/700 tier —
- * the 300/400 tiers these started from sit at 1.5–2:1 against white, which is
- * below the 3:1 that non-text graphics need to be distinguishable.
+ * Still a hook rather than module-level constants: the brand hue is switchable,
+ * and constants would be evaluated once at import and never change.
  */
 export interface ChartTheme {
   BRAND: string;
@@ -46,20 +42,9 @@ const DARK = {
   SAVED: "#34d399",
 };
 
-const LIGHT = {
-  BRAND: "#46b312",
-  BRAND_DIM: "rgba(70, 179, 18, 0.18)",
-  SERIES: ["#46b312", "#0284c7", "#d97706", "#db2777", "#475569", "#0d9488", "#ea580c"],
-  GRID: "rgba(17, 24, 39, 0.12)",
-  TICK: "#6b7280",
-  COMPOSITION: ["#46b312", "#0284c7", "#d97706"],
-  FORMATS: ["#46b312", "#0284c7", "#d97706", "#db2777", "#475569", "#0d9488"],
-  SAVED: "#059669",
-};
 
 export function useChartTheme(): ChartTheme {
-  const { theme } = useTheme();
-  const p = theme === "light" ? LIGHT : DARK;
+  const p = DARK;
 
   const legendLabels = { color: p.TICK, boxWidth: 10, boxHeight: 10, font: { size: 10 } };
   const axisX = { grid: { color: p.GRID }, ticks: { color: p.TICK, font: { size: 10 } } };

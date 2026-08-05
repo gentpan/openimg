@@ -4,7 +4,7 @@ import { useAuth } from "../AuthContext";
 import Logo from "../Logo";
 import { formatBytes, quotaApi } from "../api";
 import { RingSpinner } from "./Spinner";
-import { useTheme } from "../ThemeContext";
+import { useBrand } from "../BrandContext";
 import { useToast } from "../ToastContext";
 import Avatar from "./Avatar";
 
@@ -15,7 +15,7 @@ import Avatar from "./Avatar";
  */
 export default function Nav() {
   const { user, logout, refresh } = useAuth();
-  const { theme, toggle, brand, setBrand } = useTheme();
+  const { brand, setBrand } = useBrand();
   const toast = useToast();
   const { pathname } = useLocation();
   const [busy, setBusy] = useState(false);
@@ -112,14 +112,6 @@ export default function Nav() {
                 {formatBytes(user.available_bytes, 0)}
               </Link>
               <button
-                onClick={toggle}
-                title={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
-                aria-label={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
-                className="w-6 h-6 rounded-full text-neutral-500 hover:text-brand-300 hover:bg-neutral-900 transition"
-              >
-                <i className={`fa-solid ${theme === "dark" ? "fa-sun" : "fa-moon"} text-[11px]`} />
-              </button>
-              <button
                 onClick={() => setBrand(brand === "green" ? "violet" : "green")}
                 title={brand === "green" ? "切换到紫色" : "切换到绿色"}
                 aria-label={brand === "green" ? "切换到紫色" : "切换到绿色"}
@@ -142,14 +134,6 @@ export default function Nav() {
             </>
           ) : (
             <>
-              <button
-                onClick={toggle}
-                title={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
-                aria-label={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
-                className="w-6 h-6 rounded-full text-neutral-500 hover:text-brand-300 hover:bg-neutral-900 transition"
-              >
-                <i className={`fa-solid ${theme === "dark" ? "fa-sun" : "fa-moon"} text-[11px]`} />
-              </button>
               <button
                 onClick={() => setBrand(brand === "green" ? "violet" : "green")}
                 title={brand === "green" ? "切换到紫色" : "切换到绿色"}

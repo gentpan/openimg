@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import Logo from "../Logo";
 import PasswordField from "../components/PasswordField";
-import { useTheme } from "../ThemeContext";
 import { authApi, resetApi, nativeAuth } from "../api";
 import PasskeyLoginForm from "./PasskeyLoginForm";
 import OAuthButtons from "./OAuthButtons";
@@ -149,17 +148,9 @@ function ModeBtn({ active, onClick, children }: { active: boolean; onClick: () =
 export function AuthShell({ title, children }: { title: string; children: React.ReactNode }) {
   // These pages don't render <Nav>, so without this the theme is unreachable
   // for anyone who hasn't signed in yet.
-  const { theme, toggle } = useTheme();
+  
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-4">
-      <button
-        onClick={toggle}
-        title={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
-        aria-label={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
-        className="absolute top-4 right-4 w-8 h-8 rounded-full text-neutral-500 hover:text-brand-300 hover:bg-neutral-900 transition"
-      >
-        <i className={`fa-solid ${theme === "dark" ? "fa-sun" : "fa-moon"} text-xs`} />
-      </button>
       <div className="w-full max-w-sm rounded-2xl border border-neutral-800 bg-neutral-900/60 p-8">
         <div className="mb-6 flex items-center gap-3">
           <Logo size={36} />

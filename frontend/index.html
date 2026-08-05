@@ -12,21 +12,11 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#0a0a0a" />
     <script>
-      // Runs before the stylesheet paints, so a light-theme user never sees a
-      // dark flash. Mirrors the logic in src/ThemeContext.tsx; kept inline
-      // because any external file would already be too late.
+      // Brand hue, applied before first paint so the page never renders green
+      // and then flips to violet after React mounts. Mirrors src/BrandContext.tsx;
+      // inline because any external file would already be too late.
       (function () {
         try {
-          var p = localStorage.getItem("openimg.theme");
-          var t = p === "dark" || p === "light" ? p
-            : (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
-          document.documentElement.setAttribute("data-theme", t);
-          document.documentElement.style.colorScheme = t;
-          if (t === "light") {
-            document.querySelector('meta[name="theme-color"]').setAttribute("content", "#ffffff");
-          }
-          // Brand hue, same reason: applied here so the page never paints green
-          // and then flips to violet after React mounts.
           if (localStorage.getItem("openimg-brand") === "violet") {
             document.documentElement.setAttribute("data-brand", "violet");
           }

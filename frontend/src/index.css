@@ -42,26 +42,15 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Theming
+   Dark only.
 
-   Tailwind v4 compiles `bg-neutral-950` to `background-color:
-   var(--color-neutral-950)` and `bg-neutral-900/40` to a color-mix() over the
-   same variable. Every colour in the app is therefore a live variable
-   reference, and a whole theme is a set of variable overrides — no `dark:`
-   prefix on 880 utility classes, and no re-render when the theme flips.
+   There used to be a light theme here, built by inverting the neutral ramp
+   under [data-theme="light"]. It is gone: the product is dark, and a bright
+   green brand cannot be text on white — #5DE31D is 1.79:1 there, so the light
+   theme had to darken it to #30800A and the brand stopped looking like itself.
+   Dark has no such problem: the same green reads at 11.96:1 on the page.
 
-   The dark theme is deliberately absent from this file: it is Tailwind's stock
-   neutral ramp, used the way a dark UI uses it (high number = dark surface,
-   low number = light text). Leaving it untouched is what guarantees the
-   existing dark appearance is unchanged to the pixel.
-
-   The light theme inverts that ramp. Because the codebase consistently follows
-   "high = surface, low = text", inverting is enough to flip all 500-odd
-   neutral utilities correctly at once. The values below are the inverted
-   positions rounded to the project's design tokens (#111827 / #6b7280 /
-   #9ca3af text, #ffffff / #f8f9fa surfaces, #d1d5db borders) rather than to
-   Tailwind's raw greys, so the light theme lands on-spec instead of merely
-   being a photographic negative.
+   What remains switchable is the brand hue, at the bottom of this file.
    --------------------------------------------------------------------------- */
 
 :root {
@@ -92,91 +81,6 @@
   --heat-2: #48ba12;
   --heat-3: #5de31d;
   --heat-4: #90ec65;
-}
-
-:root[data-theme="light"] {
-  color-scheme: light;
-
-  /* Inverted neutral ramp: 950 is now the page, 100 is now the ink. */
-  --color-neutral-50: #030712;
-  --color-neutral-100: #030712; /* primary text */
-  --color-neutral-200: #111827;
-  --color-neutral-300: #1f2937;
-  --color-neutral-400: #374151;
-  --color-neutral-500: #4b5563; /* secondary text */
-  --color-neutral-600: #5d6675; /* tertiary — the most-used class; clears AA on
-                                   white and on the brand-tinted cards */
-  /* Surfaces and edges.
-     These are one step darker than a straight inversion would give, because
-     the dark theme separates panels by *lightening* them against near-black —
-     a move that has no equivalent on white. `bg-neutral-900/40`, the card fill
-     used on nearly every panel, mixes to within a hair of #ffffff, so on light
-     the structure has to come from the border tier instead. Too pale a border
-     and the page reads as one undifferentiated sheet. */
-  --color-neutral-700: #c3cad3; /* hover surface / strong border */
-  --color-neutral-800: #d5d9df; /* chips, buttons, card borders */
-  --color-neutral-900: #eef1f5; /* raised surface; /40 over white ≈ #f9fafc */
-  --color-neutral-950: #ffffff; /* page */
-
-  /* #5DE31D on white is 1.79:1, so none of the dark-theme text tiers survive
-     the flip — the light values are pushed much further than the violet ones
-     ever needed to be. 500/600/700 are absent: those are solid fills, and what
-     sits on them (ink) does not change with the theme. */
-  --color-brand-200: #215b06;
-  --color-brand-300: #2b7507;
-  --color-brand-400: #30800a; /* 4.98:1 on white — the AA floor for body text */
-  --color-brand-display: #3ca10c; /* 3.34:1 — the AA floor for large text */
-  --color-brand-900: #9dee77;
-  --color-brand-950: #7de949;
-
-  /* Same reasoning for the semantic ramps: the pale tiers were picked to glow
-     on near-black and are unreadable on white.
-
-     The 900/950 tiers are the subtle part. They are never used at full
-     strength — every occurrence is a tinted panel or overlay at 15–80% alpha.
-     Setting them to a pale tint therefore produces *nothing*: 20% of #ecfdf5
-     over white is white. So their light values are saturated mid-tones, chosen
-     so the result *after* the alpha is the pale tint the design wants. The
-     variable names the slot, not the colour. */
-  --color-red-200: #7f1d1d;
-  --color-red-300: #991b1b;
-  --color-red-400: #dc2626;
-  --color-red-900: #f87171;
-  --color-red-950: #ef4444;
-
-  /* Success moved from emerald (hue 158°) to teal (173°) so it stops reading
-     as a shade of the brand green (101°). 72° apart is enough to tell apart
-     at a glance; 57° was not.
-
-     Pushed one tier darker than the emerald values it replaces: teal-400 is
-     used as body text in a few places and #0d9488 is only 3.74:1 on white. */
-  --color-teal-200: #134e4a;
-  --color-teal-300: #115e59;
-  --color-teal-400: #0f766e; /* 5.47:1 on white */
-  --color-teal-500: #0f766e;
-  --color-teal-900: #2dd4bf;
-  --color-teal-950: #14b8a6;
-
-  --color-amber-100: #78350f;
-  --color-amber-200: #78350f;
-  --color-amber-300: #92400e;
-  --color-amber-400: #d97706;
-  --color-amber-500: #d97706;
-  --color-amber-900: #fbbf24;
-  --color-amber-950: #f59e0b;
-
-  --shadow-panel: 0 8px 32px rgb(17 24 39 / 0.12);
-  --shadow-card: 0 1px 3px rgb(17 24 39 / 0.08);
-  --track: rgb(17 24 39 / 0.1);
-
-  --text-faint: #646d7d;
-
-  --heat-empty: #f3f4f6;
-  --heat-zero: #e5e7eb;
-  --heat-1: #d7f5c6;
-  --heat-2: #a5e881;
-  --heat-3: #4bbb14;
-  --heat-4: #2b7507;
 }
 
 /* Reserve the scrollbar gutter on every page. Without this, navigating from a
@@ -251,20 +155,6 @@ html, body {
 .heat-3     { background-color: var(--heat-3); }
 .heat-4     { background-color: var(--heat-4); }
 
-/* On a near-white card #5DE31D is only 1.68:1 against the
-   surface, so the *shape* of a filled button is hard to make out even though
-   its label sits at 10.65:1. WCAG 1.4.11 wants 3:1 for the boundary of a
-   control, so in the light theme every brand fill takes a darker rim. The dark
-   theme needs nothing — #5DE31D on the page is 11.96:1 on its own.
-
-   An outline rather than a border so it costs no layout: these are 30-odd
-   buttons whose padding is already tuned. */
-:root[data-theme="light"] [class*="bg-brand-500"],
-:root[data-theme="light"] [class*="bg-brand-600"] {
-  outline: 1px solid var(--color-brand-800);
-  outline-offset: -1px;
-}
-
 /* ---------------------------------------------------------------------------
    Brand switch
 
@@ -299,24 +189,3 @@ html, body {
   --heat-4: #a87dff;
 }
 
-:root[data-brand="violet"][data-theme="light"] {
-  --color-brand-200: #5b21b6;
-  --color-brand-300: #6d28d9;
-  --color-brand-400: #7c2ee0;
-  --color-brand-900: #c4b5fd;
-  --color-brand-950: #a78bfa;
-  --color-brand-display: #7c2ee0; /* violet clears 4.5:1 on white unaided */
-
-  --heat-1: #ddd6fe;
-  --heat-2: #c4b5fd;
-  --heat-3: #8b5cf6;
-  --heat-4: #6d28d9;
-}
-
-/* The light-theme rim exists because #5DE31D is only 1.68:1 against a white
-   card, so a filled button's *outline* fails WCAG 1.4.11. Violet is 4.67:1 and
-   needs no help — the rim would just be a stray line. */
-:root[data-brand="violet"][data-theme="light"] [class*="bg-brand-500"],
-:root[data-brand="violet"][data-theme="light"] [class*="bg-brand-600"] {
-  outline: none;
-}

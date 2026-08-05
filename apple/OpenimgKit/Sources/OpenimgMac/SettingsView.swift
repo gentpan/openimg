@@ -23,35 +23,70 @@ struct SettingsView: View {
     }
 
     private var connection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label("连接", systemImage: "link").font(.headline)
+        VStack(alignment: .leading, spacing: 10) {
+            Label(model.connected ? "已登录" : "登录", systemImage: "person.badge.key")
+                .font(.headline)
 
             TextField("服务器地址", text: $model.server)
                 .textFieldStyle(.roundedBorder)
-            SecureField("访问令牌 oimg_…", text: $model.token)
-                .textFieldStyle(.roundedBorder)
 
-            Text("在网站的「账号设置 → API Token」里生成。令牌存在钥匙串，按服务器分别保存，连自建实例不会覆盖公网那条。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            HStack {
-                Button(model.busy ? "连接中…" : (model.connected ? "重新连接" : "连接")) {
-                    Task { await model.connect() }
+            if model.connected {
+                HStack {
+                    Text("这台设备的凭证保存在钥匙串里，重开应用会自动登录。")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("退出登录", role: .destructive) { model.signOut() }
                 }
-                .disabled(model.busy || model.token.isEmpty)
-                .keyboardShortcut(.defaultAction)
-
-                if model.connected {
-                    Button("断开", role: .destructive) { model.disconnect() }
+            } else {
+                Picker("", selection: $model.useToken) {
+                    Text("密码登录").tag(false)
+                    Text("访问令牌").tag(true)
                 }
-                Spacer()
-                Button("打开网站") {
-                    if let u = URL(string: model.server) { NSWorkspace.shared.open(u) }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+
+                if model.useToken {
+                    SecureField("oimg_…", text: $model.token)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit { Task { await model.connect() } }
+                    hint("在网站的「账号设置 → API Token」里生成。适合自建实例，或不想把账号密码交给第三方程序的情况。")
+                    Button(model.busy ? "连接中…" : "连接") { Task { await model.connect() } }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(model.busy || model.token.isEmpty)
+                        .keyboardShortcut(.defaultAction)
+                } else {
+                    TextField("邮箱", text: $model.email)
+                        .textFieldStyle(.roundedBorder)
+                    SecureField("密码", text: $model.password)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit { Task { await model.signIn() } }
+                    // Says what the password is actually used for. "We store a
+                    // token, not your password" is only reassuring if it is
+                    // stated before the field is filled in, not after.
+                    hint("密码只用来换取一枚这台设备专用的访问令牌，不会被保存。令牌存在钥匙串，之后每次打开都自动登录。")
+                    Button(model.busy ? "登录中…" : "登录") { Task { await model.signIn() } }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(model.busy || model.email.isEmpty || model.password.isEmpty)
+                        .keyboardShortcut(.defaultAction)
                 }
             }
+
+            HStack {
+                Spacer()
+                Button("在网站上打开") {
+                    if let u = URL(string: model.server) { NSWorkspace.shared.open(u) }
+                }
+                .buttonStyle(.link)
+                .font(.caption)
+            }
         }
+    }
+
+    private func hint(_ t: String) -> some View {
+        Text(t)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private var accountInfo: some View {

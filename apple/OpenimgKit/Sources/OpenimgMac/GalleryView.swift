@@ -169,8 +169,8 @@ private struct EmptyState: View {
             } else if !model.connected {
                 icon("link.badge.plus")
                 Text("还没有连接").font(.title3.weight(.medium))
-                Text("在设置里填入服务器地址和访问令牌").foregroundStyle(.secondary)
-                Button("去设置") { model.section = .settings }
+                Text("用邮箱和密码登录，之后每次打开都会自动登录").foregroundStyle(.secondary)
+                Button("去登录") { model.section = .settings }
                     .buttonStyle(.borderedProminent)
             } else if !model.search.isEmpty {
                 icon("magnifyingglass")

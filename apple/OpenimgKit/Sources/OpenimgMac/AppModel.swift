@@ -36,6 +36,12 @@ final class AppModel: ObservableObject {
     // Connection
     @Published var server = UserDefaults.standard.string(forKey: "server") ?? "https://openimg.io"
     @Published var token = ""
+    @Published var email = UserDefaults.standard.string(forKey: "email") ?? ""
+    @Published var password = ""
+    /// Password is the default; the token field stays for self-hosters and for
+    /// anyone who would rather not type an account password into a third-party
+    /// binary.
+    @Published var useToken = false
     @Published var account: Account?
     @Published var quota: Quota?
 
@@ -82,6 +88,11 @@ final class AppModel: ObservableObject {
         return try OpenimgClient(server: url, token: token)
     }
 
+    /// Names the credential on the server, so the token list on the website
+    /// reads "Openimg for Mac · 西风的 MacBook" instead of an opaque entry the
+    /// user cannot place.
+    var deviceName: String { Host.current().localizedName ?? "Mac" }
+
     // MARK: - Connection
 
     /// Called at launch. Silent on failure — an expired token should land the
@@ -90,6 +101,31 @@ final class AppModel: ObservableObject {
         guard !token.isEmpty else { section = .settings; return }
         await connect(quiet: true)
         if !connected { section = .settings }
+    }
+
+    /// Exchanges the password for a long-lived token, then connects with it.
+    ///
+    /// The session the password buys is not what gets stored: it expires in
+    /// seven days and the server has no refresh endpoint, so keeping it would
+    /// log the user out every week. See OpenimgAuth.signIn.
+    func signIn() async {
+        busy = true
+        defer { busy = false }
+        do {
+            guard let url = URL(string: server.trimmingCharacters(in: .whitespaces)) else {
+                throw OpenimgError.badServerURL
+            }
+            let (minted, _) = try await OpenimgAuth.signIn(
+                server: url, email: email, password: password, device: deviceName
+            )
+            token = minted
+            password = ""      // never held longer than the exchange needs
+            UserDefaults.standard.set(email, forKey: "email")
+            await connect()
+        } catch {
+            account = nil
+            announce(message(error))
+        }
     }
 
     func connect(quiet: Bool = false) async {
@@ -123,16 +159,20 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func disconnect() {
+    func signOut() {
         store.delete(server: server)
         token = ""
+        password = ""
         account = nil
         quota = nil
         images = []
         total = 0
         selection = []
         section = .settings
-        announce("已断开")
+        // Says what actually happened. A token cannot revoke itself — that is
+        // the same boundary that stops a leaked one from taking over an
+        // account — so claiming "signed out" would overstate it.
+        announce(OpenimgAuth.signOutIsLocalOnly, seconds: 8)
     }
 
     // MARK: - Gallery

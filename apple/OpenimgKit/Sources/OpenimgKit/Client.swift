@@ -176,6 +176,50 @@ public struct OpenimgClient: Sendable {
         _ = try decode(OK.self, data, resp)
     }
 
+    // MARK: - Account security
+
+    /// Mails a six-digit code to the account's own address.
+    ///
+    /// `purpose` is what the code will be spent on — the server refuses a code
+    /// issued for one purpose and presented for another, so a code obtained to
+    /// enrol a passkey cannot be replayed to change the password.
+    public func requestAccountCode(purpose: AccountCodePurpose) async throws {
+        var req = request("POST", "api/account/otp")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["purpose": purpose.rawValue])
+        let (data, resp) = try await session.data(for: req)
+        _ = try decode(OK.self, data, resp)
+    }
+
+    /// Changes the password. The code is the one mailed by
+    /// `requestAccountCode(purpose: .password)`; there is no path that skips it.
+    public func changePassword(code: String, newPassword: String) async throws {
+        var req = request("POST", "api/account/password")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: [
+            "code": code, "password": newPassword,
+        ])
+        let (data, resp) = try await session.data(for: req)
+        _ = try decode(OK.self, data, resp)
+    }
+
+    public func passkeys() async throws -> [PasskeyCredential] {
+        let (data, resp) = try await session.data(for: request("GET", "auth/passkey/list"))
+        struct Wrap: Decodable { let passkeys: [PasskeyCredential]? }
+        return try decode(Wrap.self, data, resp).passkeys ?? []
+    }
+
+    public func deletePasskey(id: String) async throws {
+        let (data, resp) = try await session.data(for: request("DELETE", "auth/passkey/\(id)"))
+        _ = try decode(OK.self, data, resp)
+    }
+
+    public func unlink(provider: String) async throws {
+        let (data, resp) = try await session.data(
+            for: request("POST", "auth/\(provider)/unlink"))
+        _ = try decode(OK.self, data, resp)
+    }
+
     public func storageSummary() async throws -> StorageSummary {
         let (data, resp) = try await session.data(for: request("GET", "api/storage/summary"))
         return try decode(StorageSummary.self, data, resp)

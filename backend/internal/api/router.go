@@ -120,12 +120,6 @@ func (s *Server) Router() *gin.Engine {
 	authed.POST("/auth/logout", s.handleLogout)
 	authed.GET("/auth/google/link-start", s.handleOAuthStart("google", "link"))
 	authed.GET("/auth/github/link-start", s.handleOAuthStart("github", "link"))
-	authed.POST("/auth/google/unlink", s.handleOAuthUnlink("google"))
-	authed.POST("/auth/github/unlink", s.handleOAuthUnlink("github"))
-	authed.GET("/auth/passkey/list", s.handlePasskeyList)
-	authed.POST("/auth/passkey/enroll/begin", s.handlePasskeyEnrollBegin)
-	authed.POST("/auth/passkey/enroll/finish", s.handlePasskeyEnrollFinish)
-	authed.DELETE("/auth/passkey/:id", s.handlePasskeyDelete)
 	authed.GET("/api/referral/me", s.handleReferralMe)
 	authed.GET("/api/referral/list", s.handleReferralList)
 	r.GET("/api/referral/lookup", s.handleReferralLookup)
@@ -186,13 +180,41 @@ func (s *Server) Router() *gin.Engine {
 	// The alternative was a native settings page whose account section is
 	// entirely read-only, which is what shipped first and what prompted this.
 	machine.PATCH("/api/account/profile", s.handleUpdateNickname)
+	// Password and passkey enrolment. These look like the things a token must
+	// never reach, and the route group is the wrong place to look: both are
+	// gated on a six-digit code mailed to the account's own address
+	// (consumeOTP with OTPPurposePassword / OTPPurposePasskey). The second
+	// factor is the mailbox, not the cookie — so a token lifted out of a PicGo
+	// config still cannot change a password, and moving them here costs the
+	// property nothing while letting the native app do what the website does.
+	//
+	// /api/account/otp is what sends that code, and only ever to the address
+	// already on the account, so it moves with them.
+	machine.POST("/api/account/otp", s.handleAccountOTP)
+	machine.POST("/api/account/password", s.handleChangePassword)
+	machine.GET("/auth/passkey/list", s.handlePasskeyList)
+	machine.POST("/auth/passkey/enroll/begin", s.handlePasskeyEnrollBegin)
+	machine.POST("/auth/passkey/enroll/finish", s.handlePasskeyEnrollFinish)
+	// Deleting a passkey and unlinking a provider carry no code, and are here
+	// on a weaker but still sound argument: both take a login method away
+	// rather than granting one. The worst a leaked token achieves is leaving
+	// you with fewer ways in, and handleOAuthUnlink already refuses to remove
+	// the last one. Neither can be used to become you.
+	machine.DELETE("/auth/passkey/:id", s.handlePasskeyDelete)
+	machine.POST("/auth/google/unlink", s.handleOAuthUnlink("google"))
+	machine.POST("/auth/github/unlink", s.handleOAuthUnlink("github"))
+	//
+	// Still cookie-only, and staying that way: minting tokens (a token that
+	// mints tokens is a token that never expires) and deleting the account
+	// (the one action no second factor makes acceptable to automate). OAuth
+	// *linking* stays too, for a different reason — it is a full-page redirect
+	// carrying an intent cookie, and the app's web session is ephemeral, so
+	// there is nothing for the callback to attach the link to.
 	machine.POST("/api/account/avatar", s.handleUploadAvatar)
 	machine.DELETE("/api/account/avatar", s.handleDeleteAvatar)
 
 	// API tokens (cookie-only: a token must not be able to mint more tokens)
 	authed.POST("/auth/native/code", s.handleNativeCode)
-	authed.POST("/api/account/otp", s.handleAccountOTP)
-	authed.POST("/api/account/password", s.handleChangePassword)
 	authed.DELETE("/api/account", s.handleDeleteAccount)
 	authed.GET("/api/tokens", s.handleListTokens)
 	authed.POST("/api/tokens", s.handleCreateToken)

@@ -9,6 +9,8 @@ struct SettingsView: View {
     /// the account changed underneath it.
     @State private var draftName: String?
     @State private var editingName = false
+    @State private var code = ""
+    @State private var newPassword = ""
     @FocusState private var nameFocused: Bool
 
     var body: some View {
@@ -17,6 +19,7 @@ struct SettingsView: View {
                 profileCard
                 locationCard
                 conversionCard
+                securityCard
                 siteCard
                 dangerCard
             }
@@ -242,6 +245,115 @@ struct SettingsView: View {
                 set: { model.maxImageWidth = $0.px; Task { await model.savePreferences() } })
     }
 
+    /// Password, passkeys and linked providers — the same set the website
+    /// offers, minus linking.
+    ///
+    /// These used to be website-only on the grounds that a token must not reach
+    /// account management. Checking what the handlers actually require showed
+    /// that reasoning was aimed at the wrong thing: changing a password and
+    /// enrolling a passkey are both gated on a code mailed to the account's own
+    /// address, so the second factor was never the cookie. See router.go.
+    ///
+    /// Linking a provider is still missing, and for a real reason rather than a
+    /// policy one: it is a full-page redirect carrying an intent cookie, and
+    /// this app's web session is ephemeral, so the callback would have nothing
+    /// to attach the link to.
+    private var securityCard: some View {
+        SettingsCard("登录与安全", "lock.shield") {
+            VStack(alignment: .leading, spacing: 16) {
+                passwordSection
+                Divider().overlay(Color.white.opacity(0.06))
+                passkeySection
+            }
+        }
+        .task(id: model.account?.id) { await model.loadPasskeys() }
+    }
+
+    @ViewBuilder
+    private var passwordSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("修改密码").font(.callout)
+                Spacer()
+                Text(model.codeSent ? "验证码 10 分钟内有效" : "验证码会发到你的邮箱")
+                    .font(.caption2).foregroundStyle(.tertiary)
+            }
+            if model.codeSent {
+                HStack(spacing: 8) {
+                    Field(icon: "number") {
+                        TextField("6 位验证码", text: $code)
+                    }
+                    .frame(width: 150)
+                    Field(icon: "lock") {
+                        SecureField("新密码（至少 8 位）", text: $newPassword)
+                    }
+                    Button("确认") {
+                        Task {
+                            if await model.changePassword(code: code, newPassword: newPassword) {
+                                code = ""; newPassword = ""
+                            }
+                        }
+                    }
+                    .buttonStyle(BrandButton())
+                    .disabled(code.count != 6 || newPassword.count < 8 || model.busy)
+                }
+                Button("取消") { model.codeSent = false; code = ""; newPassword = "" }
+                    .buttonStyle(.link).font(.caption2)
+            } else {
+                Button("发送验证码") { Task { await model.sendCode(.password) } }
+                    .buttonStyle(QuietButton())
+                    .disabled(model.busy)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var passkeySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Passkey").font(.callout)
+                Spacer()
+                Text("免密码登录，用触控 ID 或手机确认")
+                    .font(.caption2).foregroundStyle(.tertiary)
+            }
+            if model.passkeys.isEmpty {
+                Text("还没有添加 Passkey").font(.caption).foregroundStyle(.secondary)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(model.passkeys) { p in
+                        if p.id != model.passkeys.first?.id {
+                            Divider().overlay(Color.white.opacity(0.06))
+                        }
+                        HStack(spacing: 10) {
+                            Image(systemName: "person.badge.key")
+                                .font(.system(size: 13))
+                                .foregroundStyle(Color.brand)
+                                .frame(width: 18)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(p.name).font(.callout)
+                                if let d = p.lastUsedAt {
+                                    Text("最近使用 " + d.formatted(date: .abbreviated, time: .omitted))
+                                        .font(.caption2).foregroundStyle(.tertiary)
+                                } else if let d = p.createdAt {
+                                    Text("添加于 " + d.formatted(date: .abbreviated, time: .omitted))
+                                        .font(.caption2).foregroundStyle(.tertiary)
+                                }
+                            }
+                            Spacer()
+                            Button("删除") { Task { await model.deletePasskey(p) } }
+                                .buttonStyle(.link).font(.caption2)
+                        }
+                        .padding(.vertical, 8)
+                    }
+                }
+            }
+            // Enrolling needs the WebAuthn ceremony, which needs the
+            // associated-domains entitlement this build cannot carry.
+            Text("添加 Passkey 需要在网站上完成")
+                .font(.caption2).foregroundStyle(.tertiary)
+        }
+    }
+
     /// Everything this app cannot do, in one place.
     ///
     /// These are the cookie-only routes — a token must not be able to change a
@@ -294,8 +406,8 @@ struct SettingsView: View {
     private static let siteLinks: [(String, String, String)] = [
         ("API Token", "给 PicGo、Typora、curl 等工具上传用", "/settings"),
         ("存储位置", "绑定自有 R2 / S3，要填密钥", "/settings"),
-        ("修改密码", "", "/settings"),
-        ("登录方式与 Passkey", "绑定 Google / GitHub，管理 Passkey", "/settings"),
+        ("绑定 Google / GitHub", "绑定要整页跳转，原生端做不了", "/settings"),
+        ("添加 Passkey", "注册需要在网页里完成，删除可以在本页做", "/settings"),
         ("删除账号", "", "/settings"),
     ]
 

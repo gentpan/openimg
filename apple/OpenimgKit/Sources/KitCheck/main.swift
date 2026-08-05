@@ -192,6 +192,27 @@ if let a = try? dec.decode(Account.self, from: Data(noAvatar.utf8)) {
     check("缺 avatar_url 仍可解析", false)
 }
 
+section("Passkey 解析")
+
+// 服务端用 time.RFC3339 格式化，不带小数秒；而客户端解码器全局设的是
+// iso8601WithFractionalSeconds。这两处对不上会在运行时整个响应解析失败。
+let pkJSON = """
+{"passkeys":[
+ {"id":"a1","name":"MacBook Pro","created_at":"2026-08-01T10:30:00Z",
+  "last_used_at":"2026-08-05T18:00:00Z"},
+ {"id":"a2","name":"iPhone","created_at":"2026-07-20T09:00:00Z"}]}
+"""
+struct PKWrap: Decodable { let passkeys: [PasskeyCredential]? }
+let pkDec = JSONDecoder()
+pkDec.dateDecodingStrategy = .iso8601WithFractionalSeconds   // 与 Client 同款
+let pk = try? pkDec.decode(PKWrap.self, from: Data(pkJSON.utf8))
+check("RFC3339 无小数秒也能解析", pk?.passkeys?.count == 2)
+check("解出了创建时间", pk?.passkeys?.first?.createdAt != nil)
+check("缺 last_used_at 不影响解析", pk?.passkeys?.last?.lastUsedAt == nil)
+check("外层 key 是 passkeys 而非 credentials", pk?.passkeys?.first?.name == "MacBook Pro")
+check("时间戳无法解析时返回 nil 而不是抛错",
+      PasskeyCredential.date("不是时间") == nil && PasskeyCredential.date(nil) == nil)
+
 section("图库网格")
 
 // 默认窗口 1240x820 下网格的可用区。这两个数是从离屏渲染里打印出来的实测

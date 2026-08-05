@@ -324,3 +324,52 @@ public struct CheckinResult: Codable, Sendable {
         case capped
     }
 }
+
+
+/// What a mailed code may be spent on. The server keeps these apart, so a code
+/// cannot be obtained under one purpose and presented under another.
+public enum AccountCodePurpose: String, Sendable {
+    case password
+    case passkey
+}
+
+public struct PasskeyCredential: Codable, Sendable, Identifiable {
+    public let id: String
+    public let name: String
+    public let createdAt: Date?
+    /// Absent on credentials never used since the server started recording it.
+    public let lastUsedAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case createdAt = "created_at"
+        case lastUsedAt = "last_used_at"
+    }
+
+    /// Decoded by hand because these two are the odd ones out.
+    ///
+    /// Every other date in the API comes from Postgres and carries fractional
+    /// seconds, so the client's decoder is set to
+    /// `.iso8601WithFractionalSeconds`. These are formatted by Go with
+    /// `time.RFC3339`, which has none — feeding them to that strategy fails the
+    /// whole response, and it fails at runtime rather than at build time.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        createdAt = Self.date(try c.decodeIfPresent(String.self, forKey: .createdAt))
+        lastUsedAt = Self.date(try c.decodeIfPresent(String.self, forKey: .lastUsedAt))
+    }
+
+    /// Accepts RFC3339 with or without fractional seconds, and gives back nil
+    /// rather than throwing: a credential with an unparsable timestamp is still
+    /// a credential the user needs to see and be able to delete.
+    static func date(_ raw: String?) -> Date? {
+        guard let raw else { return nil }
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = f.date(from: raw) { return d }
+        f.formatOptions = [.withInternetDateTime]
+        return f.date(from: raw)
+    }
+}

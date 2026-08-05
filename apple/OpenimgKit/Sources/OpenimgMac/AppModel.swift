@@ -622,6 +622,63 @@ final class AppModel: ObservableObject {
         }
     }
 
+    // MARK: - Security
+
+    @Published var passkeys: [PasskeyCredential] = []
+    @Published var codeSent = false
+
+    func loadPasskeys() async {
+        guard connected, let c = try? client() else { return }
+        passkeys = (try? await c.passkeys()) ?? []
+    }
+
+    /// Asks the server to mail a code. Deliberately not silent on success —
+    /// the next screen asks for six digits, and if the mail never arrived the
+    /// user needs to know the request itself went through.
+    func sendCode(_ purpose: AccountCodePurpose) async {
+        do {
+            try await client().requestAccountCode(purpose: purpose)
+            codeSent = true
+            announce("验证码已发到你的邮箱")
+        } catch {
+            announce(message(error))
+        }
+    }
+
+    /// Returns true when the password actually changed, so the form knows
+    /// whether to clear itself.
+    func changePassword(code: String, newPassword: String) async -> Bool {
+        do {
+            try await client().changePassword(code: code, newPassword: newPassword)
+            codeSent = false
+            announce("密码已修改")
+            return true
+        } catch {
+            announce(message(error))
+            return false
+        }
+    }
+
+    func deletePasskey(_ p: PasskeyCredential) async {
+        do {
+            try await client().deletePasskey(id: p.id)
+            await loadPasskeys()
+            announce("已删除 \(p.name)")
+        } catch {
+            announce(message(error))
+        }
+    }
+
+    func unlink(_ provider: String) async {
+        do {
+            try await client().unlink(provider: provider)
+            account = try await client().me()
+            announce("已解除绑定")
+        } catch {
+            announce(message(error))
+        }
+    }
+
     // MARK: - Profile
 
     /// Renames the account.

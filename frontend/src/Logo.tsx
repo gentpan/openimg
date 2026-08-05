@@ -85,7 +85,7 @@ export default function Logo({ size = 28, className = "", asLink = true }: LogoP
 }
 
 
-const ACCENT = "#5DE31D";
+const ACCENT = "#8E47FF";
 
 // Kept in sync with public/favicon.svg by hand — that file is the source of
 // the generated PNG/ICO set, this constant is what React renders.

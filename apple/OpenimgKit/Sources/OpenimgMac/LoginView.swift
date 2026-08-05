@@ -33,13 +33,6 @@ struct LoginView: View {
             header
 
             VStack(spacing: 9) {
-                oauthButton("Google", .google)
-                oauthButton("GitHub", .github)
-            }
-
-            divider
-
-            VStack(spacing: 9) {
                 if model.useToken {
                     field("访问令牌", systemImage: "key.fill") {
                         SecureField("oimg_…", text: $model.token)
@@ -58,6 +51,18 @@ struct LoginView: View {
             }
 
             primaryButton
+
+            divider
+
+            // Three equal squares. Icon-only because the marks carry the
+            // meaning better than "使用 Google 继续" does at this size, and
+            // three full-width rows would make the alternatives look like the
+            // main path rather than the shortcut.
+            HStack(spacing: 9) {
+                ForEach(SignInMethod.allCases) { m in
+                    squareButton(m)
+                }
+            }
 
             Button(model.useToken ? "改用邮箱密码登录" : "改用访问令牌登录") {
                 withAnimation(.easeInOut(duration: 0.18)) { model.useToken.toggle() }
@@ -114,23 +119,20 @@ struct LoginView: View {
         }
     }
 
-    private func oauthButton(_ title: String, _ provider: OAuthProvider) -> some View {
+    private func squareButton(_ method: SignInMethod) -> some View {
         Button {
-            Task { await model.signIn(with: provider) }
+            Task { await model.signIn(with: method) }
         } label: {
-            HStack(spacing: 8) {
-                provider.mark
-                Text("使用 \(title) 继续")
-                Spacer()
-            }
-            .font(.callout)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 9)
-            .frame(maxWidth: .infinity)
-            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            method.mark
+                .frame(width: 20, height: 20)
+                .frame(maxWidth: .infinity)
+                .frame(height: 42)
+                .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(OutlineButton())
         .disabled(model.busy)
+        .help(method.title)
+        .accessibilityLabel("使用 \(method.title) 登录")
     }
 
     private func field<C: View>(_ label: String, systemImage: String,
@@ -208,14 +210,30 @@ private struct OutlineButton: ButtonStyle {
 
 // MARK: - Provider marks
 
-enum OAuthProvider: String {
-    case google, github
+enum SignInMethod: String, CaseIterable, Identifiable {
+    case google, github, passkey
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .google: "Google"
+        case .github: "GitHub"
+        case .passkey: "Passkey"
+        }
+    }
 
     @ViewBuilder
     var mark: some View {
         switch self {
-        case .google: GoogleMark().frame(width: 16, height: 16)
-        case .github: GitHubMark().frame(width: 16, height: 16)
+        case .google: GoogleMark()
+        case .github: GitHubMark()
+        case .passkey:
+            // Touch ID is the shape people associate with a passkey on a Mac,
+            // and it is a system symbol rather than a third-party brand, so it
+            // carries no usage restrictions.
+            Image(systemName: "touchid")
+                .font(.system(size: 19, weight: .regular))
+                .foregroundStyle(Color.brand)
         }
     }
 }

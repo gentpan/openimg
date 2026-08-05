@@ -24,9 +24,18 @@ final class OAuthSignIn: NSObject, ASWebAuthenticationPresentationContextProvidi
 
     /// Returns the one-time code, or nil when the user closed the sheet.
     func start(provider: String, server: String) async throws -> String? {
-        guard let url = URL(string: "\(server)/auth/\(provider)/start?native=1") else {
-            throw OpenimgError.badServerURL
-        }
+        try await run("\(server)/auth/\(provider)/start?native=1")
+    }
+
+    /// Opens the site's own sign-in page, which hands back a code once any
+    /// method succeeds. Used for passkey, where the credential ceremony has to
+    /// happen in a web context.
+    func startWebLogin(server: String) async throws -> String? {
+        try await run("\(server)/login?native=1")
+    }
+
+    private func run(_ address: String) async throws -> String? {
+        guard let url = URL(string: address) else { throw OpenimgError.badServerURL }
 
         return try await withCheckedThrowingContinuation { cont in
             let s = ASWebAuthenticationSession(

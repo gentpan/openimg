@@ -4,14 +4,14 @@ import { useAuth } from "../AuthContext";
 import Logo from "../Logo";
 import PasswordField from "../components/PasswordField";
 import { useTheme } from "../ThemeContext";
-import { authApi, resetApi } from "../api";
+import { authApi, resetApi, nativeAuth } from "../api";
 import PasskeyLoginForm from "./PasskeyLoginForm";
 import OAuthButtons from "./OAuthButtons";
 
 type Mode = "password" | "otp" | "passkey";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const nav = useNavigate();
   const loc = useLocation();
   const [email, setEmail] = useState("");
@@ -22,10 +22,27 @@ export default function LoginPage() {
   const [reset, setReset] = useState(false);
   const [providers, setProviders] = useState<string[]>([]);
   const next = (loc.state as { from?: string } | null)?.from || "/";
+  // The Mac app opens this page inside a web sheet. Set on the URL rather than
+  // handled per login method, because passkey, OTP and OAuth each finish on
+  // their own path — hooking every one of them is how a method gets forgotten.
+  const native = new URLSearchParams(loc.search).get("native") === "1";
 
   useEffect(() => {
     authApi.providers().then(setProviders).catch(() => {});
   }, []);
+
+  // One exit for every method: as soon as a session exists, trade it for a
+  // one-time code and hand that to the app. The session itself stays in the
+  // sheet and dies with it.
+  useEffect(() => {
+    if (!native || !user) return;
+    nativeAuth
+      .code()
+      .then(({ code }) => {
+        window.location.href = `openimg://auth?code=${encodeURIComponent(code)}`;
+      })
+      .catch(() => setErr("无法把登录结果交回应用，请重试"));
+  }, [native, user]);
   const passkeyAvailable = providers.includes("passkey");
 
   async function onSubmit(e: React.FormEvent) {

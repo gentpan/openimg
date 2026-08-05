@@ -164,6 +164,7 @@ func (s *Server) Router() *gin.Engine {
 	// API tokens (cookie-only: a token must not be able to mint more tokens)
 	authed.PATCH("/api/preferences", s.handleUpdatePreferences)
 	authed.PATCH("/api/account/profile", s.handleUpdateNickname)
+	authed.POST("/auth/native/code", s.handleNativeCode)
 	authed.POST("/api/account/otp", s.handleAccountOTP)
 	authed.POST("/api/account/password", s.handleChangePassword)
 	authed.POST("/api/account/avatar", s.handleUploadAvatar)

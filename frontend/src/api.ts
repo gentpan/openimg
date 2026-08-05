@@ -438,6 +438,12 @@ export const adminApi = {
 
 /** Gallery sort orders. Mirrors the whitelist in the backend's image handler —
  * an unknown value there falls back to newest rather than erroring. */
+/** Hands a signed-in session back to a native client. See backend
+ *  internal/api/native_auth.go for why the code, and not the session, travels. */
+export const nativeAuth = {
+  code: () => jfetch<{ code: string }>("/auth/native/code", { method: "POST" }),
+};
+
 export const SORTS = [
   { key: "newest", label: "最新上传", icon: "fa-arrow-down-wide-short" },
   { key: "oldest", label: "最早上传", icon: "fa-arrow-up-wide-short" },

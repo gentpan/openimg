@@ -128,15 +128,27 @@ final class AppModel: ObservableObject {
         if useToken { await connect() } else { await signIn() }
     }
 
-    /// Google / GitHub. The sheet returns a one-time code; the token comes from
-    /// trading it, so nothing long-lived ever travels through the URL.
-    func signIn(with provider: OAuthProvider) async {
+    /// Google, GitHub or passkey. All three finish the same way: the sheet
+    /// hands back a one-time code and the token comes from trading it, so
+    /// nothing long-lived ever travels through a URL.
+    ///
+    /// The providers go straight to their own start route. Passkey cannot —
+    /// WebAuthn runs in the page, and driving it natively needs an
+    /// associated-domains entitlement, which needs a Team ID a locally signed
+    /// build does not have. It opens the site's own sign-in page instead,
+    /// which hands back a code through the same handoff.
+    func signIn(with method: SignInMethod) async {
         busy = true
         defer { busy = false }
         do {
-            guard let code = try await oauth.start(provider: provider.rawValue, server: server) else {
-                return // 用户关掉了登录窗口
+            let code: String?
+            switch method {
+            case .passkey:
+                code = try await oauth.startWebLogin(server: server)
+            case .google, .github:
+                code = try await oauth.start(provider: method.rawValue, server: server)
             }
+            guard let code else { return } // 用户关掉了登录窗口
             guard let url = URL(string: server) else { throw OpenimgError.badServerURL }
             let (minted, _) = try await OpenimgAuth.exchange(
                 server: url, code: code, device: deviceName

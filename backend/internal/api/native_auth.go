@@ -75,6 +75,24 @@ func (n *nativeCodes) redeem(code string) (uuid.UUID, bool) {
 	return v.userID, true
 }
 
+// POST /auth/native/code — mints a handoff code for an already-signed-in
+// session. Cookie-only, like everything else that can create credentials.
+//
+// This exists so the web sign-in page can hand a native client back a code no
+// matter which method the user chose. The OAuth callback has its own shortcut,
+// but passkey cannot: WebAuthn happens entirely in the page, and a native app
+// cannot drive it without an associated-domains entitlement, which needs a
+// Team ID that a locally signed build does not have. Running it in the web
+// sheet and handing back a code works today and needs no entitlement.
+func (s *Server) handleNativeCode(c *gin.Context) {
+	u := auth.MustUser(c)
+	if u.Status != models.UserActive {
+		c.JSON(http.StatusForbidden, gin.H{"error": "账号已被停用"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": s.nativeCodes.issue(u.ID)})
+}
+
 type nativeExchangeReq struct {
 	Code string `json:"code" binding:"required"`
 	// Device names the token on the server so the user can recognise it in the

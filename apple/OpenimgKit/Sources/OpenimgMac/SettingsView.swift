@@ -27,9 +27,6 @@ struct SettingsView: View {
             Label(model.connected ? "已登录" : "登录", systemImage: "person.badge.key")
                 .font(.headline)
 
-            TextField("服务器地址", text: $model.server)
-                .textFieldStyle(.roundedBorder)
-
             if model.connected {
                 HStack {
                     Text("这台设备的凭证保存在钥匙串里，重开应用会自动登录。")
@@ -49,7 +46,7 @@ struct SettingsView: View {
                     SecureField("oimg_…", text: $model.token)
                         .textFieldStyle(.roundedBorder)
                         .onSubmit { Task { await model.connect() } }
-                    hint("在网站的「账号设置 → API Token」里生成。适合自建实例，或不想把账号密码交给第三方程序的情况。")
+                    hint("在网站的「账号设置 → API Token」里生成。适合不想把账号密码交给第三方程序的情况。")
                     Button(model.busy ? "连接中…" : "连接") { Task { await model.connect() } }
                         .buttonStyle(.borderedProminent)
                         .disabled(model.busy || model.token.isEmpty)
@@ -76,6 +73,7 @@ struct SettingsView: View {
                 Button("在网站上打开") {
                     if let u = URL(string: model.server) { NSWorkspace.shared.open(u) }
                 }
+                .help("用默认浏览器打开 Openimg")
                 .buttonStyle(.link)
                 .font(.caption)
             }

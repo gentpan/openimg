@@ -31,8 +31,9 @@ cd apple/OpenimgKit && swift run KitCheck
 无处安放状态栏项，SwiftUI 找不到需要保活的 scene，进程 exit 0 就没了——不崩溃、
 不打日志、菜单栏也没图标，看上去像什么都没发生。
 
-首次运行需要填服务器地址和访问令牌（网站「账号设置 → API Token」生成）。令牌
-存在钥匙串，不写配置文件；每个服务器地址一条，连自建实例不会覆盖公网那条。
+首次运行用邮箱和密码登录。密码只用来换取一枚这台设备专用的长期令牌，不会被
+保存；令牌进钥匙串，之后每次打开自动登录。也可以改用访问令牌登录（网站
+「账号设置 → API Token」生成）。
 
 ## 几个刻意的选择
 
@@ -41,9 +42,13 @@ Xcode 才能解析——只装 Command Line Tools 时 `swift test` 根本编译�
 测试目标等于一堆没人跑过的断言。`swift run KitCheck` 在任何有 Swift 的地方都能
 跑。等 Xcode 进场后可以再加一个 XCTest 目标，这个仍然留给 CI。
 
-**服务器地址是参数，不是常量。** 这是个 MIT 项目，会有人自建，写死 openimg.io
-的客户端对他们没用。也正因如此，`OpenimgClient.init` 拒绝非回环地址的明文
-http：令牌逐请求随 header 发送，一个打错的域名就会把它交给应答的人。
+**Kit 收服务器地址，App 不收。** `OpenimgClient` 拿 URL 做参数——它是个库，
+写死主机就没法测。但应用本身只面向 Openimg 一家，界面上不出现地址输入框，也
+不显示完整网址：给用户一个输入框等于邀请他填一个不会工作的地址。将来要支持
+自建实例时，Kit 这一层不用动。
+
+`OpenimgClient.init` 仍然拒绝非回环地址的明文 http：令牌逐请求随 header 发送，
+一个打错的域名就会把它交给应答的人。
 
 **multipart 组装在磁盘上而不是内存里。** 后台 `URLSession` 只接受
 `uploadTask(with:fromFile:)`，内存里的 body 会随进程退出一起消失。目前是前台

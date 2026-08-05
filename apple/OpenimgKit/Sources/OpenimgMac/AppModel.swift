@@ -36,7 +36,11 @@ final class AppModel: ObservableObject {
     static let shared = AppModel()
 
     // Connection
-    @Published var server = UserDefaults.standard.string(forKey: "server") ?? "https://openimg.io"
+    /// Fixed, and not shown anywhere in the UI. The Kit still takes a URL —
+    /// it is a library and a hard-wired host would make it untestable — but
+    /// this app targets one service, so putting an address field in front of
+    /// the user only invites them to type something that will not work.
+    let server = "https://openimg.io"
     @Published var token = ""
     @Published var email = UserDefaults.standard.string(forKey: "email") ?? ""
     @Published var password = ""
@@ -152,7 +156,6 @@ final class AppModel: ObservableObject {
             do { try store.save(token, server: server) } catch {
                 warning = "（令牌未能保存，下次启动需重新填写）"
             }
-            UserDefaults.standard.set(server, forKey: "server")
 
             account = me
             quota = try? await c.quota()

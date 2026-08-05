@@ -110,7 +110,6 @@ func (s *Server) Router() *gin.Engine {
 
 	authed := r.Group("", s.Auth.Middleware(true))
 	authed.POST("/auth/logout", s.handleLogout)
-	authed.GET("/auth/me", s.handleMe)
 	authed.GET("/auth/google/link-start", s.handleOAuthStart("google", "link"))
 	authed.GET("/auth/github/link-start", s.handleOAuthStart("github", "link"))
 	authed.POST("/auth/google/unlink", s.handleOAuthUnlink("google"))
@@ -133,6 +132,19 @@ func (s *Server) Router() *gin.Engine {
 	machine.DELETE("/api/images/:id", s.handleDeleteImage)
 	machine.POST("/api/images/bulk-delete", s.handleBulkDelete)
 	machine.POST("/api/images/:id/variant", s.handleMakeVariant)
+	// Moved down from the cookie-only group rather than added here: Gin panics
+	// on a duplicate method+path, so registering them in both places takes the
+	// process down at boot.
+	//
+	// A native client cannot function without these two. /auth/me answers "who
+	// is this token" so the app can show the account it is acting as, and
+	// /api/quota carries the tier limits — max file size, allowed formats,
+	// remaining space — which is what lets a client reject a file before
+	// spending the user's upload on a 413. Neither writes anything, and both
+	// only ever return the token owner's own data, which a token that can
+	// already bulk-delete 500 images plainly has access to.
+	machine.GET("/auth/me", s.handleMe)
+	machine.GET("/api/quota", s.handleGetQuota)
 
 	// API tokens (cookie-only: a token must not be able to mint more tokens)
 	authed.PATCH("/api/preferences", s.handleUpdatePreferences)
@@ -147,7 +159,6 @@ func (s *Server) Router() *gin.Engine {
 	authed.DELETE("/api/tokens/:id", s.handleDeleteToken)
 
 	// Space economy
-	authed.GET("/api/quota", s.handleGetQuota)
 	authed.GET("/api/quota/transactions", s.handleQuotaTransactions)
 	authed.GET("/api/storage/summary", s.handleStorageSummary)
 	authed.POST("/api/checkin", s.handleCheckin)

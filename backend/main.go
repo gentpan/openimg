@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/url"
 	"os/signal"
 	"syscall"
 	"time"
@@ -45,6 +46,24 @@ func pickEmailSender(cfg config.Config) email.Sender {
 		return sf
 	}
 	return email.Disabled()
+}
+
+// rpIDFor derives the WebAuthn Relying Party ID from the site's own origin.
+//
+// It used to be the literal "openimg.io", which meant WebAuthn was broken on
+// every deployment that was not openimg.io: the RP ID has to be a registrable
+// suffix of the page's origin, so a browser on img.example.com refuses to
+// create or use a credential scoped to someone else's domain. Self-hosters got
+// a passkey button that could never succeed.
+//
+// The port is dropped because RP IDs are domains, not origins — localhost:8080
+// must register as "localhost", which the spec allows as a secure context.
+func rpIDFor(baseURL string) string {
+	if u, err := url.Parse(baseURL); err == nil && u.Hostname() != "" {
+		return u.Hostname()
+	}
+	log.Printf("passkey: cannot parse PUBLIC_BASE_URL %q, falling back to localhost", baseURL)
+	return "localhost"
 }
 
 func main() {
@@ -118,7 +137,7 @@ func main() {
 	srv.Email = pickEmailSender(cfg)
 	log.Printf("email: provider=%s from=%s configured=%v",
 		srv.Email.Name(), cfg.EmailFrom, srv.Email.Configured())
-	if pk, err := passkey.New(gdb, "openimg.io", "OpenIMG", cfg.PublicBaseURL); err == nil {
+	if pk, err := passkey.New(gdb, rpIDFor(cfg.PublicBaseURL), "OpenIMG", cfg.PublicBaseURL); err == nil {
 		srv.Passkey = pk
 	} else {
 		log.Printf("passkey init failed: %v", err)

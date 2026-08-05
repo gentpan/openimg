@@ -156,7 +156,7 @@ func (s *Server) Router() *gin.Engine {
 	// Storage profiles (bring your own bucket)
 	authed.GET("/api/storage/profiles", s.handleListProfiles)
 	authed.POST("/api/storage/profiles", s.handleCreateProfile)
-	authed.PATCH("/api/storage/profiles/:id", s.handleUpdateNickname)
+	authed.PATCH("/api/storage/profiles/:id", s.handleUpdateProfile)
 	authed.DELETE("/api/storage/profiles/:id", s.handleDeleteProfile)
 	authed.POST("/api/storage/profiles/:id/test", s.handleTestProfile)
 	authed.POST("/api/storage/profiles/:id/default", s.handleSetDefaultProfile)

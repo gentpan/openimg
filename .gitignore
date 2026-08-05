@@ -1,9 +1,8 @@
 # Dependencies
-node_modules/
+/frontend/node_modules/
 
 # Build output
-dist/
-frontend/dist/
+/frontend/dist/
 backend/picbi-server
 backend/openimg-server
 
@@ -13,10 +12,17 @@ backend/openimg-server
 !.env.example
 *.pem
 *.key
+*.p8
+*.p12
+*.mobileprovision
 
 # Local storage / uploads
-storage/
-tmp/
+# Anchored: an unanchored 'storage/' also swallows backend/internal/storage/,
+# which is source. That has bitten a deploy rsync already.
+/backend/storage/
+/backend/tmp/
+/storage/
+/tmp/
 
 # OS
 .DS_Store

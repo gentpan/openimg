@@ -315,19 +315,22 @@ func Process(buf []byte, opts Options) (*Result, error) {
 	}
 
 	if opts.Original {
-		// Verbatim passthrough. Dimensions come from the decode we already did.
+		// Verbatim passthrough — except for location. RemoveMetadata above
+		// operated on the decoded image; these are the bytes as uploaded, so
+		// nothing has touched their EXIF. See StripGPSFromJPEG.
+		kept, _ := StripGPSFromJPEG(buf)
 		res := &Result{
 			Primary: Output{
 				Ext:    pickExt(extForType(imgType), "bin"),
 				MIME:   mimeForType(imgType),
-				Data:   buf,
+				Data:   kept,
 				Width:  width,
 				Height: height,
 			},
 			Variants: map[string]Output{},
 			Animated: animated,
 		}
-		addGridThumb(res, buf, stillParams, width)
+		addGridThumb(res, kept, stillParams, width)
 		return res, nil
 	}
 
@@ -373,10 +376,13 @@ func Process(buf []byte, opts Options) (*Result, error) {
 	// point is to hand back the exact bytes the user sent, which matters most
 	// for the odd formats that skip derivatives.
 	if opts.KeepOriginal && !bytes.Equal(buf, primary.Data) {
+		// Same exposure as the Original path: this variant is the upload as
+		// sent, so its EXIF has never been through RemoveMetadata.
+		keptOrig, _ := StripGPSFromJPEG(buf)
 		res.Variants[models.OriginalVariant(pickExt(extForType(imgType), "bin"))] = Output{
 			Ext:    pickExt(extForType(imgType), "bin"),
 			MIME:   mimeForType(imgType),
-			Data:   buf,
+			Data:   keptOrig,
 			Width:  srcWidth,
 			Height: srcHeight,
 		}

@@ -65,7 +65,7 @@ export default function UploadPage() {
               </div>
               <div className="mt-2.5 h-1 rounded-full bg-neutral-800 overflow-hidden">
                 <div
-                  className={`h-full transition-all ${pct >= 90 ? "bg-amber-500" : "bg-brand-500"}`}
+                  className={`h-full transition-all ${pct >= 90 ? "bg-amber-500" : "bg-accent-600"}`}
                   style={{ width: `${Math.min(100, pct)}%` }}
                 />
               </div>

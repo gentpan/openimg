@@ -50,7 +50,7 @@ struct OverviewView: View {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text(model.bytes(q.availableBytes))
                             .font(.system(size: 30, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Color.brand)
+                            .foregroundStyle(Color.accent)
                         Text("可用").foregroundStyle(.secondary)
                     }
                     // A plain bar, not a gauge: this is one number against one
@@ -60,7 +60,7 @@ struct OverviewView: View {
                         ZStack(alignment: .leading) {
                             Capsule().fill(.quaternary)
                             Capsule()
-                                .fill(LinearGradient(colors: [Color.brand.opacity(0.7), Color.brand],
+                                .fill(LinearGradient(colors: [Color.accent.opacity(0.7), Color.accent],
                                                      startPoint: .leading, endPoint: .trailing))
                                 .frame(width: max(3, geo.size.width * min(1, used)))
                         }
@@ -89,7 +89,7 @@ struct OverviewView: View {
                 // and with 86 / 13 / 2 the two small ones were near-identical
                 // slivers of purple that nothing distinguished.
                 let parts = [
-                    ("主图", s.sizePrimary, Color.brand),
+                    ("主图", s.sizePrimary, Color.accent),
                     ("衍生图", s.sizeVariants, Color(red: 0.20, green: 0.74, blue: 0.80)),
                     ("缩略图", s.sizeThumbs, Color(red: 0.98, green: 0.72, blue: 0.25)),
                     ("未分类", s.sizeUnclassified, Color.white.opacity(0.28)),
@@ -233,7 +233,7 @@ struct OverviewView: View {
                     ForEach(model.transactions.prefix(12)) { t in
                         HStack(spacing: 10) {
                             Image(systemName: t.isGrant ? "plus.circle.fill" : "minus.circle.fill")
-                                .foregroundStyle(t.isGrant ? Color.brand : Color.secondary)
+                                .foregroundStyle(t.isGrant ? Color.accent : Color.secondary)
                                 .font(.caption)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(t.label).font(.caption)
@@ -244,7 +244,7 @@ struct OverviewView: View {
                             Spacer()
                             Text("\(t.isGrant ? "+" : "−")\(model.bytes(t.bytes))")
                                 .font(.caption.monospacedDigit())
-                                .foregroundStyle(t.isGrant ? Color.brand : .secondary)
+                                .foregroundStyle(t.isGrant ? Color.accent : .secondary)
                         }
                         .padding(.vertical, 5)
                         if t.id != model.transactions.prefix(12).last?.id { Divider() }
@@ -269,11 +269,16 @@ struct OverviewView: View {
     /// Cycled across formats so the bars are told apart by colour as well as
     /// by length — the shortest two are otherwise a pair of stubs.
     static let formatPalette: [Color] = [
-        .brand,
-        Color(red: 0.20, green: 0.74, blue: 0.80),
-        Color(red: 0.98, green: 0.72, blue: 0.25),
-        Color(red: 0.40, green: 0.78, blue: 0.45),
-        Color(red: 0.92, green: 0.45, blue: 0.62),
+        // Accent first, not brand: a chart answers "how much", and violet in a
+        // chart reads as "this series is the brand one" rather than as a
+        // colour. The fourth used to be another green and sat too close to the
+        // first — a slate replaces it, since it only appears once there are
+        // four or more formats and a low-saturation neutral cannot clash.
+        .accent,
+        Color(red: 0.22, green: 0.74, blue: 0.97),
+        Color(red: 0.98, green: 0.75, blue: 0.14),
+        Color(red: 0.58, green: 0.64, blue: 0.72),
+        Color(red: 0.96, green: 0.45, blue: 0.71),
     ]
 
     private func percent(_ part: Int64, of whole: Int64) -> String {
@@ -338,7 +343,7 @@ private struct HeatCalendar: View {
                 Text("少").font(.caption2).foregroundStyle(.tertiary)
                 ForEach([0.15, 0.35, 0.6, 1.0], id: \.self) { level in
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.brand.opacity(level))
+                        .fill(Color.accent.opacity(level))
                         .frame(width: 9, height: 9)
                 }
                 Text("多").font(.caption2).foregroundStyle(.tertiary)
@@ -349,7 +354,7 @@ private struct HeatCalendar: View {
     private func cell(for rec: CheckinRecord?, date: String, max maxBytes: Int64) -> some View {
         let level = rec.map { 0.15 + 0.85 * (Double($0.bytes) / Double(maxBytes)) } ?? 0
         return RoundedRectangle(cornerRadius: 2)
-            .fill(rec == nil ? AnyShapeStyle(.quaternary) : AnyShapeStyle(Color.brand.opacity(level)))
+            .fill(rec == nil ? AnyShapeStyle(.quaternary) : AnyShapeStyle(Color.accent.opacity(level)))
             .frame(width: 11, height: 11)
             .help(rec == nil ? date : "\(date)　+\(ByteCountFormatter.string(fromByteCount: rec!.bytes, countStyle: .binary))")
     }

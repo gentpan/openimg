@@ -31,7 +31,7 @@ ChartJS.register(
 export default function AdminDashboard() {
   // Destructured under the same names the chart JSX below already uses, so
   // swapping the frozen constants for a live palette is a one-line change.
-  const { BRAND, BRAND_DIM, SERIES, GRID, TICK, lineBase, barBase } = useChartTheme();
+  const { ACCENT, ACCENT_DIM, SERIES, GRID, TICK, lineBase, barBase } = useChartTheme();
   const [data, setData] = useState<Dashboard | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -95,8 +95,8 @@ export default function AdminDashboard() {
                 {
                   label: "张数",
                   data: days.map((d) => d.uploads),
-                  borderColor: BRAND,
-                  backgroundColor: BRAND_DIM,
+                  borderColor: ACCENT,
+                  backgroundColor: ACCENT_DIM,
                   fill: true,
                   tension: 0.35,
                   pointRadius: 2,
@@ -198,7 +198,7 @@ export default function AdminDashboard() {
                       label: "占用",
                       data: data.by_profile.map((p) => p.bytes),
                       backgroundColor: data.by_profile.map((p) =>
-                        p.kind === "platform" ? BRAND : SERIES[1],
+                        p.kind === "platform" ? ACCENT : SERIES[1],
                       ),
                       borderRadius: 4,
                       barThickness: 22,
@@ -242,7 +242,7 @@ export default function AdminDashboard() {
               detail={`${formatBytes(s.dedup_saved_bytes)} / 引用总量 ${formatBytes(
                 s.stored_bytes + s.dedup_saved_bytes,
               )}`}
-              color={BRAND}
+              color={ACCENT}
             />
             <Gauge
               label="压缩节省"
@@ -273,13 +273,13 @@ export default function AdminDashboard() {
                   {
                     label: "已使用",
                     data: data.top_users_by_space.map((u) => u.used_bytes),
-                    backgroundColor: BRAND,
+                    backgroundColor: ACCENT,
                     borderRadius: 4,
                   },
                   {
                     label: "总配额",
                     data: data.top_users_by_space.map((u) => u.quota_bytes),
-                    backgroundColor: BRAND_DIM,
+                    backgroundColor: ACCENT_DIM,
                     borderRadius: 4,
                   },
                 ],

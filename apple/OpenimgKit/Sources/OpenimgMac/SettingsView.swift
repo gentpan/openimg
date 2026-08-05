@@ -199,7 +199,7 @@ struct SettingsView: View {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text(model.bytes(q.availableBytes))
                             .font(.system(size: 26, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Color.brand)
+                            .foregroundStyle(Color.accent)
                         Text("可用").foregroundStyle(.secondary)
                         Spacer()
                         Text("\(q.imageCount) 张").font(.callout).foregroundStyle(.secondary)
@@ -207,7 +207,7 @@ struct SettingsView: View {
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             Capsule().fill(.white.opacity(0.10))
-                            Capsule().fill(Color.brand)
+                            Capsule().fill(Color.accent)
                                 .frame(width: max(4, geo.size.width * min(1,
                                     q.quotaBytes > 0 ? Double(q.usedBytes) / Double(q.quotaBytes) : 0)))
                         }

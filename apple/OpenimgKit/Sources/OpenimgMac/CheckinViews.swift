@@ -24,17 +24,19 @@ struct WeekStrip: View {
                 VStack(spacing: 6) {
                     ZStack {
                         Circle()
-                            .fill(d.claimed ? Color.brand : .white.opacity(0.07))
+                            .fill(d.claimed ? Color.accent : .white.opacity(0.07))
                         if d.isToday && !d.claimed {
                             // Today is outlined rather than filled: it is the
                             // one still available, and a hollow ring reads as
                             // "your turn" where a grey disc reads as "missed".
-                            Circle().strokeBorder(Color.brand, lineWidth: 2)
+                            Circle().strokeBorder(Color.accent, lineWidth: 2)
                         }
                         if d.claimed {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(.white)
+                                // Ink, not white: the disc under it is the
+                                // accent green, where white is 1.68:1.
+                                .foregroundStyle(Color.accentInk)
                         }
                     }
                     .frame(width: 30, height: 30)
@@ -42,7 +44,7 @@ struct WeekStrip: View {
 
                     Text(d.label)
                         .font(.caption2)
-                        .foregroundStyle(d.isToday ? Color.brand : .secondary)
+                        .foregroundStyle(d.isToday ? Color.accent : .secondary)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -67,7 +69,7 @@ struct MilestoneBar: View {
                     // The number is the point. "Keep your streak" means nothing
                     // without saying what the streak is worth.
                     Text("满 \(total) 天 +\(bytes(reward))")
-                        .font(.caption).foregroundStyle(Color.brand)
+                        .font(.caption).foregroundStyle(Color.accent)
                 }
             }
             ProgressBar(value: total > 0 ? Double(current) / Double(total) : 0)

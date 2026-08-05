@@ -23,18 +23,18 @@ export default function CheckinWeek({ records }: { records: CheckinRecord[] }) {
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] transition ${
                 done
-                  ? "bg-brand-500 text-white"
+                  ? "bg-accent-600 text-accent-ink"
                   : isToday
                     // Outlined, not filled: today is the one still available,
                     // and a hollow ring reads as "your turn" where a grey disc
                     // reads as "missed".
-                    ? "border-2 border-brand-500 text-brand-300"
+                    ? "border-2 border-accent-600 text-accent-300"
                     : "bg-neutral-800 text-transparent"
               } ${d > today ? "opacity-45" : ""}`}
             >
               {done && <i className="fa-solid fa-check" />}
             </div>
-            <span className={`text-[10px] ${isToday ? "text-brand-300" : "text-neutral-500"}`}>
+            <span className={`text-[10px] ${isToday ? "text-accent-300" : "text-neutral-500"}`}>
               {"一二三四五六日"[i]}
             </span>
           </div>
@@ -63,13 +63,13 @@ export function MilestoneBar({
         {reward > 0 && (
           // The number is the point. "Keep your streak" means nothing without
           // saying what the streak is worth.
-          <span className="text-xs text-brand-300">
+          <span className="text-xs text-accent-300">
             满 {total} 天 +{formatBytes(reward, 0)}
           </span>
         )}
       </div>
       <div className="h-1.5 rounded-full bg-neutral-800 overflow-hidden">
-        <div className="h-full rounded-full bg-brand-500 transition-all duration-500"
+        <div className="h-full rounded-full bg-accent-600 transition-all duration-500"
              style={{ width: `${pct}%` }} />
       </div>
       <div className="text-[10px] text-neutral-600">{current} / {total} 天</div>

@@ -232,7 +232,7 @@ function Row({
         {item.state === "done" ? (
           <div className="text-[10px] text-neutral-600 truncate">
             {formatBytes(item.file.size, 0)}
-            {saved > 0 && <span className="text-teal-500"> · 省 {formatBytes(saved, 0)}</span>}
+            {saved > 0 && <span className="text-accent-400"> · 省 {formatBytes(saved, 0)}</span>}
           </div>
         ) : item.state === "error" ? (
           <div className="text-[10px] text-red-400 truncate" title={item.error}>

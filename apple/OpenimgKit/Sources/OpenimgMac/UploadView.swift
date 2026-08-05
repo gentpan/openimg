@@ -95,7 +95,7 @@ struct UploadView: View {
                     .buttonStyle(QuietButton())
                     .disabled(model.uploading)
             }
-            ProgressBar(value: model.batchProgress)
+            ProgressBar(tint: .brand, value: model.batchProgress)
                 .frame(height: 5)
         }
         .padding(14)
@@ -241,7 +241,7 @@ private struct QueueRow: View {
                     if item.deduplicated {
                         Text("秒传")
                             .font(.system(size: 9, weight: .medium))
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.success)
                             .padding(.horizontal, 5).padding(.vertical, 1.5)
                             .background(Capsule().fill(.green.opacity(0.16)))
                     }
@@ -249,7 +249,7 @@ private struct QueueRow: View {
                     Text(detail).font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                 }
                 if case .uploading = item.state {
-                    ProgressBar(value: item.progress).frame(height: 3)
+                    ProgressBar(tint: .brand, value: item.progress).frame(height: 3)
                 } else if case .failed(let why) = item.state {
                     Text(why).font(.caption2).foregroundStyle(.orange).lineLimit(1)
                 }
@@ -286,12 +286,20 @@ private struct QueueRow: View {
 
 /// One progress bar shape, so the batch bar and the per-file bars match.
 struct ProgressBar: View {
+    /// Which scale the bar belongs to.
+    ///
+    /// The same bar serves two different questions. Upload progress is "how
+    /// far along is this task" — navigation's business, so violet. Check-in
+    /// progress is "how many days have I banked" — a quantity, so green, which
+    /// is the default because that is the more common case here.
+    var tint: Color = .accent
+
     let value: Double
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 Capsule().fill(.white.opacity(0.10))
-                Capsule().fill(Color.brand)
+                Capsule().fill(tint)
                     .frame(width: max(2, geo.size.width * min(1, max(0, value))))
                     .animation(.easeOut(duration: 0.2), value: value)
             }

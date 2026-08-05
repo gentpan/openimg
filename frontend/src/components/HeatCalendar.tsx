@@ -89,10 +89,10 @@ export default function HeatCalendar({
         <span>{summary}</span>
         <span className="flex items-center gap-1">
           少
-          <span className="w-2 h-2 rounded-[2px] bg-brand-700" />
-          <span className="w-2 h-2 rounded-[2px] bg-brand-600" />
-          <span className="w-2 h-2 rounded-[2px] bg-brand-500" />
-          <span className="w-2 h-2 rounded-[2px] bg-brand-400" />
+          <span className="w-2 h-2 rounded-[2px] [background:var(--heat-1)]" />
+          <span className="w-2 h-2 rounded-[2px] [background:var(--heat-2)]" />
+          <span className="w-2 h-2 rounded-[2px] [background:var(--heat-3)]" />
+          <span className="w-2 h-2 rounded-[2px] [background:var(--heat-4)]" />
           多
         </span>
       </div>

@@ -24,7 +24,7 @@ export default function Logo({ size = 28, className = "", asLink = true }: LogoP
       className={className}
       aria-label="Openimg"
     >
-      <path fill={BRAND} d={MARK_PATH} />
+      <path fill={ACCENT} d={MARK_PATH} />
     </svg>
   );
 
@@ -36,7 +36,7 @@ export default function Logo({ size = 28, className = "", asLink = true }: LogoP
       height={size}
       aria-label="返回首页"
     >
-      <g transform="translate(4 4) scale(2)" fill={BRAND}>
+      <g transform="translate(4 4) scale(2)" fill={ACCENT}>
         <path d="M5.735 1.92a.375.375 0 0 1 .53 0l4.345 4.345a.375.375 0 1 0 .53-.53L6.795 1.39a1.125 1.125 0 0 0-1.59 0L.86 5.735a.375.375 0 1 0 .53.53l4.345-4.345Z" />
         <path d="M6 2.715 1.92 6.795c-.015.015-.03.03-.045.045v3.099c0 .518.42.937.938.937h1.687a.375.375 0 0 0 .375-.375V8.25a.375.375 0 0 1 .375-.375h1.5a.375.375 0 0 1 .375.375v2.25c0 .207.168.375.375.375h1.687a.937.937 0 0 0 .938-.937V6.84a1.3 1.3 0 0 1-.045-.045L6 2.715Z" />
       </g>
@@ -85,7 +85,7 @@ export default function Logo({ size = 28, className = "", asLink = true }: LogoP
 }
 
 
-const BRAND = "#5DE31D";
+const ACCENT = "#5DE31D";
 
 // Kept in sync with public/favicon.svg by hand — that file is the source of
 // the generated PNG/ICO set, this constant is what React renders.

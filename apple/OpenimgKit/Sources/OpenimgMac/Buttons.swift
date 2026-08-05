@@ -12,12 +12,10 @@ struct BrandButton: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.callout.weight(.semibold))
-            // Disabled takes a neutral fill rather than a faded brand one.
-            // Fading only the background used to be fine — white on 35% purple
-            // still read. With a dark label on a dark-faded green it is dark on
-            // dark, so the label has to move too, which means the whole state
-            // does.
-            .foregroundStyle(enabled ? AnyShapeStyle(Color.brandInk)
+            // Disabled takes a neutral fill rather than a faded brand one:
+            // fading only the background leaves the label at full strength on a
+            // surface that no longer supports it.
+            .foregroundStyle(enabled ? AnyShapeStyle(Color.white)
                                      : AnyShapeStyle(.tertiary))
             .padding(.horizontal, 15)
             .padding(.vertical, 7)

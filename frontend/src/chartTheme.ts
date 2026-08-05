@@ -16,8 +16,8 @@ import { useTheme } from "./ThemeContext";
  * below the 3:1 that non-text graphics need to be distinguishable.
  */
 export interface ChartTheme {
-  BRAND: string;
-  BRAND_DIM: string;
+  ACCENT: string;
+  ACCENT_DIM: string;
   SERIES: string[];
   GRID: string;
   TICK: string;
@@ -36,24 +36,24 @@ export interface ChartTheme {
 }
 
 const DARK = {
-  BRAND: "#5de31d",
-  BRAND_DIM: "rgba(93, 227, 29, 0.15)",
-  SERIES: ["#5de31d", "#38bdf8", "#fbbf24", "#f472b6", "#a78bfa", "#2dd4bf", "#fb923c"],
+  ACCENT: "#5de31d",
+  ACCENT_DIM: "rgba(93, 227, 29, 0.15)",
+  SERIES: ["#5de31d", "#38bdf8", "#fbbf24", "#f472b6", "#94a3b8", "#2dd4bf", "#fb923c"],
   GRID: "rgba(64, 64, 64, 0.35)",
   TICK: "#737373",
   COMPOSITION: ["#5de31d", "#38bdf8", "#fbbf24"],
-  FORMATS: ["#5de31d", "#38bdf8", "#fbbf24", "#f472b6", "#a78bfa", "#2dd4bf"],
+  FORMATS: ["#5de31d", "#38bdf8", "#fbbf24", "#f472b6", "#94a3b8", "#2dd4bf"],
   SAVED: "#34d399",
 };
 
 const LIGHT = {
-  BRAND: "#46b312",
-  BRAND_DIM: "rgba(70, 179, 18, 0.18)",
-  SERIES: ["#46b312", "#0284c7", "#d97706", "#db2777", "#7c3aed", "#0d9488", "#ea580c"],
+  ACCENT: "#46b312",
+  ACCENT_DIM: "rgba(70, 179, 18, 0.18)",
+  SERIES: ["#46b312", "#0284c7", "#d97706", "#db2777", "#475569", "#0d9488", "#ea580c"],
   GRID: "rgba(17, 24, 39, 0.12)",
   TICK: "#6b7280",
   COMPOSITION: ["#46b312", "#0284c7", "#d97706"],
-  FORMATS: ["#46b312", "#0284c7", "#d97706", "#db2777", "#7c3aed", "#0d9488"],
+  FORMATS: ["#46b312", "#0284c7", "#d97706", "#db2777", "#475569", "#0d9488"],
   SAVED: "#059669",
 };
 

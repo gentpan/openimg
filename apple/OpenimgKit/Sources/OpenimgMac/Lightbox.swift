@@ -52,6 +52,11 @@ struct Lightbox: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        // Clicking the picture closes, the way every viewer on the platform
+        // behaves. The arrows sit above this and take their own taps, so
+        // paging never falls through to a dismiss.
+        .onTapGesture { model.detail = nil }
         .overlay(alignment: .topLeading) {
             Button { model.detail = nil } label: {
                 Image(systemName: "xmark")
@@ -63,6 +68,24 @@ struct Lightbox: View {
             .padding(14)
             .keyboardShortcut(.escape, modifiers: [])
         }
+        .overlay(alignment: .leading) {
+            arrow("chevron.left", enabled: model.canGoPrev) { await model.showPrev() }
+                .keyboardShortcut(.leftArrow, modifiers: [])
+        }
+        .overlay(alignment: .trailing) {
+            arrow("chevron.right", enabled: model.canGoNext) { await model.showNext() }
+                .keyboardShortcut(.rightArrow, modifiers: [])
+        }
+        .overlay(alignment: .bottom) {
+            if let i = model.detailIndex {
+                Text("\(model.page * model.pageSize + i + 1) / \(model.total)")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(Capsule().fill(.black.opacity(0.45)))
+                    .padding(.bottom, 14)
+            }
+        }
         .task(id: img.id) {
             full = nil
             loadingFull = true
@@ -72,6 +95,21 @@ struct Lightbox: View {
             // a 20 MB PNG that looks identical here at 40 KB.
             full = await ThumbnailCache.shared.image(for: img.thumbURL, client: try? model.client())
         }
+    }
+
+    private func arrow(_ icon: String, enabled: Bool,
+                       _ action: @escaping () async -> Void) -> some View {
+        Button { Task { await action() } } label: {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .frame(width: 38, height: 38)
+                .background(Circle().fill(.black.opacity(0.45)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : 0.25)
+        .padding(.horizontal, 14)
     }
 
     // MARK: - Info

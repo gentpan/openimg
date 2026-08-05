@@ -397,6 +397,39 @@ final class AppModel: ObservableObject {
         await load()
     }
 
+    // MARK: - Lightbox navigation
+
+    var detailIndex: Int? {
+        guard let d = detail else { return nil }
+        return images.firstIndex { $0.id == d.id }
+    }
+    var canGoPrev: Bool { (detailIndex.map { $0 > 0 } ?? false) || page > 0 }
+    var canGoNext: Bool {
+        guard let i = detailIndex else { return false }
+        return i < images.count - 1 || page < pageCount - 1
+    }
+
+    /// Stepping past either end of the page turns the page.
+    ///
+    /// Stopping at the page boundary would be simpler and would also mean the
+    /// arrow keys go dead every 25 pictures for a reason the viewer cannot see
+    /// — the page is a fetch detail, not something the user is looking at.
+    func showPrev() async {
+        guard let i = detailIndex else { return }
+        if i > 0 { detail = images[i - 1]; return }
+        guard page > 0 else { return }
+        await go(to: page - 1)
+        detail = images.last
+    }
+
+    func showNext() async {
+        guard let i = detailIndex else { return }
+        if i < images.count - 1 { detail = images[i + 1]; return }
+        guard page < pageCount - 1 else { return }
+        await go(to: page + 1)
+        detail = images.first
+    }
+
     func toggle(_ id: String) {
         if selection.contains(id) { selection.remove(id) } else { selection.insert(id) }
     }

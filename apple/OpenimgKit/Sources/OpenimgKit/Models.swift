@@ -41,6 +41,28 @@ public struct UploadResponse: Codable, Sendable {
     public let deduplicated: Bool
 }
 
+/// Mirrors SORTS in frontend/src/api.ts; the server validates against the same
+/// whitelist and silently falls back to newest for anything else.
+public enum SortKey: String, CaseIterable, Sendable, Identifiable {
+    case newest, oldest, largest, smallest, widest, name
+    public var id: String { rawValue }
+    public var label: String {
+        switch self {
+        case .newest: "最新上传"
+        case .oldest: "最早上传"
+        case .largest: "占用最大"
+        case .smallest: "占用最小"
+        case .widest: "分辨率最高"
+        case .name: "文件名"
+        }
+    }
+}
+
+public struct BulkDeleteResult: Codable, Sendable {
+    public let deleted: Int
+    public let remaining: Int
+}
+
 public struct ImagePage: Codable, Sendable {
     public let images: [RemoteImage]
     public let total: Int

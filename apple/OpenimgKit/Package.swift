@@ -13,7 +13,9 @@ import PackageDescription
 // Xcode is in the picture; this one still runs in CI without it.
 let package = Package(
     name: "OpenimgKit",
-    platforms: [.macOS(.v13), .iOS(.v16)],
+    // macOS 14 for `inspector` and the two-parameter `onChange`; both are load
+    // bearing in the gallery and neither has a clean pre-14 equivalent.
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "OpenimgKit", targets: ["OpenimgKit"]),
         .executable(name: "KitCheck", targets: ["KitCheck"]),

@@ -116,13 +116,49 @@ public struct OpenimgClient: Sendable {
         return try decode(Quota.self, data, resp)
     }
 
-    public func images(limit: Int = 40, offset: Int = 0) async throws -> ImagePage {
-        let req = request("GET", "api/images", query: [
+    public func images(
+        limit: Int = 25,
+        offset: Int = 0,
+        query search: String = "",
+        sort: SortKey = .newest
+    ) async throws -> ImagePage {
+        var q: [URLQueryItem] = [
             .init(name: "limit", value: String(limit)),
             .init(name: "offset", value: String(offset)),
-        ])
-        let (data, resp) = try await session.data(for: req)
+            .init(name: "sort", value: sort.rawValue),
+        ]
+        // Omitted rather than sent empty: the server treats a present `q` as a
+        // filter and would ILIKE against '%%'.
+        let trimmed = search.trimmingCharacters(in: .whitespaces)
+        if !trimmed.isEmpty { q.append(.init(name: "q", value: trimmed)) }
+
+        let (data, resp) = try await session.data(for: request("GET", "api/images", query: q))
         return try decode(ImagePage.self, data, resp)
+    }
+
+    /// Deletes by id. The server caps a single call at 500; callers with more
+    /// than that must chunk, which is why this takes an array and not a set.
+    public func bulkDelete(ids: [String]) async throws -> BulkDeleteResult {
+        var req = request("POST", "api/images/bulk-delete")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["ids": ids])
+        let (data, resp) = try await session.data(for: req)
+        return try decode(BulkDeleteResult.self, data, resp)
+    }
+
+    /// Fetches raw bytes for a thumbnail or image URL.
+    ///
+    /// Object URLs point at the CDN, not at the API, and carry no credentials —
+    /// so this deliberately does not attach the token. Sending it to whatever
+    /// host `public_base_url` names would leak it to a third party the moment
+    /// someone points a storage profile at one.
+    public func fetchData(_ urlString: String) async throws -> Data {
+        guard let url = URL(string: urlString) else { throw OpenimgError.badServerURL }
+        let (data, resp) = try await session.data(from: url)
+        guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw OpenimgError.transport("图片加载失败")
+        }
+        return data
     }
 
     public func delete(id: String) async throws {

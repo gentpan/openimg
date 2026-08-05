@@ -15,23 +15,38 @@
 #   ./apple/package-mac.sh release      release 构建
 set -euo pipefail
 
+# SwiftUI's property wrappers are macros now, and their plugin ships only with
+# Xcode — the Command Line Tools toolchain cannot expand @State at all. So the
+# build has to run against Xcode's toolchain even when xcode-select points at
+# the CLT, which is the default on a machine that had them first.
+if [[ -z "${DEVELOPER_DIR:-}" ]]; then
+    for candidate in /Applications/Xcode.app /Applications/Xcode-beta.app; do
+        if [[ -d "$candidate/Contents/Developer/Toolchains" ]]; then
+            export DEVELOPER_DIR="$candidate/Contents/Developer"
+            break
+        fi
+    done
+fi
+[[ -n "${DEVELOPER_DIR:-}" ]] || { echo "找不到 Xcode —— SwiftUI 宏无法展开" >&2; exit 1; }
+
 CONFIG=${1:-debug}
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PKG="$ROOT/OpenimgKit"
 APP="$ROOT/build/OpenimgMac.app"
 
 echo "构建 ($CONFIG)…"
-swift build --package-path "$PKG" -c "$CONFIG" --product OpenimgMac >/dev/null
-BIN="$(swift build --package-path "$PKG" -c "$CONFIG" --show-bin-path)/OpenimgMac"
+xcrun swift build --package-path "$PKG" -c "$CONFIG" --product OpenimgMac >/dev/null
+BIN="$(xcrun swift build --package-path "$PKG" -c "$CONFIG" --show-bin-path)/OpenimgMac"
 [[ -x "$BIN" ]] || { echo "找不到产物：$BIN" >&2; exit 1; }
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS"
 cp "$BIN" "$APP/Contents/MacOS/OpenimgMac"
 
-# LSUIElement is the line that makes this a menu bar app rather than a normal
-# one: without it the app takes a Dock icon and a menu bar of its own, which is
-# wrong for something whose entire UI is one status item.
+# No LSUIElement: this is a windowed app, so it should take a Dock icon and its
+# own menu bar like any other. The earlier menu-bar-only build set it, and
+# leaving it in would give a main-window app no way to be brought back once its
+# window is closed.
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -44,8 +59,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundlePackageType</key>         <string>APPL</string>
   <key>CFBundleShortVersionString</key>  <string>0.1.0</string>
   <key>CFBundleVersion</key>             <string>1</string>
-  <key>LSMinimumSystemVersion</key>      <string>13.0</string>
-  <key>LSUIElement</key>                 <true/>
+  <key>LSMinimumSystemVersion</key>      <string>14.0</string>
   <key>NSHighResolutionCapable</key>     <true/>
 </dict>
 </plist>

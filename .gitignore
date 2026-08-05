@@ -4,6 +4,7 @@
 # Build output
 /frontend/dist/
 /apple/OpenimgKit/.build/
+/apple/build/
 /apple/**/*.xcodeproj
 /apple/**/xcuserdata/
 backend/picbi-server

@@ -24,8 +24,12 @@ cd apple/OpenimgKit && swift run KitCheck
 ```
 
 ```bash
-cd apple/OpenimgKit && swift run OpenimgMac
+./apple/package-mac.sh release && open apple/build/OpenimgMac.app
 ```
+
+**不要用 `swift run OpenimgMac`。** 裸可执行文件没有 bundle，`MenuBarExtra`
+无处安放状态栏项，SwiftUI 找不到需要保活的 scene，进程 exit 0 就没了——不崩溃、
+不打日志、菜单栏也没图标，看上去像什么都没发生。
 
 首次运行需要填服务器地址和访问令牌（网站「账号设置 → API Token」生成）。令牌
 存在钥匙串，不写配置文件；每个服务器地址一条，连自建实例不会覆盖公网那条。
@@ -50,12 +54,12 @@ Xcode；只有 CLT 时整个 target 编译不过。那个拖放标志放进 mode
 
 ## 现状与下一步
 
-Kit 与 macOS 应用都能用 `swift build` 构建，26 项自检全过。**但 `swift run
-OpenimgMac` 跑出来的是一个裸可执行文件，不是 .app**——没有 bundle、没有
-`LSUIElement`、Dock 里会有图标。开发够用，分发不够。
+Kit 与 macOS 应用都能用 `swift build` 构建，26 项自检全过。`package-mac.sh` 打出的是带 LSUIElement 的真 .app，ad-hoc 签名，本机可用。
+打包和 ad-hoc 签名都不需要 Xcode——.app 只是一个目录加 Info.plist，codesign
+随 Command Line Tools 一起装。
 
-要分发得装 Xcode 做三件事：包成 .app、签 Developer ID、公证。免费 Personal
-Team 签出来的 7 天过期且只能本机跑，给第二个人用需要 99 美元账号。
+**给别人用**才需要 Developer ID 签名加公证，那要 99 美元开发者账号。免费
+Personal Team 签出来的 7 天过期且只能本机跑。
 
 iOS 端还差一个产品决策：App Store 5.1.1(v) 要求提供账号功能的 App 必须能在
 App 内删账号，而 `DELETE /api/account` 是 cookie-only，且 session 7 天硬过期、

@@ -1,4 +1,5 @@
 import type {
+  AdminImage,
   AdminQuotaTx,
   AdminUser,
   ApiToken,
@@ -376,7 +377,7 @@ export const adminApi = {
   dashboard: () => jfetch<Dashboard>("/admin/api/dashboard"),
   listImages: (filters: { status?: string; user_id?: string; limit?: number } = {}) => {
     const qs = new URLSearchParams(filters as Record<string, string>);
-    return jfetch<{ images: Image[] | null }>("/admin/api/images?" + qs.toString()).then((r) => r.images ?? []);
+    return jfetch<{ images: AdminImage[] | null }>("/admin/api/images?" + qs.toString()).then((r) => r.images ?? []);
   },
   listUsers: () => jfetch<{ users: AdminUser[] | null }>("/admin/api/users").then((r) => r.users ?? []),
   updateUser: (id: string, patch: Partial<{ role: string; status: string; group_id: string; name: string }>) =>

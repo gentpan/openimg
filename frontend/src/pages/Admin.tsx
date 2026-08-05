@@ -5,8 +5,8 @@ import Footer from "../Footer";
 import AdminDashboard from "./admin/Dashboard";
 import LoginMethods from "./admin/LoginMethods";
 import UploadSettings from "./admin/UploadSettings";
-import { adminApi, formatBytes, reportCategoryLabel } from "../api";
-import type { AdminQuotaTx, AdminUser, Image, Report, UserGroup } from "../types";
+import { adminApi, formatBytes, imageApi, reportCategoryLabel } from "../api";
+import type { AdminImage, AdminQuotaTx, AdminUser, Report, UserGroup } from "../types";
 
 type Tab = "dashboard" | "users" | "groups" | "images" | "reports" | "ledger" | "login" | "upload";
 
@@ -336,18 +336,30 @@ function GroupsTab() {
 /* ---------- Images ---------- */
 
 function ImagesTab() {
-  const [images, setImages] = useState<Image[]>([]);
+  const [images, setImages] = useState<AdminImage[]>([]);
   const [status, setStatus] = useState("");
+  const [detail, setDetail] = useState<AdminImage | null>(null);
 
   async function load() {
-    setImages(await adminApi.listImages({ status: status || undefined, limit: 60 }));
+    const next = await adminApi.listImages({ status: status || undefined, limit: 60 });
+    setImages(next);
+    // Keep the open panel pointed at fresh data, or close it if the image is
+    // gone — a stale panel is how you block something twice.
+    setDetail((d) => (d ? next.find((i) => i.id === d.id) ?? null : null));
   }
   useEffect(() => {
     load().catch(() => {});
   }, [status]);
 
-  async function toggleBlock(img: Image) {
+  async function toggleBlock(img: AdminImage) {
     await adminApi.blockImage(img.id);
+    await load();
+  }
+
+  async function removeImage(img: AdminImage) {
+    if (!confirm(`确定删除这张图片？\n\n${img.orig_name}\n上传者：${img.owner_email}\n\n对象会被清除，占用的 ${formatBytes(img.size_stored, 0)} 退还给该用户。此操作不可撤销。`)) return;
+    await imageApi.remove(img.id);
+    setDetail(null);
     await load();
   }
 
@@ -374,24 +386,138 @@ function ImagesTab() {
       </div>
       <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-8 gap-2">
         {images.map((img) => (
-          <div key={img.id} className="group relative rounded-xl overflow-hidden border border-neutral-800">
+          <button
+            key={img.id}
+            onClick={() => setDetail(img)}
+            title={`${img.orig_name}\n${img.owner_email}`}
+            className={`group relative block rounded-xl overflow-hidden border transition ${
+              detail?.id === img.id ? "border-violet-500" : "border-neutral-800 hover:border-neutral-700"
+            }`}
+          >
             <img src={img.thumb_url} alt="" loading="lazy" className="w-full aspect-square object-cover" />
             {img.status === "blocked" && (
               <div className="absolute inset-0 bg-red-950/60 flex items-center justify-center">
                 <i className="fa-solid fa-eye-slash text-red-300" />
               </div>
             )}
-            <button
-              onClick={() => toggleBlock(img)}
-              className="absolute inset-x-0 bottom-0 py-1 text-[10px] scrim opacity-0 group-hover:opacity-100 transition"
-            >
-              {img.status === "blocked" ? "解除屏蔽" : "屏蔽"}
-            </button>
-          </div>
+            {/* The uploader on the tile itself, not only in the panel: scanning
+                a grid for one account's images should not take 60 clicks. */}
+            <span className="absolute inset-x-0 bottom-0 scrim px-1.5 py-1 text-left text-[9px] leading-tight text-neutral-300 truncate">
+              {img.owner_name || img.owner_email}
+            </span>
+          </button>
         ))}
       </div>
       {images.length === 0 && <div className="py-10 text-center text-xs text-neutral-600">暂无图片</div>}
+
+      {detail && (
+        <AdminImageDetail
+          img={detail}
+          onClose={() => setDetail(null)}
+          onBlock={() => toggleBlock(detail)}
+          onDelete={() => removeImage(detail)}
+        />
+      )}
     </Card>
+  );
+}
+
+/**
+ * Moderation panel. Blocking or deleting a picture is a decision about an
+ * account as much as about a file, so the uploader sits at the top with a
+ * one-click jump to the rest of their images.
+ */
+function AdminImageDetail({
+  img,
+  onClose,
+  onBlock,
+  onDelete,
+}: {
+  img: AdminImage;
+  onClose: () => void;
+  onBlock: () => void;
+  onDelete: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    try {
+      await fn();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="shadow-panel flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl border border-neutral-800 bg-neutral-900"
+      >
+        <div className="flex items-center gap-2 border-b border-neutral-800/60 px-5 py-3.5">
+          <span className="text-sm text-neutral-100">图片详情</span>
+          {img.status === "blocked" && (
+            <span className="rounded-full bg-red-900/50 px-2 py-0.5 text-[10px] text-red-300">已屏蔽</span>
+          )}
+          <div className="flex-1" />
+          <button onClick={onClose} className="text-neutral-500 hover:text-neutral-100 transition">
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <img src={img.thumb_url} alt="" className="mb-4 w-full rounded-xl bg-neutral-950 object-contain max-h-56" />
+
+          <div className="mb-3 rounded-xl border border-violet-900/40 bg-violet-950/20 px-3 py-2.5">
+            <div className="text-[10px] text-neutral-500">上传者</div>
+            <div className="mt-0.5 text-xs text-neutral-100 break-all">
+              {img.owner_name ? `${img.owner_name} · ` : ""}
+              {img.owner_email}
+            </div>
+            <a
+              href={`/admin?tab=images&user=${img.owner_id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                navigator.clipboard?.writeText(img.owner_email);
+              }}
+              className="mt-1 inline-block text-[10px] text-violet-400 hover:underline"
+            >
+              <i className="fa-solid fa-copy mr-1" />
+              复制邮箱
+            </a>
+          </div>
+
+          <dl className="space-y-1 text-[11px]">
+            <DetailRow label="文件名" value={img.orig_name} />
+            <DetailRow label="尺寸" value={`${img.width} × ${img.height}`} />
+            <DetailRow label="存储占用" value={formatBytes(img.size_stored)} />
+            <DetailRow label="格式" value={img.ext.toUpperCase()} />
+            <DetailRow label="短链" value={img.short_code || "—"} />
+            <DetailRow label="上传时间" value={new Date(img.created_at).toLocaleString("zh-CN")} />
+          </dl>
+        </div>
+
+        <div className="flex items-center gap-2 border-t border-neutral-800/60 px-5 py-3">
+          <button
+            onClick={() => run(async () => onBlock())}
+            disabled={busy}
+            className="rounded-lg bg-neutral-800 px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-700 disabled:opacity-50 transition"
+          >
+            <i className={`fa-solid ${img.status === "blocked" ? "fa-eye" : "fa-eye-slash"} mr-1.5`} />
+            {img.status === "blocked" ? "解除屏蔽" : "屏蔽"}
+          </button>
+          <div className="flex-1" />
+          <button
+            onClick={() => run(async () => onDelete())}
+            disabled={busy}
+            className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50 transition"
+          >
+            <i className="fa-solid fa-trash-can mr-1.5" />
+            删除
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

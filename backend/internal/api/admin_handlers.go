@@ -70,7 +70,60 @@ func (s *Server) adminListImages(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"images": s.decorate(images)})
+	c.JSON(http.StatusOK, gin.H{"images": s.decorateWithOwner(images)})
+}
+
+// adminImageOut is the moderation view: the same payload the owner sees, plus
+// who the owner is. Moderating a picture without knowing whose it is means
+// every block is a coin flip on whether the account also needs action — the
+// report queue already exposes owner_email for exactly this reason.
+//
+// Kept separate from decorate() rather than folded into imageOut so the
+// address never rides along on a user's own listing, where it is at best
+// redundant and at worst a leak the moment that listing is shared.
+type adminImageOut struct {
+	imageOut
+	OwnerID    string `json:"owner_id"`
+	OwnerEmail string `json:"owner_email"`
+	OwnerName  string `json:"owner_name,omitempty"`
+}
+
+func (s *Server) decorateWithOwner(images []models.Image) []adminImageOut {
+	base := s.decorate(images)
+	out := make([]adminImageOut, 0, len(base))
+	if len(base) == 0 {
+		return out
+	}
+
+	ids := make([]uuid.UUID, 0, len(base))
+	seen := map[uuid.UUID]bool{}
+	for _, b := range base {
+		if !seen[b.UserID] {
+			seen[b.UserID] = true
+			ids = append(ids, b.UserID)
+		}
+	}
+	// One query for the whole page, not one per row.
+	var users []models.User
+	s.DB.Select("id, email, name").Where("id IN ?", ids).Find(&users)
+	byID := make(map[uuid.UUID]models.User, len(users))
+	for _, u := range users {
+		byID[u.ID] = u
+	}
+
+	for _, b := range base {
+		item := adminImageOut{imageOut: b, OwnerID: b.UserID.String()}
+		if u, ok := byID[b.UserID]; ok {
+			item.OwnerEmail = u.Email
+			item.OwnerName = u.Name
+		} else {
+			// Account gone but the image outlived it — say so rather than
+			// rendering a blank where an address belongs.
+			item.OwnerEmail = "（账号已删除）"
+		}
+		out = append(out, item)
+	}
+	return out
 }
 
 type adminUser struct {

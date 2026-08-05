@@ -235,3 +235,57 @@ func TestProcessPNGDoesNotInflate(t *testing.T) {
 			ratio*100-100, in, out)
 	}
 }
+
+// The grid thumbnail used to key off width alone, on the reasoning that
+// anything ≤600px "renders fine as-is". That holds for width and not for
+// bytes: a narrow, tall page is under the cut while still being megabytes,
+// and the gallery would download the whole thing to paint a 230px card.
+func TestGridThumbTriggersOnSizeNotJustWidth(t *testing.T) {
+	// 500px wide — under the width trigger — but tall enough to clear 1 MB.
+	src := synthPhotoPNGJitter(t, 500, 3200, 4)
+	if int64(len(src)) < GridThumbMinBytes {
+		t.Fatalf("夹具只有 %d 字节，没到 %d 的触发线，测不到东西", len(src), GridThumbMinBytes)
+	}
+	res, err := Process(src, Options{})
+	if err != nil {
+		t.Fatalf("Process: %v", err)
+	}
+	v, ok := res.Variants[models.VariantW600]
+	if !ok {
+		t.Fatalf("宽 500 但 %d 字节的图没有生成缩略图", len(src))
+	}
+	if v.Width > 500 {
+		t.Errorf("缩略图被放大到 %dpx；SizeDown 应该只缩不放", v.Width)
+	}
+	t.Logf("源 %d 字节 → 主图 %d → 缩略图 %d 字节 (%dx%d)",
+		len(src), res.Primary.Size(), v.Size(), v.Width, v.Height)
+}
+
+// Small and already efficient: generating anything here would add an object
+// that costs quota without ever being the cheaper thing to load.
+func TestGridThumbSkippedWhenSmallAndLight(t *testing.T) {
+	src := synthPhotoPNGJitter(t, 400, 300, 4)
+	res, err := Process(src, Options{})
+	if err != nil {
+		t.Fatalf("Process: %v", err)
+	}
+	if v, ok := res.Variants[models.VariantW600]; ok {
+		t.Errorf("小图不该生成缩略图，却产出了 %d 字节（主图 %d）", v.Size(), res.Primary.Size())
+	}
+}
+
+// Whatever triggers generation, the thumbnail only earns its place by being
+// smaller than the image it replaces.
+func TestGridThumbNeverLargerThanPrimary(t *testing.T) {
+	for _, d := range []struct{ w, h int }{{500, 3200}, {1600, 900}, {2400, 1350}} {
+		src := synthPhotoPNGJitter(t, d.w, d.h, 4)
+		res, err := Process(src, Options{})
+		if err != nil {
+			t.Fatalf("%dx%d Process: %v", d.w, d.h, err)
+		}
+		if v, ok := res.Variants[models.VariantW600]; ok && v.Size() >= res.Primary.Size() {
+			t.Errorf("%dx%d 的缩略图 %d 字节 ≥ 主图 %d 字节，不该保留",
+				d.w, d.h, v.Size(), res.Primary.Size())
+		}
+	}
+}

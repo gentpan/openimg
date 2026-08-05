@@ -459,15 +459,31 @@ func MakeAvatar(buf []byte) (*Output, error) {
 // 200px thumbnail was being upscaled past 2x on every card.
 const GridThumbWidth = 600
 
-// addGridThumb produces the grid thumbnail, skipping sources already at or
-// below that width — those render fine as-is.
+// GridThumbMinBytes is the second trigger. Width alone misses the shape that
+// actually hurts: a 500x8000 comic page sits under the width cut while
+// carrying millions of pixels, and a badly-compressed PNG can be megabytes at
+// any width. Either one gets served whole into a 230px card.
+const GridThumbMinBytes = 1 << 20 // 1 MB
+
+// addGridThumb produces the grid thumbnail whenever the image the gallery
+// would otherwise load is too wide or too heavy.
+//
+// The result is kept only if it really is smaller than that image. Under the
+// width trigger alone that was safe to assume; under a size trigger it is not.
+// SizeDown never upscales, so a 400px source yields a 400px "thumbnail", and
+// re-encoding an already-tight file at its own dimensions can come out larger
+// — an object that costs quota and makes every gallery view worse.
 func addGridThumb(res *Result, buf []byte, params *vips.ImportParams, width int) {
-	if width <= GridThumbWidth {
+	served := res.Primary.Size() // what a missing thumbnail falls back to
+	if width <= GridThumbWidth && served < GridThumbMinBytes {
 		return
 	}
 	out, err := encodeWebP(buf, params, GridThumbWidth, thumbQuality)
 	if err != nil {
 		log.Printf("imageproc: grid thumbnail failed: %v", err)
+		return
+	}
+	if out.Size() >= served {
 		return
 	}
 	res.Variants[models.VariantW600] = out

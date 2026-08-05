@@ -137,6 +137,13 @@ export interface CheckinResult {
 
 export type ProfileKind = "platform" | "user_r2" | "user_s3";
 
+/** 管理端图片列表的行：比用户自己的多了上传者身份。 */
+export interface AdminImage extends Image {
+  owner_id: string;
+  owner_email: string;
+  owner_name?: string;
+}
+
 export interface StorageProfile {
   id: string;
   kind: ProfileKind;

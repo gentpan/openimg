@@ -622,6 +622,58 @@ final class AppModel: ObservableObject {
         }
     }
 
+    // MARK: - Profile
+
+    /// Renames the account.
+    ///
+    /// Not optimistic, unlike `savePreferences`: the server trims the string
+    /// and caps it at 32 characters, so what it stores is not always what was
+    /// typed, and a field that keeps showing the rejected value is worse than
+    /// one that snaps to the truth.
+    func saveNickname(_ name: String) async {
+        guard let a = account, name != a.name else { return }
+        do {
+            let saved = try await client().updateProfile(name: name)
+            account = try await client().me()
+            announce(saved.isEmpty ? "已清除昵称" : "昵称已改为 \(saved)")
+        } catch {
+            announce(message(error))
+        }
+    }
+
+    func pickAvatar() async {
+        let p = NSOpenPanel()
+        p.allowedContentTypes = [.image]
+        p.allowsMultipleSelection = false
+        p.message = "选择一张图片作为头像"
+        guard p.runModal() == .OK, let url = p.url else { return }
+        await setAvatar(url)
+    }
+
+    func setAvatar(_ url: URL) async {
+        busy = true
+        defer { busy = false }
+        do {
+            _ = try await client().uploadAvatar(fileURL: url)
+            account = try await client().me()
+            announce("头像已更新")
+        } catch {
+            announce(message(error))
+        }
+    }
+
+    func removeAvatar() async {
+        busy = true
+        defer { busy = false }
+        do {
+            try await client().deleteAvatar()
+            account = try await client().me()
+            announce("已移除头像")
+        } catch {
+            announce(message(error))
+        }
+    }
+
     /// Rejects what the server would reject anyway.
     ///
     /// Worth doing locally because the daily upload count is consumed by the

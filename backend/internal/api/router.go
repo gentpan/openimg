@@ -168,14 +168,25 @@ func (s *Server) Router() *gin.Engine {
 	// stay cookie-only. Worth it so the client can offer the setting where the
 	// user is actually about to upload.
 	machine.PATCH("/api/preferences", s.handleUpdatePreferences)
+	// Nickname and avatar. Moved down from the cookie-only group (again: Gin
+	// panics on a duplicate registration, so this is a move, not an addition).
+	//
+	// The line this group draws is between changing how an account *presents*
+	// and changing who *controls* it. A leaked token that can rename you or
+	// swap your picture is vandalism; one that can change your password, mint
+	// more tokens, read your S3 credentials or delete the account is a
+	// takeover. Those all stay below, and they stay cookie-only.
+	//
+	// The alternative was a native settings page whose account section is
+	// entirely read-only, which is what shipped first and what prompted this.
+	machine.PATCH("/api/account/profile", s.handleUpdateNickname)
+	machine.POST("/api/account/avatar", s.handleUploadAvatar)
+	machine.DELETE("/api/account/avatar", s.handleDeleteAvatar)
 
 	// API tokens (cookie-only: a token must not be able to mint more tokens)
-	authed.PATCH("/api/account/profile", s.handleUpdateNickname)
 	authed.POST("/auth/native/code", s.handleNativeCode)
 	authed.POST("/api/account/otp", s.handleAccountOTP)
 	authed.POST("/api/account/password", s.handleChangePassword)
-	authed.POST("/api/account/avatar", s.handleUploadAvatar)
-	authed.DELETE("/api/account/avatar", s.handleDeleteAvatar)
 	authed.DELETE("/api/account", s.handleDeleteAccount)
 	authed.GET("/api/tokens", s.handleListTokens)
 	authed.POST("/api/tokens", s.handleCreateToken)

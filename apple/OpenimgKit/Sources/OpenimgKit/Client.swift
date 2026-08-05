@@ -135,6 +135,47 @@ public struct OpenimgClient: Sendable {
         _ = try decode(OK.self, data, resp)
     }
 
+    /// Renames the account. Empty clears the nickname back to the address.
+    public func updateProfile(name: String) async throws -> String {
+        var req = request("PATCH", "api/account/profile")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["name": name])
+        let (data, resp) = try await session.data(for: req)
+        struct Wrap: Decodable { let name: String? }
+        return try decode(Wrap.self, data, resp).name ?? name
+    }
+
+    /// Uploads a new avatar and returns the URL the server settled on.
+    ///
+    /// The server re-encodes whatever it is given, so there is no point
+    /// resizing here first — and unlike an image upload, no dedup to break.
+    public func uploadAvatar(fileURL: URL) async throws -> String? {
+        let boundary = "openimg.\(UUID().uuidString)"
+        let body = try MultipartBody.write(
+            fileURL: fileURL,
+            fieldName: "file", // fixed server-side: c.Request.FormFile("file")
+            filename: fileURL.lastPathComponent,
+            boundary: boundary
+        )
+        defer { try? FileManager.default.removeItem(at: body) }
+
+        var req = request("POST", "api/account/avatar")
+        req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        let (data, resp) = try await session.upload(for: req, fromFile: body)
+        struct Wrap: Decodable {
+            let url: String?
+            let avatarURL: String?
+            enum CodingKeys: String, CodingKey { case url; case avatarURL = "avatar_url" }
+        }
+        let w = try decode(Wrap.self, data, resp)
+        return w.avatarURL ?? w.url
+    }
+
+    public func deleteAvatar() async throws {
+        let (data, resp) = try await session.data(for: request("DELETE", "api/account/avatar"))
+        _ = try decode(OK.self, data, resp)
+    }
+
     public func storageSummary() async throws -> StorageSummary {
         let (data, resp) = try await session.data(for: request("GET", "api/storage/summary"))
         return try decode(StorageSummary.self, data, resp)

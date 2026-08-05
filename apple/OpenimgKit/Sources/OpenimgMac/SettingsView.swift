@@ -4,12 +4,19 @@ import OpenimgKit
 
 struct SettingsView: View {
     @ObservedObject var model: AppModel
+    /// nil means "showing whatever the server says". It only holds a value
+    /// while the field is being edited, so the card never has to be told that
+    /// the account changed underneath it.
+    @State private var draftName: String?
+    @State private var editingName = false
+    @FocusState private var nameFocused: Bool
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                accountCard
+                profileCard
                 storageCard
+                locationCard
                 conversionCard
                 tierCard
                 dangerCard
@@ -19,18 +26,25 @@ struct SettingsView: View {
             .padding(.bottom, 22)
         }
         .frame(maxWidth: .infinity)
+        .task(id: model.account?.id) { await model.loadStats() }
     }
 
     // MARK: - Cards
 
-    private var accountCard: some View {
-        SettingsCard("账号", "person.crop.circle") {
+    /// Editable, where it used to be a read-only block.
+    ///
+    /// It was read-only because the nickname and avatar routes were in the
+    /// cookie-only group and this client holds a token, so every write would
+    /// have 401'd. They now sit alongside the other things a token may do to
+    /// its own account — see the note in router.go for where that line is.
+    private var profileCard: some View {
+        SettingsCard("个人资料", "person.crop.circle") {
             if let a = model.account {
-                HStack(spacing: 14) {
-                    Avatar(account: a, size: 54, client: try? model.client())
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(a.name.isEmpty ? "（未设置昵称）" : a.name)
-                            .font(.title3.weight(.medium))
+                HStack(alignment: .top, spacing: 14) {
+                    avatarWell(a)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        nameField(a)
                         Text(a.email).font(.callout).foregroundStyle(.secondary)
                         HStack(spacing: 6) {
                             tag(a.role)
@@ -39,12 +53,143 @@ struct SettingsView: View {
                             // gives "admin admin".
                             if let t = model.quota?.tier, t.name != a.role { tag(t.name) }
                         }
-                        .padding(.top, 2)
                     }
-                    Spacer()
+                    Spacer(minLength: 0)
                 }
             }
         }
+    }
+
+    /// The picture doubles as its own button: hovering reveals the actions over
+    /// it, so the card does not carry two buttons for something most people
+    /// set once.
+    private func avatarWell(_ a: Account) -> some View {
+        VStack(spacing: 6) {
+            Avatar(account: a, size: 62, client: try? model.client())
+                .overlay(
+                    Circle().strokeBorder(.white.opacity(0.12), lineWidth: 1)
+                )
+            HStack(spacing: 4) {
+                Button("更换") { Task { await model.pickAvatar() } }
+                    .buttonStyle(.link).font(.caption2)
+                if a.avatarURL?.isEmpty == false {
+                    Text("·").font(.caption2).foregroundStyle(.quaternary)
+                    Button("移除") { Task { await model.removeAvatar() } }
+                        .buttonStyle(.link).font(.caption2)
+                }
+            }
+            .disabled(model.busy)
+        }
+    }
+
+    /// Commits on Return and on losing focus, and reverts on Escape.
+    ///
+    /// A save button for one short string is a button people forget to press;
+    /// blur-to-save is what the website does, so the two agree.
+    private func nameField(_ a: Account) -> some View {
+        TextField("昵称", text: Binding(
+            get: { draftName ?? a.name },
+            set: { draftName = $0 }
+        ))
+            .textFieldStyle(.plain)
+            .font(.title3.weight(.medium))
+            .padding(.horizontal, 8).padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(.white.opacity(editingName ? 0.08 : 0))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(.white.opacity(editingName ? 0.14 : 0), lineWidth: 1)
+            )
+            .frame(maxWidth: 260)
+            .onSubmit { commitName() }
+            .onExitCommand { draftName = nil; editingName = false }
+            .focused($nameFocused)
+            .onChange(of: nameFocused) { _, focused in
+                editingName = focused
+                if !focused { commitName() }
+            }
+            .animation(.easeOut(duration: 0.12), value: editingName)
+    }
+
+    private func commitName() {
+        guard let draft = draftName else { return }
+        // Dropped before the request, not after: `saveNickname` refreshes the
+        // account, and whatever the server decided to store is then what shows
+        // — including a trim or a 32-character truncation the user did not do.
+        draftName = nil
+        Task { await model.saveNickname(draft) }
+    }
+
+    /// Read-only on purpose.
+    ///
+    /// Creating and editing a storage profile means handing over the S3 access
+    /// key and secret, and those routes are cookie-only by design — a token
+    /// pasted into a PicGo config must not be able to read them back. So the
+    /// app shows where the bytes actually sit and sends the user to the site to
+    /// change it. The numbers come from /api/storage/summary, which the token
+    /// can already reach.
+    private var locationCard: some View {
+        SettingsCard("存储位置", "externaldrive.connected.to.line.below") {
+            if let profiles = model.summary?.byProfile, !profiles.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(Array(profiles.enumerated()), id: \.element.id) { i, p in
+                        if i > 0 { Divider().overlay(Color.white.opacity(0.06)) }
+                        HStack(spacing: 10) {
+                            Image(systemName: p.kind == "platform"
+                                  ? "cube.box" : "externaldrive.badge.person.crop")
+                                .font(.system(size: 14))
+                                .foregroundStyle(Color.brand)
+                                .frame(width: 20)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(p.name).font(.callout)
+                                // The platform pool's name already is its kind;
+                                // printing both gives "平台存储池 平台存储池".
+                                if let k = kindLabel(p.kind), k != p.name {
+                                    Text(k).font(.caption2).foregroundStyle(.tertiary)
+                                }
+                            }
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: 1) {
+                                Text(model.bytes(p.bytes)).font(.callout.monospacedDigit())
+                                Text("\(p.images) 张")
+                                    .font(.caption2).foregroundStyle(.tertiary)
+                            }
+                        }
+                        .padding(.vertical, 9)
+                    }
+                }
+                siteHint("新增或修改存储位置需要填写密钥，只能在网站上操作")
+            } else if model.statsLoading {
+                ProgressView().controlSize(.small).frame(maxWidth: .infinity)
+            } else {
+                Text("还没有图片，看不出存的位置")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func kindLabel(_ kind: String) -> String? {
+        switch kind {
+        case "platform": "平台存储池"
+        case "s3", "r2": kind.uppercased() + " · 自有存储桶"
+        default: kind.isEmpty ? nil : kind
+        }
+    }
+
+    private func siteHint(_ text: String) -> some View {
+        HStack(spacing: 6) {
+            Text(text).font(.caption2).foregroundStyle(.tertiary)
+            Button("去网站") {
+                if let u = URL(string: model.server + "/settings") {
+                    NSWorkspace.shared.open(u)
+                }
+            }
+            .buttonStyle(.link).font(.caption2)
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 8)
     }
 
     private var storageCard: some View {
@@ -133,9 +278,7 @@ struct SettingsView: View {
                 // These are cookie-only on the server — a token deliberately
                 // cannot reach account management — so they are a link out
                 // rather than a control that would fail here.
-                Text("绑定自有 R2 / S3、修改昵称与密码需要在网站上操作")
-                    .font(.caption2).foregroundStyle(.tertiary)
-                    .padding(.top, 8)
+                siteHint("修改密码、管理 API Token、删除账号需要在网站上操作")
             }
         }
     }

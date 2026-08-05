@@ -73,7 +73,7 @@ export default function SettingsPage() {
           账号设置
         </h1>
 
-        {info && <div className="mb-4 rounded-lg border border-emerald-900/60 bg-emerald-900/15 px-4 py-2 text-sm text-emerald-300">{info}</div>}
+        {info && <div className="mb-4 rounded-lg border border-teal-900/60 bg-teal-900/15 px-4 py-2 text-sm text-teal-300">{info}</div>}
         {err && <div className="mb-4 rounded-lg border border-red-900/60 bg-red-900/15 px-4 py-2 text-sm text-red-300">{err}</div>}
 
         <Section icon="fa-id-badge" title="个人资料" subtitle="头像和昵称会显示在页面顶部，昵称可以重复">
@@ -101,7 +101,7 @@ export default function SettingsPage() {
           <Row label="邮箱" value={
             <span>
               {user.email}{" "}
-              {user.email_verified && <Tag color="emerald">已验证</Tag>}
+              {user.email_verified && <Tag color="teal">已验证</Tag>}
             </span>
           } />
           <Row label="角色" value={<Tag color="brand">{user.role}</Tag>} />
@@ -303,7 +303,7 @@ function NicknameField() {
         className="w-44 h-8 rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 text-xs outline-none focus:border-brand-500 placeholder-faint transition"
       />
       {state === "saving" && <RingSpinner className="h-3 w-3 text-brand-400" />}
-      {state === "saved" && <i className="fa-solid fa-check text-[10px] text-emerald-400" />}
+      {state === "saved" && <i className="fa-solid fa-check text-[10px] text-teal-400" />}
       {state === "error" && <span className="text-[10px] text-red-400">{err}</span>}
       {state === "idle" && (
         <span className="text-[10px] text-faint">昵称可重复，邮箱才是账号标识</span>
@@ -449,7 +449,7 @@ function ChangePassword({ onClose }: { onClose: () => void }) {
           <button
             onClick={submit}
             disabled={!ready || busy}
-            className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
+            className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-white hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
           >
             {busy ? <RingSpinner className="h-3.5 w-3.5" /> : "确认修改"}
           </button>
@@ -542,21 +542,21 @@ function ConnectionRow({
               ? "text-red-400 hover:bg-red-900/30 border border-red-900/40"
               : connected
               ? "text-neutral-400 hover:text-neutral-200"
-              : "bg-brand-600 text-brand-ink hover:bg-brand-500"
+              : "bg-brand-600 text-white hover:bg-brand-500"
           } ${actionBusy ? "opacity-60" : ""}`}
         >
           {actionBusy ? "…" : actionLabel}
         </button>
       )}
-      {connected && <Tag color="emerald">{connectedLabel}</Tag>}
+      {connected && <Tag color="teal">{connectedLabel}</Tag>}
     </div>
   );
 }
 
-function Tag({ color, children }: { color: "emerald" | "brand"; children: React.ReactNode }) {
+function Tag({ color, children }: { color: "teal" | "brand"; children: React.ReactNode }) {
   const cls =
-    color === "emerald"
-      ? "bg-emerald-900/60 text-emerald-300"
+    color === "teal"
+      ? "bg-teal-900/60 text-teal-300"
       : "bg-brand-900/60 text-brand-300";
   return <span className={`text-[10px] rounded-full px-2 py-0.5 ${cls}`}>{children}</span>;
 }
@@ -657,7 +657,7 @@ function PasskeySection() {
           }}
         />
       )}
-      {info && <div className="text-xs text-emerald-400">{info}</div>}
+      {info && <div className="text-xs text-teal-400">{info}</div>}
       {err && <div className="text-xs text-red-400">{err}</div>}
       <div className="space-y-2">
         {list.map((pk) => (
@@ -685,7 +685,7 @@ function PasskeySection() {
       <button
         onClick={() => setEnroll(true)}
         disabled={busy}
-        className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
+        className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-lg bg-brand-600 px-3 text-xs font-medium text-white hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
       >
         <i className="fa-solid fa-plus" aria-hidden></i>
         {busy ? "等待授权…" : "添加 Passkey"}

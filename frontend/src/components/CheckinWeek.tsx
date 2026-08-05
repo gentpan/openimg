@@ -23,7 +23,7 @@ export default function CheckinWeek({ records }: { records: CheckinRecord[] }) {
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] transition ${
                 done
-                  ? "bg-brand-500 text-brand-ink"
+                  ? "bg-brand-500 text-white"
                   : isToday
                     // Outlined, not filled: today is the one still available,
                     // and a hollow ring reads as "your turn" where a grey disc

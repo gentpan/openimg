@@ -195,7 +195,7 @@ JSON 路径   image.url`}
                 </p>
                 <Link
                   to="/register"
-                  className="mt-6 inline-block rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-medium text-brand-ink hover:bg-brand-500 transition"
+                  className="mt-6 inline-block rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-brand-500 transition"
                 >
                   免费注册，领 1 GB
                 </Link>
@@ -243,7 +243,7 @@ function Feature({
 function Step({ n, title, desc }: { n: number; title: string; desc: string }) {
   return (
     <div className="h-full rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
-      <div className="w-7 h-7 rounded-full bg-brand-600 text-brand-ink text-xs font-medium flex items-center justify-center mb-3">
+      <div className="w-7 h-7 rounded-full bg-brand-600 text-white text-xs font-medium flex items-center justify-center mb-3">
         {n}
       </div>
       <div className="text-sm font-medium text-neutral-100">{title}</div>

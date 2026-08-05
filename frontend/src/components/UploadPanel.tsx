@@ -67,7 +67,7 @@ export default function UploadPanel() {
               errorCount > 0
                 ? "bg-red-900/40 text-red-300"
                 : finished
-                  ? "bg-emerald-900/40 text-emerald-300"
+                  ? "bg-teal-900/40 text-teal-300"
                   : "bg-brand-900/40 text-brand-300"
             }`}
           >
@@ -131,7 +131,7 @@ export default function UploadPanel() {
                         key={f.key}
                         onClick={() => setFormat(f.key)}
                         className={`px-1.5 py-0.5 rounded-md text-[10px] transition ${
-                          format === f.key ? "bg-brand-600 text-brand-ink" : "text-neutral-500 hover:text-neutral-100"
+                          format === f.key ? "bg-brand-600 text-white" : "text-neutral-500 hover:text-neutral-100"
                         }`}
                       >
                         {f.label}
@@ -140,7 +140,7 @@ export default function UploadPanel() {
                   </div>
                   <button
                     onClick={() => copy(allLinks, "all")}
-                    className="rounded-lg bg-brand-600 px-2.5 py-1 text-[10px] font-medium text-brand-ink hover:bg-brand-500 transition whitespace-nowrap"
+                    className="rounded-lg bg-brand-600 px-2.5 py-1 text-[10px] font-medium text-white hover:bg-brand-500 transition whitespace-nowrap"
                   >
                     <i className={`fa-solid ${copied === "all" ? "fa-check" : "fa-copy"} mr-1`} />
                     {copied === "all" ? "已复制" : `复制 ${done.length} 条`}
@@ -222,7 +222,7 @@ function Row({
           {item.deduplicated && (
             <span
               title="服务器上已有相同内容，直接秒传"
-              className="shrink-0 rounded-full bg-emerald-900/50 px-1 text-[9px] text-emerald-300"
+              className="shrink-0 rounded-full bg-teal-900/50 px-1 text-[9px] text-teal-300"
             >
               秒传
             </span>
@@ -232,7 +232,7 @@ function Row({
         {item.state === "done" ? (
           <div className="text-[10px] text-neutral-600 truncate">
             {formatBytes(item.file.size, 0)}
-            {saved > 0 && <span className="text-emerald-500"> · 省 {formatBytes(saved, 0)}</span>}
+            {saved > 0 && <span className="text-teal-500"> · 省 {formatBytes(saved, 0)}</span>}
           </div>
         ) : item.state === "error" ? (
           <div className="text-[10px] text-red-400 truncate" title={item.error}>
@@ -255,7 +255,7 @@ function Row({
             title="复制链接"
             className={`w-6 h-6 rounded-md text-[10px] transition ${
               copied === item.id
-                ? "bg-brand-600 text-brand-ink"
+                ? "bg-brand-600 text-white"
                 : "text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
             }`}
           >

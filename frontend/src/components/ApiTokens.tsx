@@ -72,7 +72,7 @@ export default function ApiTokens() {
                   setTimeout(() => setCopied(false), 1500);
                 } catch {}
               }}
-              className="shrink-0 rounded-md bg-brand-600 px-2.5 py-1.5 text-[10px] text-brand-ink hover:bg-brand-500 transition"
+              className="shrink-0 rounded-md bg-brand-600 px-2.5 py-1.5 text-[10px] text-white hover:bg-brand-500 transition"
             >
               <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"} mr-1`} />
               {copied ? "已复制" : "复制"}
@@ -142,7 +142,7 @@ export default function ApiTokens() {
         <button
           onClick={create}
           disabled={busy || !name.trim()}
-          className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition whitespace-nowrap"
+          className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-white hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition whitespace-nowrap"
         >
           生成
         </button>

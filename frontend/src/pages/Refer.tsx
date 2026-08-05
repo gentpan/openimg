@@ -66,7 +66,7 @@ export default function ReferPage() {
               />
               <button
                 onClick={copy}
-                className="rounded-lg bg-brand-600 hover:bg-brand-500 px-4 py-2 text-sm font-medium text-brand-ink inline-flex items-center gap-1.5"
+                className="rounded-lg bg-brand-600 hover:bg-brand-500 px-4 py-2 text-sm font-medium text-white inline-flex items-center gap-1.5"
               >
                 <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"}`} />
                 {copied ? "已复制" : "复制"}
@@ -102,7 +102,7 @@ export default function ReferPage() {
         {/* Summary */}
         <h3 className="text-sm uppercase tracking-wide text-neutral-500 mb-3">数据</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
-          <Stat icon="fa-user-plus" iconBg="bg-emerald-900/40 text-emerald-300" label="已邀请用户" value={s?.count ?? 0} />
+          <Stat icon="fa-user-plus" iconBg="bg-teal-900/40 text-teal-300" label="已邀请用户" value={s?.count ?? 0} />
           <Stat icon="fa-database" iconBg="bg-brand-900/40 text-brand-300" label="累计获得空间" value={formatBytes(s?.total_bytes ?? 0, 0)} />
           <Stat icon="fa-gift" iconBg="bg-amber-900/40 text-amber-300" label="单次奖励" value={`${bonus} × 2`} />
         </div>
@@ -155,7 +155,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 function Bullet({ children }: { children: React.ReactNode }) {
   return (
     <li className="flex items-start gap-2 text-sm text-neutral-300">
-      <i className="fa-solid fa-circle-check text-emerald-500 mt-0.5" />
+      <i className="fa-solid fa-circle-check text-teal-500 mt-0.5" />
       <span>{children}</span>
     </li>
   );

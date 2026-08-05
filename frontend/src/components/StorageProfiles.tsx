@@ -115,7 +115,7 @@ export default function StorageProfiles() {
       {msg && (
         <div
           className={`mb-3 rounded-lg px-3 py-2 text-xs ${
-            msg.kind === "ok" ? "bg-emerald-950/30 text-emerald-300" : "bg-red-950/30 text-red-300"
+            msg.kind === "ok" ? "bg-teal-950/30 text-teal-300" : "bg-red-950/30 text-red-300"
           }`}
         >
           {msg.text}
@@ -288,7 +288,7 @@ export default function StorageProfiles() {
             <button
               onClick={() => submit(false)}
               disabled={!!busy}
-              className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:opacity-50 transition"
+              className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-white hover:bg-brand-500 disabled:opacity-50 transition"
             >
               {busy === "save" ? <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" /> : "保存"}
             </button>

@@ -86,7 +86,7 @@ export default function Uploader({ compact = false }: { compact?: boolean }) {
             <Link
               to="/register"
               onClick={(e) => e.stopPropagation()}
-              className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-medium text-brand-ink hover:bg-brand-500 transition"
+              className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-500 transition"
             >
               免费注册
             </Link>

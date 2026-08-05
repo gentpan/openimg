@@ -56,7 +56,7 @@ export default function AdminLayout() {
               onClick={() => setTab(t.key)}
               className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition ${
                 tab === t.key
-                  ? "bg-brand-600 text-brand-ink"
+                  ? "bg-brand-600 text-white"
                   : "bg-neutral-900 text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800"
               }`}
             >
@@ -187,7 +187,7 @@ function UsersTab() {
                   {formatBytes(u.used_bytes, 0)} / {formatBytes(u.quota_bytes, 0)}
                 </td>
                 <td className="py-2 pr-3">
-                  <span className={u.status === "active" ? "text-emerald-400" : "text-red-400"}>
+                  <span className={u.status === "active" ? "text-teal-400" : "text-red-400"}>
                     {u.status === "active" ? "正常" : "已停用"}
                   </span>
                 </td>
@@ -215,7 +215,7 @@ function UsersTab() {
                     <button
                       onClick={() => patch(u.id, { status: "active" })}
                       disabled={busy}
-                      className="text-emerald-400 hover:underline"
+                      className="text-teal-400 hover:underline"
                     >
                       恢复
                     </button>
@@ -311,7 +311,7 @@ function GroupsTab() {
                     setBusy(false);
                   }
                 }}
-                className="accent-brand-800"
+                className="accent-brand-600"
               />
             </div>
             <div className="flex items-center justify-between gap-2">
@@ -849,7 +849,7 @@ function LedgerTab() {
                 <td className="py-2 pr-3 whitespace-nowrap">{t.type}</td>
                 <td
                   className={`py-2 pr-3 whitespace-nowrap ${
-                    t.bytes >= 0 ? "text-emerald-400" : "text-neutral-400"
+                    t.bytes >= 0 ? "text-teal-400" : "text-neutral-400"
                   }`}
                 >
                   {t.bytes >= 0 ? "+" : "−"}

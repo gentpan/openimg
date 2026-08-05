@@ -12,11 +12,11 @@ import { RingSpinner } from "../components/Spinner";
 
 const TX_LABELS: Record<string, { label: string; icon: string; tone: string }> = {
   signup_grant: { label: "注册赠送", icon: "fa-gift", tone: "text-brand-300" },
-  checkin: { label: "每日签到", icon: "fa-calendar-check", tone: "text-emerald-300" },
+  checkin: { label: "每日签到", icon: "fa-calendar-check", tone: "text-teal-300" },
   referral: { label: "邀请奖励", icon: "fa-user-plus", tone: "text-brand-300" },
   admin_grant: { label: "管理员调整", icon: "fa-user-shield", tone: "text-amber-300" },
   upload: { label: "上传占用", icon: "fa-cloud-arrow-up", tone: "text-neutral-400" },
-  delete_refund: { label: "删除释放", icon: "fa-trash-can", tone: "text-emerald-300" },
+  delete_refund: { label: "删除释放", icon: "fa-trash-can", tone: "text-teal-300" },
 };
 
 /** Days into the current month-long milestone. */
@@ -102,7 +102,7 @@ export default function SpacePage() {
           <div
             className={`mb-4 rounded-xl border px-4 py-2.5 text-xs ${
               msg.kind === "ok"
-                ? "border-emerald-500/30 bg-emerald-950/20 text-emerald-200"
+                ? "border-teal-500/30 bg-teal-950/20 text-teal-200"
                 : "border-red-500/30 bg-red-950/20 text-red-200"
             }`}
           >
@@ -152,7 +152,7 @@ export default function SpacePage() {
               <button
                 onClick={doCheckin}
                 disabled={busy || quota?.checkin.checked_in_today}
-                className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition whitespace-nowrap"
+                className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition whitespace-nowrap"
               >
                 {busy ? (
                   <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" />
@@ -227,7 +227,7 @@ export default function SpacePage() {
                       <div className="text-[10px] text-neutral-600 truncate">{tx.reason}</div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className={`text-xs ${tx.bytes >= 0 ? "text-emerald-300" : "text-neutral-400"}`}>
+                      <div className={`text-xs ${tx.bytes >= 0 ? "text-teal-300" : "text-neutral-400"}`}>
                         {tx.bytes >= 0 ? "+" : "−"}
                         {formatBytes(Math.abs(tx.bytes))}
                       </div>
@@ -326,7 +326,7 @@ function Pager({
           disabled={busy}
           className={`${btn} tabular-nums ${
             p === page
-              ? "bg-brand-600 text-brand-ink"
+              ? "bg-brand-600 text-white"
               : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
           }`}
         >

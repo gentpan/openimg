@@ -70,7 +70,7 @@ export default function EmailOtpForm() {
         <button
           type="submit"
           disabled={busy || !email}
-          className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-700 disabled:text-neutral-500"
+          className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-white hover:bg-brand-500 disabled:bg-neutral-700 disabled:text-neutral-500"
         >
           {busy ? "发送中…" : "发送验证码"}
         </button>
@@ -83,7 +83,7 @@ export default function EmailOtpForm() {
 
   return (
     <form onSubmit={onVerify} className="space-y-4">
-      {info && <div className="text-sm text-emerald-400">{info}</div>}
+      {info && <div className="text-sm text-teal-400">{info}</div>}
       <Field label="验证码">
         <input
           inputMode="numeric"
@@ -100,7 +100,7 @@ export default function EmailOtpForm() {
       <button
         type="submit"
         disabled={busy || code.length !== 6}
-        className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-700 disabled:text-neutral-500"
+        className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-white hover:bg-brand-500 disabled:bg-neutral-700 disabled:text-neutral-500"
       >
         {busy ? "验证中…" : "登录"}
       </button>

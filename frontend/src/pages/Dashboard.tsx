@@ -86,7 +86,7 @@ export default function DashboardPage() {
           <div className="flex-1" />
           <Link
             to="/upload"
-            className="rounded-lg bg-brand-600 px-3.5 py-1.5 text-xs font-medium text-brand-ink hover:bg-brand-500 transition"
+            className="rounded-lg bg-brand-600 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-brand-500 transition"
           >
             <i className="fa-solid fa-cloud-arrow-up mr-1.5" />
             上传图片

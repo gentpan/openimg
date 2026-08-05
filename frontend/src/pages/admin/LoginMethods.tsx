@@ -53,7 +53,7 @@ export default function LoginMethods() {
         <div
           className={`rounded-xl px-4 py-2.5 text-xs ${
             msg.kind === "ok"
-              ? "border border-emerald-500/30 bg-emerald-950/20 text-emerald-200"
+              ? "border border-teal-500/30 bg-teal-950/20 text-teal-200"
               : "border border-red-500/30 bg-red-950/20 text-red-200"
           }`}
         >
@@ -79,7 +79,7 @@ export default function LoginMethods() {
                 <span className="text-sm text-neutral-100">{label} 登录</span>
                 {info.enabled ? (
                   <>
-                    <span className="rounded-full bg-emerald-900/50 px-1.5 py-0.5 text-[9px] text-emerald-300">
+                    <span className="rounded-full bg-teal-900/50 px-1.5 py-0.5 text-[9px] text-teal-300">
                       已启用
                     </span>
                     <span className="rounded-full bg-neutral-800 px-1.5 py-0.5 text-[9px] text-neutral-400">
@@ -141,7 +141,7 @@ export default function LoginMethods() {
               <button
                 onClick={() => save(p)}
                 disabled={busy === p || !status.can_store}
-                className="mt-3 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition"
+                className="mt-3 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition"
               >
                 {busy === p ? <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" /> : "保存"}
               </button>
@@ -174,13 +174,13 @@ function MethodRow({ label, enabled, note }: { label: string; enabled: boolean; 
   return (
     <div className="flex items-center gap-3">
       <i
-        className={`fa-solid ${enabled ? "fa-circle-check text-emerald-400" : "fa-circle-xmark text-faint"} text-xs`}
+        className={`fa-solid ${enabled ? "fa-circle-check text-teal-400" : "fa-circle-xmark text-faint"} text-xs`}
       />
       <div className="flex-1 min-w-0">
         <div className="text-xs text-neutral-300">{label}</div>
         <div className="text-[10px] text-neutral-600">{note}</div>
       </div>
-      <span className={`text-[10px] ${enabled ? "text-emerald-400" : "text-neutral-600"}`}>
+      <span className={`text-[10px] ${enabled ? "text-teal-400" : "text-neutral-600"}`}>
         {enabled ? "已启用" : "未启用"}
       </span>
     </div>
@@ -206,7 +206,7 @@ function CopyRow({ value }: { value: string }) {
           } catch {}
         }}
         className={`shrink-0 w-7 h-7 rounded-md text-[10px] transition ${
-          copied ? "bg-brand-600 text-brand-ink" : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+          copied ? "bg-brand-600 text-white" : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
         }`}
       >
         <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"}`} />

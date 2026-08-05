@@ -82,7 +82,7 @@ export default function Nav() {
                 className={`rounded-full px-2.5 py-0.5 transition whitespace-nowrap ${
                   user.checked_in_today
                     ? "bg-neutral-900 text-neutral-600 cursor-default"
-                    : "bg-brand-600 text-brand-ink hover:bg-brand-500"
+                    : "bg-brand-600 text-white hover:bg-brand-500"
                 }`}
               >
                 {busy ? (

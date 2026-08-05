@@ -39,7 +39,7 @@ function score(pw: string): { level: 0 | 1 | 2 | 3 | 4; label: string } {
   return { level, label: ["", "很弱", "较弱", "一般", "很强"][level] };
 }
 
-const BAR = ["bg-neutral-700", "bg-red-500", "bg-amber-500", "bg-brand-500", "bg-emerald-500"];
+const BAR = ["bg-neutral-700", "bg-red-500", "bg-amber-500", "bg-brand-500", "bg-teal-500"];
 
 /**
  * Password input with a visibility toggle, a generator, and a strength bar.
@@ -136,7 +136,7 @@ export default function PasswordField({
       )}
 
       {copied && (
-        <div className="mt-1.5 text-[10px] text-emerald-400">
+        <div className="mt-1.5 text-[10px] text-teal-400">
           <i className="fa-solid fa-check mr-1" />
           已生成并复制到剪贴板，请立即保存
         </div>

@@ -46,7 +46,7 @@ export default function UploadSettings() {
         <div
           className={`rounded-xl px-4 py-2.5 text-xs ${
             msg.kind === "ok"
-              ? "border border-emerald-500/30 bg-emerald-950/20 text-emerald-200"
+              ? "border border-teal-500/30 bg-teal-950/20 text-teal-200"
               : "border border-red-500/30 bg-red-950/20 text-red-200"
           }`}
         >
@@ -190,7 +190,7 @@ function ImageDomain() {
             <button
               onClick={save}
               disabled={busy || !dirty || !value.trim()}
-              className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
+              className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
             >
               保存
             </button>
@@ -204,7 +204,7 @@ function ImageDomain() {
 
       {msg && (
         <div
-          className={`mt-2 text-[11px] ${msg.kind === "ok" ? "text-emerald-300" : "text-red-400"}`}
+          className={`mt-2 text-[11px] ${msg.kind === "ok" ? "text-teal-300" : "text-red-400"}`}
         >
           {msg.text}
         </div>

@@ -122,7 +122,7 @@ export default function SharePage() {
           <a
             href={data.url}
             download={data.orig_name}
-            className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink transition hover:bg-brand-500"
+            className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-white transition hover:bg-brand-500"
           >
             <i className="fa-solid fa-download mr-1.5" />
             下载
@@ -286,7 +286,7 @@ function FormatRow({ label, value, first }: { label: string; value: string; firs
 
   return (
     <div className={`flex items-stretch ${first ? "" : "border-t border-neutral-800/60"}`}>
-      <div className="flex w-32 shrink-0 items-center bg-brand-600 px-3 text-xs font-medium text-brand-ink sm:w-40">
+      <div className="flex w-32 shrink-0 items-center bg-brand-600 px-3 text-xs font-medium text-white sm:w-40">
         {label}
       </div>
       <input
@@ -299,7 +299,7 @@ function FormatRow({ label, value, first }: { label: string; value: string; firs
         onClick={copy}
         title="复制"
         className={`flex w-11 shrink-0 items-center justify-center text-xs transition ${
-          copied ? "bg-brand-600 text-brand-ink" : "bg-neutral-900/40 text-neutral-500 hover:text-brand-300"
+          copied ? "bg-brand-600 text-white" : "bg-neutral-900/40 text-neutral-500 hover:text-brand-300"
         }`}
       >
         <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"}`} />

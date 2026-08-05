@@ -92,3 +92,24 @@ struct Field<C: View>: View {
         )
     }
 }
+
+
+/// A text-only action, in the brand colour.
+///
+/// `.buttonStyle(LinkButton())` would be the one-liner and it paints with the *system*
+/// accent — blue on a default Mac — which is the one colour this product does
+/// not use. Small enough that a full button would shout, so it stays text.
+struct LinkButton: ButtonStyle {
+    @Environment(\.isEnabled) private var enabled
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(enabled ? AnyShapeStyle(Color.brand) : AnyShapeStyle(.tertiary))
+            .opacity(configuration.isPressed ? 0.6 : 1)
+            .underline(hovering && enabled)
+            .contentShape(Rectangle())
+            .onHover { hovering = $0 }
+            .animation(.easeOut(duration: 0.1), value: hovering)
+    }
+}

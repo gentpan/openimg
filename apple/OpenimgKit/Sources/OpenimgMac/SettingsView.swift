@@ -15,15 +15,27 @@ struct SettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                profileCard
-                locationCard
-                conversionCard
-                securityCard
-                siteCard
-                dangerCard
+            // Two columns, matching the overview page.
+            //
+            // Six cards in one 560pt column inside a 1240pt window made the
+            // page twice as long as it needed to be while leaving a third of
+            // the width empty on either side. Split by what the cards are
+            // about: who you are and how you get in on the left, what happens
+            // to your images and where they go on the right.
+            HStack(alignment: .top, spacing: 16) {
+                VStack(spacing: 16) {
+                    profileCard
+                    securityCard
+                    dangerCard
+                }
+                VStack(spacing: 16) {
+                    conversionCard
+                    locationCard
+                    siteCard
+                }
             }
-            .frame(maxWidth: 560, alignment: .leading)
+            .frame(maxWidth: 980)
+            .frame(maxWidth: .infinity)   // centres the block in a wide window
             .padding(.horizontal, 22)
             .padding(.bottom, 22)
         }
@@ -73,11 +85,11 @@ struct SettingsView: View {
                 )
             HStack(spacing: 4) {
                 Button("更换") { Task { await model.pickAvatar() } }
-                    .buttonStyle(.link).font(.caption2)
+                    .buttonStyle(LinkButton()).font(.caption2)
                 if a.avatarURL?.isEmpty == false {
                     Text("·").font(.caption2).foregroundStyle(.quaternary)
                     Button("移除") { Task { await model.removeAvatar() } }
-                        .buttonStyle(.link).font(.caption2)
+                        .buttonStyle(LinkButton()).font(.caption2)
                 }
             }
             .disabled(model.busy)
@@ -190,7 +202,7 @@ struct SettingsView: View {
                     NSWorkspace.shared.open(u)
                 }
             }
-            .buttonStyle(.link).font(.caption2)
+            .buttonStyle(LinkButton()).font(.caption2)
             Spacer(minLength: 0)
         }
         .padding(.top, 8)
@@ -218,6 +230,21 @@ struct SettingsView: View {
                         // silently has no effect.
                         .disabled(model.uploadMode == .original)
                         .opacity(model.uploadMode == .original ? 0.45 : 1)
+                }
+                if let t = model.quota?.tier {
+                    // The limits these three controls operate inside. They were
+                    // a card of their own, which meant a read-only card sitting
+                    // in a page of settings; against the switches they bound,
+                    // they read as the constraint they are.
+                    VStack(spacing: 0) {
+                        Divider().overlay(Color.white.opacity(0.06))
+                        row("单文件上限", model.bytes(t.maxFileSize))
+                        Divider().overlay(Color.white.opacity(0.06))
+                        row("每日上传", t.dailyUploadCount > 0 ? "\(t.dailyUploadCount) 张" : "不限")
+                        Divider().overlay(Color.white.opacity(0.06))
+                        row("支持格式", t.allowedFormats.joined(separator: " · ").uppercased())
+                    }
+                    .padding(.top, 2)
                 }
             }
         }
@@ -298,7 +325,7 @@ struct SettingsView: View {
                     .disabled(code.count != 6 || newPassword.count < 8 || model.busy)
                 }
                 Button("取消") { model.codeSent = false; code = ""; newPassword = "" }
-                    .buttonStyle(.link).font(.caption2)
+                    .buttonStyle(LinkButton()).font(.caption2)
             } else {
                 Button("发送验证码") { Task { await model.sendCode(.password) } }
                     .buttonStyle(QuietButton())
@@ -341,7 +368,7 @@ struct SettingsView: View {
                             }
                             Spacer()
                             Button("删除") { Task { await model.deletePasskey(p) } }
-                                .buttonStyle(.link).font(.caption2)
+                                .buttonStyle(LinkButton()).font(.caption2)
                         }
                         .padding(.vertical, 8)
                     }
@@ -364,16 +391,6 @@ struct SettingsView: View {
     /// and they had no way to find out where to get one.
     private var siteCard: some View {
         SettingsCard("在网站上管理", "safari") {
-            if let t = model.quota?.tier {
-                VStack(spacing: 0) {
-                    row("单文件上限", model.bytes(t.maxFileSize))
-                    Divider().overlay(Color.white.opacity(0.06))
-                    row("每日上传", t.dailyUploadCount > 0 ? "\(t.dailyUploadCount) 张" : "不限")
-                    Divider().overlay(Color.white.opacity(0.06))
-                    row("支持格式", t.allowedFormats.joined(separator: " · ").uppercased())
-                }
-                .padding(.bottom, 6)
-            }
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Self.siteLinks, id: \.0) { title, detail, path in
                     if title != Self.siteLinks.first?.0 {
@@ -405,7 +422,6 @@ struct SettingsView: View {
 
     private static let siteLinks: [(String, String, String)] = [
         ("API Token", "给 PicGo、Typora、curl 等工具上传用", "/settings"),
-        ("存储位置", "绑定自有 R2 / S3，要填密钥", "/settings"),
         ("绑定 Google / GitHub", "绑定要整页跳转，原生端做不了", "/settings"),
         ("添加 Passkey", "注册需要在网页里完成，删除可以在本页做", "/settings"),
         ("删除账号", "", "/settings"),

@@ -11,12 +11,12 @@ import type { CheckinRecord, QuotaInfo, QuotaTransaction } from "../types";
 import { RingSpinner } from "../components/Spinner";
 
 const TX_LABELS: Record<string, { label: string; icon: string; tone: string }> = {
-  signup_grant: { label: "注册赠送", icon: "fa-gift", tone: "text-accent-300" },
-  checkin: { label: "每日签到", icon: "fa-calendar-check", tone: "text-accent-300" },
-  referral: { label: "邀请奖励", icon: "fa-user-plus", tone: "text-accent-300" },
+  signup_grant: { label: "注册赠送", icon: "fa-gift", tone: "text-brand-300" },
+  checkin: { label: "每日签到", icon: "fa-calendar-check", tone: "text-brand-300" },
+  referral: { label: "邀请奖励", icon: "fa-user-plus", tone: "text-brand-300" },
   admin_grant: { label: "管理员调整", icon: "fa-user-shield", tone: "text-amber-300" },
   upload: { label: "上传占用", icon: "fa-cloud-arrow-up", tone: "text-neutral-400" },
-  delete_refund: { label: "删除释放", icon: "fa-trash-can", tone: "text-accent-300" },
+  delete_refund: { label: "删除释放", icon: "fa-trash-can", tone: "text-brand-300" },
 };
 
 /** Days into the current month-long milestone. */
@@ -122,7 +122,7 @@ export default function SpacePage() {
                 <div className="text-xs text-neutral-600 mt-1 mb-4">
                   共 {formatBytes(quota.quota_bytes)} · 已用 {usedPct.toFixed(1)}%
                 </div>
-                <BarMeter percent={usedPct} bars={50} tone={usedPct >= 90 ? "amber" : "accent"} className="h-10" />
+                <BarMeter percent={usedPct} bars={50} tone={usedPct >= 90 ? "amber" : "brand"} className="h-10" />
                 <dl className="mt-4 space-y-1 text-[11px]">
                   <Row label="总容量" value={formatBytes(quota.quota_bytes)} />
                   <Row label="剩余可用" value={formatBytes(quota.available_bytes)} />
@@ -152,7 +152,7 @@ export default function SpacePage() {
               <button
                 onClick={doCheckin}
                 disabled={busy || quota?.checkin.checked_in_today}
-                className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-600 disabled:bg-neutral-800 disabled:text-neutral-600 transition whitespace-nowrap"
+                className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-medium text-brand-ink hover:bg-brand-600 disabled:bg-neutral-800 disabled:text-neutral-600 transition whitespace-nowrap"
               >
                 {busy ? (
                   <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" />
@@ -227,7 +227,7 @@ export default function SpacePage() {
                       <div className="text-[10px] text-neutral-600 truncate">{tx.reason}</div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className={`text-xs ${tx.bytes >= 0 ? "text-accent-300" : "text-neutral-400"}`}>
+                      <div className={`text-xs ${tx.bytes >= 0 ? "text-brand-300" : "text-neutral-400"}`}>
                         {tx.bytes >= 0 ? "+" : "−"}
                         {formatBytes(Math.abs(tx.bytes))}
                       </div>
@@ -326,7 +326,7 @@ function Pager({
           disabled={busy}
           className={`${btn} tabular-nums ${
             p === page
-              ? "bg-brand-600 text-white"
+              ? "bg-brand-600 text-brand-ink"
               : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
           }`}
         >

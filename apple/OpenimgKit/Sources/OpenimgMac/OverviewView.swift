@@ -50,7 +50,7 @@ struct OverviewView: View {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text(model.bytes(q.availableBytes))
                             .font(.system(size: 30, weight: .semibold, design: .rounded))
-                            .foregroundStyle(Color.accent)
+                            .foregroundStyle(Color.brand)
                         Text("可用").foregroundStyle(.secondary)
                         Spacer()
                         // Moved here from the settings page, which carried a
@@ -66,7 +66,7 @@ struct OverviewView: View {
                         ZStack(alignment: .leading) {
                             Capsule().fill(.quaternary)
                             Capsule()
-                                .fill(Color.accent)
+                                .fill(Color.brand)
                                 .frame(width: max(3, geo.size.width * min(1, used)))
                         }
                     }
@@ -94,7 +94,7 @@ struct OverviewView: View {
                 // and with 86 / 13 / 2 the two small ones were near-identical
                 // slivers of purple that nothing distinguished.
                 let parts = [
-                    ("主图", s.sizePrimary, Color.accent),
+                    ("主图", s.sizePrimary, Color.brand),
                     ("衍生图", s.sizeVariants, Color(red: 0.20, green: 0.74, blue: 0.80)),
                     ("缩略图", s.sizeThumbs, Color(red: 0.98, green: 0.72, blue: 0.25)),
                     ("未分类", s.sizeUnclassified, Color.white.opacity(0.28)),
@@ -238,7 +238,7 @@ struct OverviewView: View {
                     ForEach(model.transactions.prefix(12)) { t in
                         HStack(spacing: 10) {
                             Image(systemName: t.isGrant ? "plus.circle.fill" : "minus.circle.fill")
-                                .foregroundStyle(t.isGrant ? Color.accent : Color.secondary)
+                                .foregroundStyle(t.isGrant ? Color.brand : Color.secondary)
                                 .font(.caption)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(t.label).font(.caption)
@@ -249,7 +249,7 @@ struct OverviewView: View {
                             Spacer()
                             Text("\(t.isGrant ? "+" : "−")\(model.bytes(t.bytes))")
                                 .font(.caption.monospacedDigit())
-                                .foregroundStyle(t.isGrant ? Color.accent : .secondary)
+                                .foregroundStyle(t.isGrant ? Color.brand : .secondary)
                         }
                         .padding(.vertical, 5)
                         if t.id != model.transactions.prefix(12).last?.id { Divider() }
@@ -279,7 +279,7 @@ struct OverviewView: View {
         // colour. The fourth used to be another green and sat too close to the
         // first — a slate replaces it, since it only appears once there are
         // four or more formats and a low-saturation neutral cannot clash.
-        .accent,
+        .brand,
         Color(red: 0.22, green: 0.74, blue: 0.97),
         Color(red: 0.98, green: 0.75, blue: 0.14),
         Color(red: 0.58, green: 0.64, blue: 0.72),

@@ -159,7 +159,7 @@ export default function GalleryPage() {
 
           <Link
             to="/upload"
-            className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-500 transition"
+            className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-brand-ink hover:bg-brand-500 transition"
           >
             <i className="fa-solid fa-plus mr-1.5" />
             上传
@@ -177,7 +177,7 @@ export default function GalleryPage() {
               <span
                 className={`w-4 h-4 rounded border flex items-center justify-center text-[8px] transition ${
                   allLoadedSelected
-                    ? "bg-brand-600 border-brand-600 text-white"
+                    ? "bg-brand-600 border-brand-600 text-brand-ink"
                     : selected.size > 0
                       ? "border-brand-500 text-brand-400"
                       : "border-neutral-600 text-transparent"
@@ -441,7 +441,7 @@ function Card({
         title={selected ? "取消选择" : "选择"}
         className={`absolute top-2 left-2 w-5 h-5 rounded-md border flex items-center justify-center text-[9px] transition ${
           selected
-            ? "bg-brand-600 border-brand-600 text-white"
+            ? "bg-brand-600 border-brand-600 text-brand-ink"
             : `bg-black/50 border-white/50 text-transparent hover:text-white ${
                 anySelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
               }`

@@ -16,8 +16,8 @@ import { useTheme } from "./ThemeContext";
  * below the 3:1 that non-text graphics need to be distinguishable.
  */
 export interface ChartTheme {
-  ACCENT: string;
-  ACCENT_DIM: string;
+  BRAND: string;
+  BRAND_DIM: string;
   SERIES: string[];
   GRID: string;
   TICK: string;
@@ -36,8 +36,8 @@ export interface ChartTheme {
 }
 
 const DARK = {
-  ACCENT: "#5de31d",
-  ACCENT_DIM: "rgba(93, 227, 29, 0.15)",
+  BRAND: "#5de31d",
+  BRAND_DIM: "rgba(93, 227, 29, 0.15)",
   SERIES: ["#5de31d", "#38bdf8", "#fbbf24", "#f472b6", "#94a3b8", "#2dd4bf", "#fb923c"],
   GRID: "rgba(64, 64, 64, 0.35)",
   TICK: "#737373",
@@ -47,8 +47,8 @@ const DARK = {
 };
 
 const LIGHT = {
-  ACCENT: "#46b312",
-  ACCENT_DIM: "rgba(70, 179, 18, 0.18)",
+  BRAND: "#46b312",
+  BRAND_DIM: "rgba(70, 179, 18, 0.18)",
   SERIES: ["#46b312", "#0284c7", "#d97706", "#db2777", "#475569", "#0d9488", "#ea580c"],
   GRID: "rgba(17, 24, 39, 0.12)",
   TICK: "#6b7280",

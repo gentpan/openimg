@@ -111,7 +111,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-white hover:bg-brand-500 disabled:bg-neutral-700 disabled:text-neutral-500"
+            className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-700 disabled:text-neutral-500"
           >
             {busy ? "登录中…" : "登录"}
           </button>
@@ -300,7 +300,7 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
         <button
           type="submit"
           disabled={busy || code.length !== 6 || pw.length < 8}
-          className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-white hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500"
+          className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500"
         >
           {busy ? "设置中…" : "设置新密码并登录"}
         </button>

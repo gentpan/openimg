@@ -15,7 +15,7 @@ struct BrandButton: ButtonStyle {
             // Disabled takes a neutral fill rather than a faded brand one:
             // fading only the background leaves the label at full strength on a
             // surface that no longer supports it.
-            .foregroundStyle(enabled ? AnyShapeStyle(Color.white)
+            .foregroundStyle(enabled ? AnyShapeStyle(Color.brandInk)
                                      : AnyShapeStyle(.tertiary))
             .padding(.horizontal, 15)
             .padding(.vertical, 7)

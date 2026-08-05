@@ -56,7 +56,7 @@ export default function PasskeyLoginForm() {
       <button
         type="submit"
         disabled={busy}
-        className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-white hover:bg-brand-500 disabled:bg-neutral-700 disabled:text-neutral-500 inline-flex items-center justify-center gap-2"
+        className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-700 disabled:text-neutral-500 inline-flex items-center justify-center gap-2"
       >
         <i className="fa-solid fa-fingerprint" aria-hidden></i>
         {busy ? "等待 Passkey…" : "用 Passkey 登录"}

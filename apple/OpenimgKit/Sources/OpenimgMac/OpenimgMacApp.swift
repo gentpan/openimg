@@ -287,7 +287,7 @@ struct Sidebar: View {
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             Capsule().fill(.white.opacity(0.10))
-                            Capsule().fill(Color.accent)
+                            Capsule().fill(Color.brand)
                                 .frame(width: max(3, geo.size.width *
                                     min(1, Double(q.usedBytes) / Double(q.quotaBytes))))
                         }
@@ -330,7 +330,7 @@ private struct SidebarRow: View {
                 Text(section.label).font(.system(size: 15))
                 Spacer(minLength: 0)
             }
-            .foregroundStyle(active ? AnyShapeStyle(Color.white) : AnyShapeStyle(.secondary))
+            .foregroundStyle(active ? AnyShapeStyle(Color.brandInk) : AnyShapeStyle(.secondary))
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background {

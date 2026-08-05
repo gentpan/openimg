@@ -449,7 +449,7 @@ function ChangePassword({ onClose }: { onClose: () => void }) {
           <button
             onClick={submit}
             disabled={!ready || busy}
-            className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-white hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
+            className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
           >
             {busy ? <RingSpinner className="h-3.5 w-3.5" /> : "确认修改"}
           </button>
@@ -542,7 +542,7 @@ function ConnectionRow({
               ? "text-red-400 hover:bg-red-900/30 border border-red-900/40"
               : connected
               ? "text-neutral-400 hover:text-neutral-200"
-              : "bg-brand-600 text-white hover:bg-brand-500"
+              : "bg-brand-600 text-brand-ink hover:bg-brand-500"
           } ${actionBusy ? "opacity-60" : ""}`}
         >
           {actionBusy ? "…" : actionLabel}
@@ -685,7 +685,7 @@ function PasskeySection() {
       <button
         onClick={() => setEnroll(true)}
         disabled={busy}
-        className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-lg bg-brand-600 px-3 text-xs font-medium text-white hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
+        className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
       >
         <i className="fa-solid fa-plus" aria-hidden></i>
         {busy ? "等待授权…" : "添加 Passkey"}

@@ -190,7 +190,7 @@ function ImageDomain() {
             <button
               onClick={save}
               disabled={busy || !dirty || !value.trim()}
-              className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
+              className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
             >
               保存
             </button>

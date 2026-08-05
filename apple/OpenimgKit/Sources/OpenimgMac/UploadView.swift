@@ -95,7 +95,7 @@ struct UploadView: View {
                     .buttonStyle(QuietButton())
                     .disabled(model.uploading)
             }
-            ProgressBar(tint: .brand, value: model.batchProgress)
+            ProgressBar(value: model.batchProgress)
                 .frame(height: 5)
         }
         .padding(14)
@@ -249,7 +249,7 @@ private struct QueueRow: View {
                     Text(detail).font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                 }
                 if case .uploading = item.state {
-                    ProgressBar(tint: .brand, value: item.progress).frame(height: 3)
+                    ProgressBar(value: item.progress).frame(height: 3)
                 } else if case .failed(let why) = item.state {
                     Text(why).font(.caption2).foregroundStyle(.orange).lineLimit(1)
                 }
@@ -286,13 +286,7 @@ private struct QueueRow: View {
 
 /// One progress bar shape, so the batch bar and the per-file bars match.
 struct ProgressBar: View {
-    /// Which scale the bar belongs to.
-    ///
-    /// The same bar serves two different questions. Upload progress is "how
-    /// far along is this task" — navigation's business, so violet. Check-in
-    /// progress is "how many days have I banked" — a quantity, so green, which
-    /// is the default because that is the more common case here.
-    var tint: Color = .accent
+    var tint: Color = .brand
 
     let value: Double
     var body: some View {

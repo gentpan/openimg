@@ -59,12 +59,12 @@ export function BarMeter({
   percent,
   bars = 40,
   className = "",
-  tone = "accent",
+  tone = "brand",
 }: {
   percent: number;
   bars?: number;
   className?: string;
-  tone?: "accent" | "amber";
+  tone?: "brand" | "amber";
 }) {
   const reduced = usePrefersReducedMotion();
   const [mounted, setMounted] = useState(false);
@@ -90,7 +90,7 @@ export function BarMeter({
   const partial = clamped <= 0 ? 0 : Math.max(exact - whole, whole === 0 ? 0.35 : 0);
   const animated = reduced || mounted;
 
-  const on = tone === "amber" ? "bg-amber-400" : "bg-accent-400";
+  const on = tone === "amber" ? "bg-amber-400" : "bg-brand-400";
   // 15% of a brand colour over a white card is white. The unlit cells are
   // structure, not accent, so they use the neutral track instead.
   const off = "bg-neutral-800";
@@ -196,8 +196,8 @@ export function AreaSpark({
       >
         <defs>
           <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--color-accent-600)" stopOpacity="0.45" />
-            <stop offset="100%" stopColor="var(--color-accent-600)" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--color-brand-600)" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="var(--color-brand-600)" stopOpacity="0" />
           </linearGradient>
         </defs>
 
@@ -212,7 +212,7 @@ export function AreaSpark({
         <path
           d={line}
           fill="none"
-          stroke="var(--color-accent-400)"
+          stroke="var(--color-brand-400)"
           strokeWidth={2.5}
           vectorEffect="non-scaling-stroke"
           strokeLinecap="round"
@@ -234,13 +234,13 @@ export function AreaSpark({
               y1={0}
               x2={pts[hover].x}
               y2={H}
-              stroke="var(--color-accent-400)"
+              stroke="var(--color-brand-400)"
               strokeWidth={1}
               strokeDasharray="3 3"
               vectorEffect="non-scaling-stroke"
               opacity={0.5}
             />
-            <circle cx={pts[hover].x} cy={pts[hover].y} r={4} fill="var(--color-accent-400)" vectorEffect="non-scaling-stroke" />
+            <circle cx={pts[hover].x} cy={pts[hover].y} r={4} fill="var(--color-brand-400)" vectorEffect="non-scaling-stroke" />
           </>
         )}
       </svg>
@@ -248,7 +248,7 @@ export function AreaSpark({
       {active && (
         <div className="absolute top-0 left-0 right-0 flex justify-center pointer-events-none">
           <div className="rounded-lg bg-neutral-950/90 border border-neutral-800 px-2 py-1 text-[10px] text-neutral-300 whitespace-nowrap">
-            {active.label} · <span className="text-accent-300">{formatValue(active.value)}</span>
+            {active.label} · <span className="text-brand-300">{formatValue(active.value)}</span>
           </div>
         </div>
       )}

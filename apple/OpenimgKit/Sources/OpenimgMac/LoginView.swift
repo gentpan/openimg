@@ -101,7 +101,7 @@ struct LoginView: View {
         VStack(spacing: 9) {
             Image(systemName: "photo.on.rectangle.angled")
                 .font(.system(size: 27, weight: .light))
-                .foregroundStyle(Color.white)
+                .foregroundStyle(Color.brandInk)
                 .frame(width: 56, height: 56)
                 .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.brand))
                 .shadow(color: Color.brand.opacity(0.5), radius: 14, y: 5)

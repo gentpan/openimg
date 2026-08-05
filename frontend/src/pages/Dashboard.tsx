@@ -86,7 +86,7 @@ export default function DashboardPage() {
           <div className="flex-1" />
           <Link
             to="/upload"
-            className="rounded-lg bg-brand-600 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-brand-500 transition"
+            className="rounded-lg bg-brand-600 px-3.5 py-1.5 text-xs font-medium text-brand-ink hover:bg-brand-500 transition"
           >
             <i className="fa-solid fa-cloud-arrow-up mr-1.5" />
             上传图片
@@ -136,7 +136,7 @@ export default function DashboardPage() {
               <div className="text-[10px] uppercase tracking-wider text-neutral-600">空间获得趋势</div>
               <div className="text-xs text-neutral-500 mt-1">最近 30 天 · 签到 / 邀请 / 赠送</div>
             </div>
-            <div className="text-lg font-brand text-accent-400 tabular-nums">
+            <div className="text-lg font-brand text-brand-400 tabular-nums">
               +{formatBytes(earnedTotal, 0)}
             </div>
           </div>
@@ -225,14 +225,14 @@ export default function DashboardPage() {
               <div className="text-[10px] text-neutral-600 mt-0.5">点击进入图库管理</div>
             </div>
             <div className="flex-1" />
-            <Link to="/gallery" className="text-[11px] text-accent-400 hover:underline">
+            <Link to="/gallery" className="text-[11px] text-brand-400 hover:underline">
               查看全部 →
             </Link>
           </div>
           {recent.length === 0 ? (
             <div className="py-10 text-center">
               <div className="text-xs text-neutral-600 mb-2">还没有上传过图片</div>
-              <Link to="/upload" className="text-xs text-accent-400 hover:underline">
+              <Link to="/upload" className="text-xs text-brand-400 hover:underline">
                 去上传第一张 →
               </Link>
             </div>

@@ -1,34 +1,22 @@
 import SwiftUI
 
-// Two scales, matching the site's `--color-brand-*` and `--color-accent-*`.
-//
-// brand  (violet) — where you are and what to press: wordmark, sidebar
-//                   selection, the one primary action on a screen, links.
-//                   Carries WHITE text.
-// accent (green)  — how much you have and what you earned: check-in, quota
-//                   gauges, chart series, the "+N MB" grants. Carries INK.
-//
-// In one line: violet is navigation, green is quantity.
+/// One scale, and one rule about what goes on it.
+///
+/// #5DE31D has a relative luminance of 0.574, so white on it is 1.68:1 —
+/// unreadable, not merely low. Every filled control therefore takes
+/// `Color.brandInk` (10.65:1), and white never appears on a brand surface.
+/// That single fact is the whole difference from the violet this replaces,
+/// which was 0.135 and carried white at 4.67:1.
 extension Color {
     /// Same value as the site's `--color-brand-600`.
-    static let brand = Color(red: 0x8E / 255, green: 0x47 / 255, blue: 0xFF / 255)
+    static let brand = Color(red: 0x5D / 255, green: 0xE3 / 255, blue: 0x1D / 255)
 
-    /// Same value as the site's `--color-accent-600`.
-    static let accent = Color(red: 0x5D / 255, green: 0xE3 / 255, blue: 0x1D / 255)
+    /// What goes *on* a brand fill. Near-black with a trace of the brand hue,
+    /// so it reads as part of the control rather than as borrowed body text.
+    static let brandInk = Color(red: 0x0A / 255, green: 0x1B / 255, blue: 0x02 / 255)
 
-    /// What goes *on* an accent fill — and only an accent fill.
-    ///
-    /// The violet has a relative luminance of 0.135, so white on it is 4.67:1
-    /// and a filled violet control is labelled in white. The green is 0.574 —
-    /// white lands at 1.68:1, which is not "a bit low", it is illegible. Hence
-    /// two scales with opposite foregrounds, and hence this constant: near-black
-    /// with a trace of the accent hue, 10.65:1, reading as part of the control
-    /// rather than as borrowed body text.
-    static let accentInk = Color(red: 0x0A / 255, green: 0x1B / 255, blue: 0x02 / 255)
-
-    /// "It worked" — distinct from the accent green on purpose. Teal sits at
-    /// hue 173° against the accent's 101°; the emerald it replaces was 158° and
-    /// read as a shade of the same colour.
+    /// "It worked" — kept at a distinctly different hue (teal, 173°) from the
+    /// brand (101°) so a success message never reads as brand chrome.
     static let success = Color(red: 0x14 / 255, green: 0xB8 / 255, blue: 0xA6 / 255)
 }
 
@@ -123,7 +111,7 @@ struct Pill: View {
                 Text(text)
             }
             .font(.callout.weight(active ? .medium : .regular))
-            .foregroundStyle(active ? AnyShapeStyle(Color.white) : AnyShapeStyle(.secondary))
+            .foregroundStyle(active ? AnyShapeStyle(Color.brandInk) : AnyShapeStyle(.secondary))
             .padding(.horizontal, 12)
             .padding(.vertical, 5)
             .background {

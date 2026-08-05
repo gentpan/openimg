@@ -136,7 +136,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
                     onClick={() => copy(l.value, l.key)}
                     className={`shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-md text-[10px] transition ${
                       copied === l.key
-                        ? "bg-brand-600 text-white"
+                        ? "bg-brand-600 text-brand-ink"
                         : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
                     }`}
                   >

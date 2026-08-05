@@ -192,6 +192,50 @@ if let a = try? dec.decode(Account.self, from: Data(noAvatar.utf8)) {
     check("缺 avatar_url 仍可解析", false)
 }
 
+section("图库网格")
+
+// 默认窗口 1240x820 下网格的可用区。这两个数是从离屏渲染里打印出来的实测
+// 值，不是从内边距推算的——推算过一次，结果差了 180pt。
+let deskGrid = CGSize(width: 972, height: 637)
+let f50 = GridFit.solve(count: 50, in: deskGrid, spacing: 12, minCell: 72)
+check("50 张不用滚动", !f50.scrolls)
+check("行列容得下 50 张（\(f50.columns)x\(f50.rows)）", f50.columns * f50.rows >= 50)
+check("横向不溢出",
+      Double(f50.columns) * f50.cellWidth + 12 * Double(f50.columns - 1) <= 972.5)
+check("纵向不溢出",
+      Double(f50.rows) * f50.cellHeight + 12 * Double(f50.rows - 1) <= 637.5)
+check("格子接近正方（\(Int(f50.cellWidth))x\(Int(f50.cellHeight))）",
+      f50.cellHeight / f50.cellWidth > 0.78 && f50.cellHeight / f50.cellWidth < 1.18)
+check("格子不至于太小", f50.cellWidth >= 72)
+
+// 换页大小：都要能铺满，且张数越多格子越小
+let sizes = [25, 50, 100, 200].map { GridFit.solve(count: $0, in: deskGrid, spacing: 12, minCell: 72) }
+// 默认窗口在 72pt 下限内最多摆 13x7=91 格，所以 100/200 注定要滚动。
+// 这正是想要的：宁可滚动，也不把格子压到看不清。
+check("25/50 铺满不滚动", !sizes[0].scrolls && !sizes[1].scrolls)
+check("100/200 改为滚动而不是压小格子",
+      sizes[2].scrolls && sizes[3].scrolls
+      && sizes[2].cellWidth >= 72 && sizes[3].cellWidth >= 72)
+check("张数越多格子越小",
+      sizes[0].cellWidth > sizes[1].cellWidth && sizes[1].cellWidth > sizes[2].cellWidth)
+
+// 最小窗口：宁可滚动也不要 40pt 的格子
+let tiny = GridFit.solve(count: 50, in: CGSize(width: 632, height: 362), spacing: 12, minCell: 72)
+check("窗口太小时滚动", tiny.scrolls)
+check("滚动时格子仍不小于下限", tiny.cellWidth >= 72)
+
+// 少量图片时不该被拉成长条
+let three = GridFit.solve(count: 3, in: deskGrid, spacing: 12, minCell: 72)
+check("3 张时格子不被拉成长条",
+      three.cellHeight / three.cellWidth > 0.78 && three.cellHeight / three.cellWidth < 1.18)
+
+// 退化输入
+check("0 张不崩", GridFit.solve(count: 0, in: deskGrid, spacing: 12, minCell: 72).columns >= 1)
+check("尺寸为 0 不崩", GridFit.solve(count: 50, in: .zero, spacing: 12, minCell: 72).scrolls)
+check("尺寸为 NaN 不崩",
+      GridFit.solve(count: 50, in: CGSize(width: CGFloat.nan, height: CGFloat.nan),
+                    spacing: 12, minCell: 72).scrolls)
+
 section("本地缩放")
 
 let scratch = "/private/tmp/claude-501/-Users-peter-projects-openimg-io/6a0adad5-8d72-4802-a42c-5a93af436413/scratchpad"

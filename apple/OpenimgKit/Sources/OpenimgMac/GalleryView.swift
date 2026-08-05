@@ -4,7 +4,7 @@ import OpenimgKit
 
 struct GalleryView: View {
     @ObservedObject var model: AppModel
-    private let columns = [GridItem(.adaptive(minimum: 158, maximum: 210), spacing: 14)]
+    private static let spacing: Double = 12
 
     var body: some View {
         VStack(spacing: 0) {
@@ -13,13 +13,7 @@ struct GalleryView: View {
             if model.images.isEmpty {
                 EmptyState(model: model)
             } else {
-                ScrollView {
-                    LazyVGrid(columns: columns, spacing: 14) {
-                        ForEach(model.images) { Card(model: model, img: $0) }
-                    }
-                    .padding(.horizontal, 18)
-                    .padding(.bottom, 18)
-                }
+                grid
             }
             statusBar
         }
@@ -31,6 +25,39 @@ struct GalleryView: View {
             }
         }
         .animation(.easeOut(duration: 0.18), value: model.detail?.id)
+    }
+
+    /// A page sized to the window rather than the other way round.
+    ///
+    /// `GeometryReader` sits outside the `ScrollView` on purpose — a scroll view
+    /// proposes unbounded height to its content, so measuring from inside would
+    /// report infinity and the solver would hand back one enormous row.
+    ///
+    /// The `ScrollView` stays even when everything fits: nothing scrolls when
+    /// the content is exactly as tall as the port, and it is what catches the
+    /// small-window case where the solver gives up and falls back to `minCell`.
+    private var grid: some View {
+        GeometryReader { geo in
+            let fit = GridFit.solve(count: model.images.count, in: geo.size,
+                                    spacing: Self.spacing, minCell: 72)
+            ScrollView {
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.fixed(fit.cellWidth),
+                                                       spacing: Self.spacing),
+                                   count: fit.columns),
+                    spacing: Self.spacing
+                ) {
+                    ForEach(model.images) {
+                        Card(model: model, img: $0,
+                             width: fit.cellWidth, height: fit.cellHeight)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .scrollDisabled(!fit.scrolls)
+        }
+        .padding(.horizontal, 18)
+        .padding(.bottom, 14)
     }
 
     /// The capsule row from the reference. It doubles as the selection bar:
@@ -104,56 +131,61 @@ struct GalleryView: View {
 
 // MARK: - Card
 
+/// A contact-sheet tile: the picture is the whole cell.
+///
+/// The old card carried a permanent caption strip under the thumbnail. At the
+/// tile sizes a full page needs, that strip costs about a third of the cell to
+/// print a filename too narrow to read — so the name moved onto the picture,
+/// where it only appears under the pointer, and onto the tooltip, which stays
+/// legible no matter how small the tile gets.
 private struct Card: View {
     @ObservedObject var model: AppModel
     let img: RemoteImage
+    let width: Double
+    let height: Double
     @State private var hovering = false
 
     private var selected: Bool { model.selection.contains(img.id) }
     private var active: Bool { model.detail?.id == img.id }
+    /// Below this the caption is a few truncated characters and a format chip
+    /// wider than the word it holds. The tooltip carries the name instead.
+    private var showsCaption: Bool { width >= 118 }
 
     var body: some View {
-        VStack(spacing: 0) {
-            ZStack(alignment: .topLeading) {
-                Thumbnail(url: img.thumbURL, client: try? model.client())
-                    .frame(height: 118)
+        ZStack(alignment: .topLeading) {
+            Thumbnail(url: img.thumbURL, client: try? model.client())
 
-                if hovering || selected || !model.selection.isEmpty {
-                    Button { model.toggle(img.id) } label: {
-                        Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                            .font(.system(size: 16))
-                            .symbolRenderingMode(.palette)
-                            .foregroundStyle(.white, selected ? Color.brand : .black.opacity(0.45))
-                    }
-                    .buttonStyle(.plain)
-                    .padding(7)
+            if hovering && showsCaption {
+                caption
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                     .transition(.opacity)
-                }
             }
 
-            HStack(spacing: 5) {
-                Text(img.origName)
-                    .font(.caption2).lineLimit(1).truncationMode(.middle)
-                Spacer(minLength: 0)
-                Text(img.ext.uppercased())
-                    .font(.system(size: 8.5, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 4).padding(.vertical, 1.5)
-                    .background(Capsule().fill(.white.opacity(0.10)))
+            if hovering || selected || !model.selection.isEmpty {
+                Button { model.toggle(img.id) } label: {
+                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 15))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, selected ? Color.brand : .black.opacity(0.45))
+                        .shadow(color: .black.opacity(0.35), radius: 2)
+                }
+                .buttonStyle(.plain)
+                .padding(6)
+                .transition(.opacity)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 7)
         }
-        .panelSurface(11)
+        .frame(width: width, height: height)
+        .panelSurface(10)
         .overlay(
-            RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .strokeBorder(selected || active ? Color.brand : .clear, lineWidth: 1.6)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(selected || active ? Color.brand : .clear, lineWidth: 2)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .animation(.easeOut(duration: 0.12), value: hovering)
         .animation(.easeOut(duration: 0.12), value: selected)
         .hoverLift()
         .onHover { hovering = $0 }
+        .help("\(img.origName) · \(img.ext.uppercased())")
         .contentShape(Rectangle())
         .onTapGesture { model.detail = active ? nil : img }
         .contextMenu {
@@ -169,6 +201,23 @@ private struct Card: View {
             Divider()
             Button("删除", role: .destructive) { Task { await model.delete(img) } }
         }
+    }
+
+    /// A flat bar rather than a scrim. A gradient over a photograph reads as
+    /// part of the photograph.
+    private var caption: some View {
+        HStack(spacing: 5) {
+            Text(img.origName)
+                .font(.caption2).lineLimit(1).truncationMode(.middle)
+            Spacer(minLength: 0)
+            Text(img.ext.uppercased())
+                .font(.system(size: 8.5, weight: .medium))
+                .foregroundStyle(.white.opacity(0.75))
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 5)
+        .background(Color.black.opacity(0.62))
     }
 }
 

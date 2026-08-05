@@ -72,7 +72,10 @@ final class AppModel: ObservableObject {
     @Published var images: [RemoteImage] = []
     @Published var total = 0
     @Published var page = 0
-    @Published var pageSize = 25
+    // 50 rather than 25: the grid sizes itself to fit whatever this is, and a
+    // page of 25 in a default window means tiles big enough to look like a
+    // mistake. See GridFit.
+    @Published var pageSize = 50
     @Published var search = ""
     @Published var sort: SortKey = .newest
     @Published var selection: Set<String> = []

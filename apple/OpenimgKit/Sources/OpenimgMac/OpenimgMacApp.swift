@@ -18,7 +18,10 @@ struct OpenimgMacApp: App {
                 // two sets of every surface value.
                 .preferredColorScheme(.dark)
         }
-        .defaultSize(width: 1060, height: 700)
+        // Sized so a default page of 50 lands on tiles around 95pt rather than
+        // 73pt. The gallery fills whatever it is given, so the default window
+        // is what decides how big a thumbnail the app opens on.
+        .defaultSize(width: 1240, height: 820)
         .windowStyle(.hiddenTitleBar)
         .commands {
             CommandGroup(replacing: .newItem) {

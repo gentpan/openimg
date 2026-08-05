@@ -12,6 +12,9 @@ struct UploadItem: Identifiable {
     var state: State = .queued
     var progress: Double = 0
     var deduplicated = false
+    /// Set when the file was downscaled locally before sending, so the row can
+    /// show what actually went over the wire instead of the on-disk size.
+    var sentBytes: Int64?
 
     var name: String { url.lastPathComponent }
     var size: Int64 {

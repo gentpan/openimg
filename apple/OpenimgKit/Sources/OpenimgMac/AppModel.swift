@@ -550,9 +550,28 @@ final class AppModel: ObservableObject {
                 continue
             }
             queue[i].state = .uploading
+
+            // Shrink first when a width limit is set. Only ever a downscale in
+            // the same format — see LocalResize for why nothing else happens on
+            // this side. Skipped entirely in original mode, where the point is
+            // to hand over the exact bytes.
+            var toSend = url
+            var temp: URL?
+            if uploadMode == .optimized, maxImageWidth > 0,
+               let smaller = LocalResize.shrink(url, maxWidth: maxImageWidth) {
+                toSend = smaller
+                temp = smaller
+                queue[i].sentBytes =
+                    (try? smaller.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init)
+            }
+            defer { if let temp { try? FileManager.default.removeItem(at: temp) } }
+
             do {
                 let id = queue[i].id
-                let res = try await client().upload(fileURL: url) { [weak self] p in
+                // The server sees the original filename regardless of which
+                // file the bytes came from.
+                let res = try await client().upload(fileURL: toSend,
+                                                    filename: url.lastPathComponent) { [weak self] p in
                     Task { @MainActor in
                         guard let self, let k = self.queue.firstIndex(where: { $0.id == id })
                         else { return }

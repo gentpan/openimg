@@ -8,18 +8,19 @@ struct UploadView: View {
     var body: some View {
         VStack(spacing: 16) {
             if model.queue.isEmpty {
-                Spacer(minLength: 0)
+                // The drop target takes the room rather than floating in it.
+                // A small dashed box centred in a large empty page reads as an
+                // afterthought; on this screen it is the whole point.
                 dropZone
                 conversion
                 formatRow
                 limits
-                Spacer(minLength: 0)
             } else {
                 batchHeader
                 queueList
                 // The drop zone stays reachable while a batch is on screen, so
                 // adding more files does not mean clearing the list first.
-                dropZone.frame(maxWidth: 430, maxHeight: 72)
+                dropZone.frame(maxHeight: 76)
                 formatRow
             }
         }
@@ -38,7 +39,7 @@ struct UploadView: View {
                     .strokeBorder(model.dropping ? Color.brand : .white.opacity(0.14),
                                   style: StrokeStyle(lineWidth: model.dropping ? 2 : 1.2, dash: [7, 5]))
             )
-            .frame(maxWidth: 430, maxHeight: 210)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .overlay { zoneContent }
             .contentShape(Rectangle())
             .onTapGesture {
@@ -56,14 +57,15 @@ struct UploadView: View {
     @ViewBuilder
     private var zoneContent: some View {
         if model.queue.isEmpty {
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 Image(systemName: "arrow.up.doc")
-                    .font(.system(size: 30, weight: .light))
+                    .font(.system(size: 38, weight: .light))
                     .foregroundStyle(Color.brand)
-                    .frame(width: 66, height: 66)
+                    .frame(width: 88, height: 88)
                     .background(Circle().fill(Color.brand.opacity(0.12)))
-                Text("把图片或文件夹拖到这里").font(.title3.weight(.medium))
-                Text("或点击选择，文件夹会自动展开").font(.caption).foregroundStyle(.secondary)
+                Text("把图片或文件夹拖到这里").font(.title2.weight(.medium))
+                Text("或点击选择，文件夹会自动展开")
+                    .font(.callout).foregroundStyle(.secondary)
             }
         } else {
             Label("继续添加", systemImage: "plus")
@@ -229,6 +231,13 @@ private struct QueueRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(item.name).font(.callout).lineLimit(1).truncationMode(.middle)
+                    if let sent = item.sentBytes, item.size > 0 {
+                        Text("已缩至 \(Int(Double(sent) / Double(item.size) * 100))%")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundStyle(Color.brand)
+                            .padding(.horizontal, 5).padding(.vertical, 1.5)
+                            .background(Capsule().fill(Color.brand.opacity(0.16)))
+                    }
                     if item.deduplicated {
                         Text("秒传")
                             .font(.system(size: 9, weight: .medium))

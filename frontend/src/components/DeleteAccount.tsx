@@ -25,7 +25,7 @@ export default function DeleteAccount() {
     setErr(null);
     try {
       const res = await userApi.deleteAccount(confirm.trim());
-      alert(`账号已删除${res.deleted_images ? `，同时删除了 ${res.deleted_images} 张图片` : ""}`);
+      alert(res.deleted_images ? t.deleteAccount.doneWithImages(res.deleted_images) : t.deleteAccount.done);
       window.location.href = "/";
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -52,14 +52,14 @@ export default function DeleteAccount() {
         {t.deleteAccount.warningTitle}
       </div>
       <ul className="text-[11px] text-neutral-400 space-y-1 mb-3 leading-relaxed">
-        <li>· 你上传的<b className="text-red-300">{t.deleteAccount.warning.imagesEmphasis}</b>，所有外链立即失效</li>
-        <li>· 已获得的空间、签到记录、邀请奖励全部清空</li>
-        <li>· API Token 立即失效，绑定的自有存储配置会被移除（不会删除你自己桶里的文件）</li>
-        <li>· 该邮箱可以重新注册，但数据无法找回</li>
+        <li>· {t.deleteAccount.warning.images}</li>
+        <li>· {t.deleteAccount.warning.rewards}</li>
+        <li>· {t.deleteAccount.warning.tokens}</li>
+        <li>· {t.deleteAccount.warning.reregister}</li>
       </ul>
 
       <label className="block text-[10px] text-neutral-500 mb-1">
-        请输入 <span className="font-mono text-neutral-300">{user.email}</span> 以确认
+        {t.deleteAccount.typeEmailToConfirm(user.email)}
       </label>
       <input
         value={confirm}

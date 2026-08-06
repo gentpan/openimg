@@ -1,5 +1,6 @@
 import { formatBytes } from "../api";
 import type { CheckinRecord } from "../types";
+import { useLang } from "../LangContext";
 
 /**
  * Mon–Sun as filled circles, mirroring the macOS client.
@@ -9,6 +10,7 @@ import type { CheckinRecord } from "../types";
  * instead, because thirty circles is a grid rather than a glance.
  */
 export default function CheckinWeek({ records }: { records: CheckinRecord[] }) {
+  const { t } = useLang();
   const claimed = new Set(records.map((r) => r.date));
   const today = utcKey(new Date());
   const days = weekDays();
@@ -35,7 +37,7 @@ export default function CheckinWeek({ records }: { records: CheckinRecord[] }) {
               {done && <i className="fa-solid fa-check" />}
             </div>
             <span className={`text-[10px] ${isToday ? "text-brand-300" : "text-neutral-500"}`}>
-              {"一二三四五六日"[i]}
+              {t.checkinWeek.weekdayInitial(i)}
             </span>
           </div>
         );
@@ -55,6 +57,7 @@ export function MilestoneBar({
   total: number;
   reward: number;
 }) {
+  const { t } = useLang();
   const pct = total > 0 ? Math.min(100, (current / total) * 100) : 0;
   return (
     <div className="space-y-1.5">
@@ -64,7 +67,7 @@ export function MilestoneBar({
           // The number is the point. "Keep your streak" means nothing without
           // saying what the streak is worth.
           <span className="text-xs text-brand-300">
-            满 {total} 天 +{formatBytes(reward, 0)}
+            {t.checkinWeek.milestoneReward(total, formatBytes(reward, 0))}
           </span>
         )}
       </div>
@@ -72,7 +75,7 @@ export function MilestoneBar({
         <div className="h-full rounded-full bg-brand-600 transition-all duration-500"
              style={{ width: `${pct}%` }} />
       </div>
-      <div className="text-[10px] text-neutral-600">{current} / {total} 天</div>
+      <div className="text-[10px] text-neutral-600">{current} / {t.common.days(total)}</div>
     </div>
   );
 }

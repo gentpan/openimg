@@ -35,7 +35,7 @@ export default function Nav() {
       if (res.capped) {
         toast.info(t.nav.checkinCappedTitle, t.nav.checkinCappedDetail);
       } else {
-        toast.success(`签到成功，+${formatBytes(res.granted_bytes)}`, t.nav.checkinSuccessDetail);
+        toast.success(t.nav.checkinSuccessTitle(formatBytes(res.granted_bytes)), t.nav.checkinSuccessDetail);
       }
       await refresh();
     } catch (e) {
@@ -79,7 +79,7 @@ export default function Nav() {
                 disabled={busy || user.checked_in_today}
                 title={
                   user.checked_in_today
-                    ? `今日已签到 · 连续 ${user.checkin_streak} 天`
+                    ? t.nav.checkedInTodayStreak(user.checkin_streak)
                     : t.nav.checkinHint
                 }
                 className={`rounded-full px-2.5 py-0.5 transition whitespace-nowrap ${
@@ -93,7 +93,7 @@ export default function Nav() {
                 ) : user.checked_in_today ? (
                   <>
                     <i className="fa-solid fa-check text-[10px] mr-1" />
-                    {user.checkin_streak} 天
+                    {t.common.days(user.checkin_streak)}
                   </>
                 ) : (
                   <>
@@ -104,7 +104,7 @@ export default function Nav() {
               </button>
               <Link
                 to="/space"
-                title={`已用 ${formatBytes(user.used_bytes)} / 共 ${formatBytes(user.quota_bytes)}`}
+                title={t.nav.storagePillTitle(formatBytes(user.used_bytes), formatBytes(user.quota_bytes))}
                 className={`rounded-full px-2 py-0.5 transition ${
                   low
                     ? "bg-amber-900/30 text-amber-200 hover:bg-amber-900/50"

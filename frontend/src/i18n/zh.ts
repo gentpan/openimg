@@ -31,6 +31,7 @@ export const zh = {
     download: "下载",
     optional: "（可选）",
     verified: "已验证",
+    adminRequired: "需要管理员权限",
     backToHome: "返回首页",
 
     signIn: "登录",
@@ -706,6 +707,7 @@ export const zh = {
       reregister: "该邮箱可以重新注册，但数据无法找回",
     },
     confirmLabel: (email: string) => `请输入 ${email} 以确认`,
+    typeEmailToConfirm: (email: string) => `请输入 ${email} 以确认`,
     confirmButton: "永久删除我的账户",
   },
 

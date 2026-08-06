@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { accountApi, type OtpPurpose } from "../api";
 import { RingSpinner } from "./Spinner";
+import { useLang } from "../LangContext";
+import type { Dict } from "../i18n";
 
-const LABELS: Record<OtpPurpose, { title: string; action: string }> = {
-  password: { title: "修改密码", action: "确认修改" },
-  passkey: { title: "添加 Passkey", action: "继续添加" },
-  purge: { title: "清空图库", action: "确认清空" },
-};
+// Resolved at render, not at import: the language can change after this module
+// is evaluated.
+const labels = (t: Dict): Record<OtpPurpose, { title: string; action: string }> => ({
+  password: { title: t.common.changePassword, action: t.common.confirmChange },
+  passkey: { title: t.common.addPasskey, action: t.otpConfirm.passkeyAction },
+  purge: { title: t.otpConfirm.purgeTitle, action: t.otpConfirm.purgeAction },
+});
 
 /**
  * Confirmation dialog for actions gated on an emailed code.
@@ -31,6 +35,7 @@ export default function OtpConfirm({
   /** Receives the code; throw to keep the dialog open and show the message. */
   onVerified: (code: string) => Promise<void>;
 }) {
+  const { t } = useLang();
   const [code, setCode] = useState("");
   const [sending, setSending] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -90,7 +95,7 @@ export default function OtpConfirm({
     }
   }
 
-  const label = LABELS[purpose];
+  const label = labels(t)[purpose];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
@@ -109,13 +114,13 @@ export default function OtpConfirm({
 
         <p className="text-[11px] leading-relaxed text-neutral-500 mb-3">
           {sending ? (
-            "正在发送验证码…"
+            t.otpConfirm.sending
           ) : sentTo ? (
             <>
-              验证码已发送到 <span className="text-neutral-300">{sentTo}</span>，5 分钟内有效。
+              {t.common.otpSentTo(sentTo)}
             </>
           ) : (
-            "无法发送验证码。"
+            t.otpConfirm.sendFailed
           )}
           {detail && <span className="block mt-1.5">{detail}</span>}
         </p>
@@ -126,7 +131,7 @@ export default function OtpConfirm({
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength={6}
-          placeholder="6 位验证码"
+          placeholder={t.otpConfirm.codePlaceholder}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
           onKeyDown={(e) => e.key === "Enter" && submit()}
           className="w-full rounded-lg bg-neutral-950 border border-neutral-800 px-3 py-2 text-center text-lg tracking-[0.4em] tabular-nums outline-none focus:border-brand-500 placeholder-faint placeholder:text-sm placeholder:tracking-normal"
@@ -140,7 +145,7 @@ export default function OtpConfirm({
             disabled={sending || cooldown > 0 || busy}
             className="text-[11px] text-neutral-500 hover:text-brand-300 disabled:hover:text-neutral-500 disabled:opacity-60 transition"
           >
-            {cooldown > 0 ? `重新发送 (${cooldown}s)` : "重新发送"}
+            {cooldown > 0 ? t.otpConfirm.resendCountdown(cooldown) : t.common.resend}
           </button>
           <div className="flex-1" />
           <button
@@ -148,7 +153,7 @@ export default function OtpConfirm({
             disabled={busy}
             className="rounded-lg px-3 py-1.5 text-xs text-neutral-400 hover:text-neutral-100 transition"
           >
-            取消
+            {t.common.cancel}
           </button>
           <button
             onClick={submit}

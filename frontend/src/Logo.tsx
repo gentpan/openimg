@@ -1,3 +1,4 @@
+import { useLang } from "./LangContext";
 interface LogoProps {
   size?: number;
   className?: string;
@@ -15,6 +16,7 @@ interface LogoProps {
  * it without spending a label.
  */
 export default function Logo({ size = 28, className = "", asLink = true }: LogoProps) {
+  const { t } = useLang();
   const mark = (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -34,7 +36,7 @@ export default function Logo({ size = 28, className = "", asLink = true }: LogoP
       viewBox="0 0 32 32"
       width={size}
       height={size}
-      aria-label="返回首页"
+      aria-label={t.common.backToHome}
     >
       <g transform="translate(4 4) scale(2)" fill={BRAND}>
         <path d="M5.735 1.92a.375.375 0 0 1 .53 0l4.345 4.345a.375.375 0 1 0 .53-.53L6.795 1.39a1.125 1.125 0 0 0-1.59 0L.86 5.735a.375.375 0 1 0 .53.53l4.345-4.345Z" />
@@ -75,7 +77,7 @@ export default function Logo({ size = 28, className = "", asLink = true }: LogoP
   return (
     <a
       href="/"
-      title="返回首页"
+      title={t.common.backToHome}
       className="group relative inline-block will-change-[scale] transition-[scale] duration-200 ease-out hover:scale-110"
       style={{ width: size, height: size, lineHeight: 0 }}
     >

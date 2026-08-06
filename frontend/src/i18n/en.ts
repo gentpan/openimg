@@ -32,6 +32,7 @@ export const en: Dict = {
     download: "Download",
     optional: "(optional)",
     verified: "Verified",
+    adminRequired: "Admin access required",
     backToHome: "Back to home",
 
     signIn: "Sign in",
@@ -712,6 +713,7 @@ export const en: Dict = {
       reregister: "The email can be used to sign up again, but the data can't be recovered",
     },
     confirmLabel: (email: string) => `Type ${email} to confirm`,
+    typeEmailToConfirm: (email: string) => `Type ${email} to confirm`,
     confirmButton: "Permanently delete my account",
   },
 

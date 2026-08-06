@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { BrandProvider } from "./BrandContext";
-import { LangProvider } from "./LangContext";
+import { LangProvider, useLang } from "./LangContext";
 import { ToastProvider } from "./ToastContext";
 import { UploadProvider } from "./UploadContext";
 import UploadPanel from "./components/UploadPanel";
@@ -80,10 +80,11 @@ export default function App() {
 }
 
 function RequireAdmin({ children }: { children: React.ReactElement }) {
+  const { t } = useLang();
   const { user, loading } = useAuth();
-  if (loading) return <CenterMsg>加载中…</CenterMsg>;
+  if (loading) return <CenterMsg>{t.common.loading}</CenterMsg>;
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== "admin") return <CenterMsg>需要管理员权限</CenterMsg>;
+  if (user.role !== "admin") return <CenterMsg>{t.common.adminRequired}</CenterMsg>;
   return children;
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLang } from "../LangContext";
 
 /** Respects the OS reduced-motion setting — animations are decoration, never information. */
 function usePrefersReducedMotion(): boolean {
@@ -137,6 +138,7 @@ export function AreaSpark({
   formatValue?: (n: number) => string;
   className?: string;
 }) {
+  const { t } = useLang();
   const reduced = usePrefersReducedMotion();
   const [drawn, setDrawn] = useState(false);
   const [hover, setHover] = useState<number | null>(null);
@@ -150,7 +152,7 @@ export function AreaSpark({
   if (data.length === 0) {
     return (
       <div className={`flex items-center justify-center text-xs text-neutral-600 ${className}`} style={{ height }}>
-        暂无数据
+        {t.common.noData}
       </div>
     );
   }

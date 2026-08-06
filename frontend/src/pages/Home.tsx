@@ -5,19 +5,25 @@ import Footer from "../Footer";
 import Nav from "../components/Nav";
 import Uploader from "../components/Uploader";
 import Reveal, { RevealGroup } from "../components/Reveal";
+import { useLang } from "../LangContext";
+import type { Dict } from "../i18n";
 
 /** Hero feature pills. Six is the ceiling: past that the row wraps to three
- *  lines on a phone and reads as a wall rather than a summary. */
-const HIGHLIGHTS: { icon: string; text: string }[] = [
-  { icon: "fa-sliders", text: "压缩或留原图" },
-  { icon: "fa-file-zipper", text: "WebP / AVIF" },
-  { icon: "fa-globe", text: "全球 CDN" },
-  { icon: "fa-user-shield", text: "自动抹除 EXIF" },
-  { icon: "fa-cloud", text: "可绑自有 R2 / S3" },
-  { icon: "fa-infinity", text: "永久免费" },
+ *  lines on a phone and reads as a wall rather than a summary.
+ *
+ *  Holds dictionary keys rather than text: a module constant is evaluated
+ *  once at import, while the language can change at any time after. */
+const HIGHLIGHTS: { icon: string; key: keyof Dict["home"]["highlight"] }[] = [
+  { icon: "fa-sliders", key: "optimizeOrOriginal" },
+  { icon: "fa-file-zipper", key: "webpAvif" },
+  { icon: "fa-globe", key: "globalCdn" },
+  { icon: "fa-user-shield", key: "stripExif" },
+  { icon: "fa-cloud", key: "ownBucket" },
+  { icon: "fa-infinity", key: "freeForever" },
 ];
 
 export default function Home() {
+  const { t } = useLang();
   const { user } = useAuth();
 
 
@@ -33,18 +39,18 @@ export default function Home() {
             <Reveal direction="scale" duration={500}>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-500/30 bg-brand-950/30 px-3 py-1 text-[11px] text-brand-300 mb-5">
                 <i className="fa-solid fa-heart text-[9px]" />
-                永久免费的公益图床
+                {t.home.hero.badge}
               </span>
             </Reveal>
             <Reveal delay={80}>
               <h1 className="text-3xl sm:text-5xl font-brand text-neutral-100 leading-tight">
-                图片托管，
-                <span className="text-[var(--color-brand-display)]">从此不用操心</span>
+                {t.home.hero.titleLead}
+                <span className="text-[var(--color-brand-display)]">{t.home.hero.titleAccent}</span>
               </h1>
             </Reveal>
             <Reveal delay={160}>
               <p className="mt-4 text-sm sm:text-base text-neutral-400 max-w-xl mx-auto leading-relaxed">
-                拖进来就好。剩下的压缩、转码、分发，我们全包了。
+                {t.home.hero.subtitle}
               </p>
             </Reveal>
             {/* Pills instead of another sentence: these are six independent
@@ -54,11 +60,11 @@ export default function Home() {
               <ul className="mt-5 flex flex-wrap items-center justify-center gap-2">
                 {HIGHLIGHTS.map((h) => (
                   <li
-                    key={h.text}
+                    key={h.key}
                     className="inline-flex items-center gap-1.5 rounded-full border border-neutral-800 bg-neutral-900/50 px-3 py-1.5 text-[11px] text-neutral-300"
                   >
                     <i className={`fa-solid ${h.icon} text-[9px] text-brand-400`} />
-                    {h.text}
+                    {t.home.highlight[h.key]}
                   </li>
                 ))}
               </ul>
@@ -75,8 +81,8 @@ export default function Home() {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
           <Reveal>
             <SectionHead
-              title="为什么用 Openimg"
-              subtitle="做好一件事：让图片又小又快"
+              title={t.home.features.sectionTitle}
+              subtitle={t.home.features.sectionSubtitle}
             />
           </Reveal>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -85,38 +91,38 @@ export default function Home() {
                 <Feature
                   key="a"
                   icon="fa-compress"
-                  title="自动压缩转换"
-                  desc="上传即生成 WebP / AVIF 与多档缩略图，体积通常只剩三分之一，画质肉眼无差。"
+                  title={t.home.features.optimize.title}
+                  desc={t.home.features.optimize.desc}
                 />,
                 <Feature
                   key="b"
                   icon="fa-bolt"
-                  title="Cloudflare CDN"
-                  desc="内容寻址的不可变地址，边缘缓存一年。国内外访问都走最近的节点。"
+                  title={t.home.features.cdn.title}
+                  desc={t.home.features.cdn.desc}
                 />,
                 <Feature
                   key="c"
                   icon="fa-shield-halved"
-                  title="隐私优先"
-                  desc="自动剥离 EXIF 与 GPS 定位信息，重新编码去掉一切夹带内容，不会泄露你的拍摄地点。"
+                  title={t.home.features.privacy.title}
+                  desc={t.home.features.privacy.desc}
                 />,
                 <Feature
                   key="d"
                   icon="fa-cloud"
-                  title="绑定自有存储"
-                  desc="可以把图片直接存进你自己的 Cloudflare R2 或 S3，容量不受平台限制，随时可迁走。"
+                  title={t.home.features.ownStorage.title}
+                  desc={t.home.features.ownStorage.desc}
                 />,
                 <Feature
                   key="e"
                   icon="fa-calendar-check"
-                  title="签到得空间"
-                  desc="注册即送 1 GB，每天签到随机领 1–20 MB，连续 7 天额外奖励，邀请好友双方各得 200 MB。容量永久累加。"
+                  title={t.home.features.checkin.title}
+                  desc={t.home.features.checkin.desc}
                 />,
                 <Feature
                   key="f"
                   icon="fa-plug"
-                  title="工具直连"
-                  desc="生成 API Token 后可直接在 PicGo、Typora 或 curl 里使用，写文章时无需切换页面。"
+                  title={t.home.features.tools.title}
+                  desc={t.home.features.tools.desc}
                 />,
               ]}
             </RevealGroup>
@@ -126,7 +132,7 @@ export default function Home() {
         {/* How it works */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
           <Reveal>
-            <SectionHead title="三步开始" subtitle="不到一分钟" />
+            <SectionHead title={t.home.steps.sectionTitle} subtitle={t.home.steps.sectionSubtitle} />
           </Reveal>
           <div className="grid sm:grid-cols-3 gap-3">
             <RevealGroup step={100} className="h-full">
@@ -134,20 +140,20 @@ export default function Home() {
                 <Step
                   key="1"
                   n={1}
-                  title="注册账号"
-                  desc="邮箱、Google、GitHub 或 Passkey，验证邮箱后即可上传。"
+                  title={t.home.steps.signUp.title}
+                  desc={t.home.steps.signUp.desc}
                 />,
                 <Step
                   key="2"
                   n={2}
-                  title="拖进图片"
-                  desc="拖拽、点击选择，或直接 Ctrl+V 粘贴截图，支持批量。"
+                  title={t.home.steps.drop.title}
+                  desc={t.home.steps.drop.desc}
                 />,
                 <Step
                   key="3"
                   n={3}
-                  title="复制链接"
-                  desc="一键复制 URL / Markdown / HTML / BBCode，粘到任何地方。"
+                  title={t.home.steps.copy.title}
+                  desc={t.home.steps.copy.desc}
                 />,
               ]}
             </RevealGroup>
@@ -158,26 +164,32 @@ export default function Home() {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
           <Reveal>
             <SectionHead
-              title="接入你的工作流"
-              subtitle="在设置页生成 API Token 后即可使用"
+              title={t.home.integration.sectionTitle}
+              subtitle={t.home.integration.sectionSubtitle}
             />
           </Reveal>
           <div className="grid lg:grid-cols-2 gap-3">
             <CodeCard
-              title="curl"
+              title={t.home.integration.curlCardTitle}
+              copyLabel={t.common.copy}
+              copiedLabel={t.common.copied}
               icon="fa-terminal"
               code={`curl -X POST https://openimg.io/api/upload \\
   -H "Authorization: Bearer oimg_xxxxxx" \\
   -F "file=@photo.jpg"`}
             />
             <CodeCard
-              title="PicGo 自定义图床"
+              title={t.home.integration.picgoCardTitle}
+              copyLabel={t.common.copy}
+              copiedLabel={t.common.copied}
               icon="fa-plug"
-              code={`API 地址   https://openimg.io/api/upload
-POST 参数名  file
-自定义 Header
-  { "Authorization": "Bearer oimg_xxxxxx" }
-JSON 路径   image.url`}
+              code={[
+                  `${t.home.integration.picgoConfigLabel.apiUrl}   https://openimg.io/api/upload`,
+                  `${t.home.integration.picgoConfigLabel.postField}  file`,
+                  t.home.integration.picgoConfigLabel.customHeader,
+                  `  { "Authorization": "Bearer oimg_xxxxxx" }`,
+                  `${t.home.integration.picgoConfigLabel.jsonPath}   image.url`,
+                ].join("\n")}
             />
           </div>
         </section>
@@ -188,16 +200,16 @@ JSON 路径   image.url`}
             <Reveal direction="scale" duration={700}>
               <div className="rounded-2xl border border-brand-500/20 bg-brand-950/20 px-6 py-10 text-center">
                 <h2 className="text-xl sm:text-2xl font-brand text-neutral-100">
-                  现在就开始，一分钱都不用花
+                  {t.home.cta.title}
                 </h2>
                 <p className="mt-2.5 text-sm text-neutral-400">
-                  这是一个公益项目，没有会员，没有广告，也不会卖你的数据。
+                  {t.home.cta.subtitle}
                 </p>
                 <Link
                   to="/register"
                   className="mt-6 inline-block rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-medium text-brand-ink hover:bg-brand-500 transition"
                 >
-                  免费注册，领 1 GB
+                  {t.home.cta.button}
                 </Link>
               </div>
             </Reveal>
@@ -256,9 +268,13 @@ function CodeCard({
   title,
   icon,
   code,
+  copyLabel,
+  copiedLabel,
 }: {
   title: string;
   icon: string;
+  copyLabel: string;
+  copiedLabel: string;
   code: string;
 }) {
   const [copied, setCopied] = useState(false);
@@ -280,7 +296,7 @@ function CodeCard({
           className="text-[10px] text-neutral-500 hover:text-brand-300 transition"
         >
           <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"} mr-1`} />
-          {copied ? "已复制" : "复制"}
+          {copied ? copiedLabel : copyLabel}
         </button>
       </div>
       <pre className="px-4 py-3 text-[11px] leading-relaxed text-neutral-400 overflow-x-auto">

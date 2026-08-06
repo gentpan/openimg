@@ -189,3 +189,24 @@ html, body {
   --heat-4: #a87dff;
 }
 
+/* Icon hover: grow slowly, recolour quickly.
+   ---------------------------------------------------------------------------
+   Written here rather than as Tailwind utilities because the two properties
+   need *different* durations, and a single `duration-*` cannot express that.
+
+   Why they differ: `scale` is composited, `color` is not. These marks use
+   fill-current, so animating colour re-rasterises the glyph on every frame —
+   sharing one 500ms duration meant half a second of repainting while the icon
+   was also being scaled, which is what made a working animation still look
+   like it was stuttering. Landing the colour in 150ms leaves the rest of the
+   grow as a pure compositor operation.
+
+   will-change promotes the element so those remaining frames transform an
+   existing texture instead of re-rendering the SVG at each intermediate size.
+   Safe to leave on permanently here: it is four 20px icons, not a list. */
+.icon-grow {
+  will-change: scale;
+  transition:
+    scale 500ms cubic-bezier(0, 0, 0.2, 1),
+    color 150ms ease-out;
+}

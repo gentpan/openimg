@@ -54,16 +54,23 @@ export default function Footer() {
               // The box stays 5×5 and only the glyph scales, so growing one
               // icon never nudges its neighbours along the row.
               //
-              // `scale`, not `transform`. Tailwind v4 compiles scale-150 to the
-              // standalone `scale` property — transition-[color,transform]
-              // therefore listed a property nothing was animating, and the grow
-              // was an instant jump. It read as a stutter because there was no
-              // animation at all, and raising the duration changed nothing.
+              // Three separate things had to be right for this to look smooth,
+              // and getting two of them right still looked broken:
               //
-              // 500ms with ease-out: 1.5× is a large step for a 20px mark, and
-              // ease-out spends most of its time near the end, so it settles
-              // rather than arrives.
-              className={`flex h-5 w-5 items-center justify-center text-neutral-500 transition-[color,scale] duration-500 ease-out hover:scale-150 ${
+              // 1. The property. Tailwind v4 compiles scale-150 to the
+              //    standalone `scale` property, so a transition listing
+              //    `transform` animated nothing and the grow was an instant
+              //    jump — which reads as a stutter because there is no motion
+              //    at all.
+              // 2. The repaint window. `color` cannot be composited, and these
+              //    marks are fill-current, so animating it re-rasterises the
+              //    glyph every frame. Sharing one 500ms duration meant half a
+              //    second of repainting *while* scaling. The colour now lands
+              //    in 150ms and the scale carries on alone.
+              // 3. The layer. `will-change: scale` promotes the icon so the
+              //    remaining 350ms is a compositor transform of an existing
+              //    texture rather than a re-raster at each intermediate size.
+              className={`icon-grow flex h-5 w-5 items-center justify-center text-neutral-500 hover:scale-150 ${
                 s.hover ?? "hover:text-brand-300"
               }`}
             >

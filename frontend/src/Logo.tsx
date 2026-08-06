@@ -60,7 +60,7 @@ export default function Logo({ size = 28, className = "", asLink = true }: LogoP
   if (!asLink) {
     return (
       <span
-        className="group relative inline-block transition-[scale] duration-200 ease-out hover:scale-110"
+        className="group relative inline-block will-change-[scale] transition-[scale] duration-200 ease-out hover:scale-110"
         style={{ width: size, height: size, lineHeight: 0 }}
       >
         {inner}
@@ -76,7 +76,7 @@ export default function Logo({ size = 28, className = "", asLink = true }: LogoP
     <a
       href="/"
       title="返回首页"
-      className="group relative inline-block transition-[scale] duration-200 ease-out hover:scale-110"
+      className="group relative inline-block will-change-[scale] transition-[scale] duration-200 ease-out hover:scale-110"
       style={{ width: size, height: size, lineHeight: 0 }}
     >
       {inner}

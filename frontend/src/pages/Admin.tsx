@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Nav from "../components/Nav";
 import Footer from "../Footer";
@@ -823,52 +823,63 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 /* ---------- Ledger ---------- */
 
 function LedgerTab() {
-  const [txs, setTxs] = useState<AdminQuotaTx[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(0);
+  // One state object, not four. The rows, the total, and the page they belong
+  // to either update together or not at all — split across separate useState
+  // calls they can drift: a failed load that reset the page but kept old rows
+  // renders "1–200 / 3000" over rows from page 41.
+  const [view, setView] = useState<{ txs: AdminQuotaTx[]; total: number; page: number }>({
+    txs: [],
+    total: 0,
+    page: 0,
+  });
   const [perPage, setPerPage] = useState(50);
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  // Monotonic request id. The wide search ("a") takes 10× longer than the
+  // narrow one ("abc") typed right after it, so first-sent-last-landed is the
+  // common case, not a corner — a stale response must not overwrite a newer
+  // one. An effect cleanup can cancel the debounce timer but not a fetch
+  // already in flight; this check covers both.
+  const seq = useRef(0);
 
   const load = useCallback(async (p: number, q: string, n: number) => {
+    const mine = ++seq.current;
     setBusy(true);
+    setErr(null);
     try {
-      const r = await adminApi.listTransactions({ limit: n, offset: p * n, q: q || undefined });
+      let r = await adminApi.listTransactions({ limit: n, offset: p * n, q: q || undefined });
       // Landing past the end returns nothing while the total says otherwise —
       // it happens when the row count shrinks under a page you are already on.
       // Step back to the last real page instead of showing an empty table.
       if (p > 0 && r.transactions.length === 0 && r.total > 0) {
-        const last = Math.max(0, Math.ceil(r.total / n) - 1);
-        if (last !== p) {
-          setPage(last);
-          const back = await adminApi.listTransactions({ limit: n, offset: last * n, q: q || undefined });
-          setTxs(back.transactions);
-          setTotal(back.total);
-          return;
-        }
+        p = Math.max(0, Math.ceil(r.total / n) - 1);
+        r = await adminApi.listTransactions({ limit: n, offset: p * n, q: q || undefined });
       }
-      setTxs(r.transactions);
-      setTotal(r.total);
-    } catch {
-      // Leave the previous page on screen rather than blanking the table: a
-      // transient failure should not look like "there are no records".
+      if (mine !== seq.current) return;
+      setView({ txs: r.transactions, total: r.total, page: p });
+    } catch (e) {
+      if (mine !== seq.current) return;
+      // The old rows stay on screen so a blip doesn't read as "no records",
+      // but only under a banner that says they are stale — silently keeping
+      // them makes a failed search look exactly like a successful one.
+      setErr(e instanceof Error ? e.message : String(e));
     } finally {
-      setBusy(false);
+      if (mine === seq.current) setBusy(false);
     }
   }, []);
 
   // Debounced, matching the gallery's 300ms. The empty case fires immediately
   // so clearing the box feels instant.
   //
-  // page is deliberately not in the dependency list — paging calls load()
-  // directly. Having both would fire two requests for one click.
+  // view.page is deliberately not a dependency — paging calls load() directly.
+  // Having both would fire two requests for one click.
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPage(0);
-      load(0, query, perPage);
-    }, query ? 300 : 0);
+    const timer = setTimeout(() => load(0, query, perPage), query ? 300 : 0);
     return () => clearTimeout(timer);
   }, [query, perPage, load]);
+
+  const { txs, total, page } = view;
 
   const cols = ["用户", "文件", "类型", "变化", "配额后", "已用后", "说明", "时间"];
 
@@ -898,6 +909,12 @@ function LedgerTab() {
         <PageSizeMenu value={perPage} onChange={setPerPage} />
       </div>
 
+      {err && (
+        <div className="mx-5 mb-2 rounded-lg border border-red-500/30 bg-red-950/20 px-3 py-2 text-[11px] text-red-300">
+          <i className="fa-solid fa-triangle-exclamation mr-1.5" />
+          加载失败：{err} —— 下方显示的仍是上一次的结果
+        </div>
+      )}
       <div className="overflow-x-auto px-5 pb-1">
         <table className="w-full text-left text-xs">
           <thead className="text-[10px] text-neutral-600">
@@ -952,10 +969,7 @@ function LedgerTab() {
           perPage={perPage}
           total={total}
           busy={busy}
-          onPage={(p) => {
-            setPage(p);
-            load(p, query, perPage);
-          }}
+          onPage={(p) => load(p, query, perPage)}
         />
       )}
     </div>

@@ -749,4 +749,128 @@ export const en: Dict = {
   toast: {
     dismiss: "Click to dismiss",
   },
+  docs: {
+    title: "Using Openimg",
+    subtitle: "One API token puts the image host into PicGo, Typora, a script, or CI.",
+    toc: {
+      token: "Get a token",
+      curl: "Upload in one command",
+      picgo: "PicGo",
+      typora: "Typora",
+      errors: "When it fails",
+      limits: "Limits",
+      more: "Other endpoints",
+    },
+    token: {
+      heading: "Get a token",
+      settingsLink: "Settings → API tokens",
+      createIn: (link: string, once: string) =>
+        `Create one in ${link}. The plaintext is ${once} — close the dialog and it is gone. The server keeps only a hash, so a lost token cannot be recovered, only replaced.`,
+      onceEmphasis: "shown exactly once",
+      headerForms: (prefix: string) =>
+        `Tokens start with ${prefix}. Three header forms are accepted; the server takes the first non-empty one in this order:`,
+      commentCommon: "the usual one",
+      commentBare: "bare, must start with oimg_",
+      commentNoBearer: "for clients that will not add a Bearer prefix",
+      note: (bearer: string, warn: string, apiKey: string) =>
+        `The third form exists for tools like PicGo and Typora: they can set a custom header but will not necessarily add the ${bearer} prefix. ${warn}, though — CORS allows only Origin, Content-Type, Accept and Authorization, so ${apiKey} is rejected at the preflight.`,
+      noteWarn: "Do not use it from a browser script",
+    },
+    curl: {
+      heading: "Upload in one command",
+      constraints: (multipart: string, field: string) =>
+        `Two hard constraints: the request must be ${multipart}, and the field must be named ${field}. The server reads that field and nothing else — quality, format and width are ignored, because conversion follows your account settings rather than the request.`,
+      success: (code: string) => `Success is ${code}. The response looks like this (common fields only):`,
+      directLinkOnly: "If all you want is the direct link:",
+      note: (imageKey: string, dedupKey: string, path: string, wrong: string) =>
+        `The top level has exactly two keys, ${imageKey} and ${dedupKey}. Wherever a JSON path is asked for, write ${path}, not ${wrong} — this is the single most common mistake when wiring it up.`,
+      noteEmphasis: (imageKey: string) => `The image object lives under ${imageKey}`,
+      dedup: (flag: string, emphasis: string) =>
+        `${flag} means the server already had these exact bytes: nothing is re-encoded and no object is written, but ${emphasis}.`,
+      dedupEmphasis: "the quota is still charged in full",
+      variants: (variants: string, isString: string, urls: string) =>
+        `Note also that ${variants} is a comma-separated ${isString} while ${urls} is the object — both fields are present, and they are easy to confuse.`,
+      variantsEmphasis: "string",
+    },
+    picgo: {
+      heading: "PicGo",
+      install: (plugin: string) => `Install the ${plugin} plugin, then fill in:`,
+      fieldApiUrl: "API URL",
+      fieldPostName: "POST field name",
+      fieldJsonPath: "JSON path",
+      fieldHeaders: "Custom headers",
+      fieldBody: "Custom body",
+      valueEmpty: "leave empty",
+      shortLink: (path: string) =>
+        `To have it paste short links instead, change the JSON path to ${path}.`,
+      note: 'Deleting from the PicGo album only removes the local record; the image stays on the server, because a custom web uploader has no delete callback. See section 7 for deleting for real.',
+    },
+    typora: {
+      heading: "Typora",
+      intro: (emphasis: string) =>
+        `${emphasis} Its uploader list has only PicGo, iPic, uPic and “custom command” — there is no form for an API URL and headers. Two ways round it:`,
+      introEmphasis: "Typora cannot talk to this API directly.",
+      viaPicgo: "Through PicGo (recommended)",
+      viaPicgoSteps: (picgoApp: string) =>
+        `Set PicGo up as in the previous section, then Typora → Preferences → Image → Upload Service → ${picgoApp}, point it at the executable, and click “Test Uploader”.`,
+      viaScript: "Without PicGo: a custom command",
+      viaScriptIntro: (path: string, chmod: string) =>
+        `Typora passes the file paths as arguments and reads the last lines of output as URLs. Save this as ${path} and ${chmod} it:`,
+      viaScriptTail: (custom: string, curl: string, jq: string) =>
+        `Then set the upload service to ${custom} with this script as the command. It needs ${curl} and ${jq} on the machine.`,
+    },
+    errors: {
+      heading: "When it fails",
+      shape: (json: string) => `Errors are always ${json}; a few carry extra fields.`,
+      colStatus: "Status",
+      colFix: "What to do",
+      note: (emphasis: string, retryAfter: string, used: string, limit: string) =>
+        `${emphasis} The status code alone is not enough: with ${retryAfter} it is the rate limit (60 per IP per minute) and backing off works; with ${used} / ${limit} the daily quota is spent, and backing off will not help — that one waits for tomorrow.`,
+      noteEmphasis: "The two 429s need different handling.",
+    },
+    limits: {
+      heading: "Limits",
+      intro: (emphasis: string) =>
+        `File size, daily count, allowed formats and pixel dimensions all follow your ${emphasis}, and an admin may have changed them. Read them rather than hardcoding them:`,
+      introEmphasis: "tier",
+      fields: (a: string, b: string, c: string, d: string) =>
+        `The response carries ${a}, ${b} and ${c}, along with ${d} for the space left.`,
+      note: (emphasis: string) =>
+        `The size limit applies to ${emphasis}, not to the file alone — multipart boundaries and headers count toward it. A file whose byte count exactly equals the limit is therefore still rejected; leaving 1% of headroom is the safe move.`,
+      noteEmphasis: "the whole request body",
+    },
+    more: {
+      heading: "Other endpoints",
+      intro: "These take the same token:",
+      commentList: "list (paging, search, sort)",
+      commentDetail: "one image",
+      commentDelete: "delete one",
+      commentBulk: "delete several",
+      commentCheckin: "daily check-in for storage",
+      note: (emphasis: string) =>
+        `Changing the password, managing tokens and connecting your own storage ${emphasis} — those are web-only. A leaked token should not be able to take over the account: it can upload and delete images, but it cannot change the password, mint another token, or read your S3 credentials.`,
+      noteEmphasis: "cannot be done with a token",
+    },
+    errorRows: [
+      /* The `error` column is the API's own wording, taken from the backend
+         catalogue, so this table and the responses cannot drift apart. */
+      ["401", "auth: invalid token format", "The token does not start with oimg_ — usually a character lost while pasting"],
+      ["401", "auth: invalid token", "No such token: deleted, or copied wrong"],
+      ["401", "auth: token expired", "Expired. Create another (leave the expiry blank for one that never expires)"],
+      ["401", "Not signed in", "No authentication header at all"],
+      ["403", "Verify your email before uploading", "Carries code: email_unverified. Verify on the site"],
+      ["413", "File exceeds the X MB limit", "Compress and retry"],
+      ["400", "Missing upload field: file", "The field is not named file, or the request is not valid multipart"],
+      ["415", "Unsupported image format: X", "Not on the allow list. SVG and PDF are refused outright"],
+      ["415", "Your tier cannot upload X files", "The allowed array in the response lists what you can send"],
+      ["415", "Image is AxB, over the CxD limit", "Too many pixels. Note this is 415, not 413"],
+      ["429", "Too many uploads, try again shortly", "Carries retry_after in seconds. Back off and retry"],
+      ["429", "Daily upload limit reached", "Carries used / limit. Wait for tomorrow"],
+      ["507", "Not enough space: X needed, Y left", "Delete images, or check in for more"],
+      ["503", "Storage unavailable: …", "The storage backend is having trouble. Retry later"],
+    ] as [string, string, string][],
+    feedback: (link: string) =>
+      `Found something here that disagrees with the API, or a step that is not clear? ${link}.`,
+    feedbackLink: "Open an issue",
+  },
 };

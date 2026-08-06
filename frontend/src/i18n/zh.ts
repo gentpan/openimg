@@ -743,4 +743,126 @@ export const zh = {
   toast: {
     dismiss: "点击关闭",
   },
+  docs: {
+    title: "接入 Openimg",
+    subtitle: "用一枚 API Token，把图床接进 PicGo、Typora、脚本或 CI。",
+    toc: {
+      token: "先拿一枚 Token",
+      curl: "一条命令上传",
+      picgo: "PicGo",
+      typora: "Typora",
+      errors: "出错了怎么办",
+      limits: "限制",
+      more: "其余接口",
+    },
+    token: {
+      heading: "先拿一枚 Token",
+      settingsLink: "设置 → API Token",
+      createIn: (link: string, once: string) =>
+        `到 ${link} 创建。明文${once}，关掉就再也看不到——服务端只存哈希，找回不了，丢了只能重建。`,
+      onceEmphasis: "只显示这一次",
+      headerForms: (prefix: string) =>
+        `Token 以 ${prefix} 开头。三种请求头写法都收，服务端按这个顺序取第一个非空的：`,
+      commentCommon: "最常见",
+      commentBare: "裸写，必须以 oimg_ 开头",
+      commentNoBearer: "给不会加 Bearer 前缀的客户端",
+      note: (bearer: string, warn: string, apiKey: string) =>
+        `第三种是为 PicGo、Typora 这类工具留的——它们能设自定义请求头，但不一定会处理 ${bearer} 前缀。不过${warn}：服务端 CORS 放行的请求头只有 Origin、Content-Type、Accept、Authorization，${apiKey} 会被预检挡掉。`,
+      noteWarn: "浏览器里的脚本别用它",
+    },
+    curl: {
+      heading: "一条命令上传",
+      constraints: (multipart: string, field: string) =>
+        `两条硬约束：必须是 ${multipart}，字段名必须是 ${field}。服务端只读这一个字段，质量、格式、宽度这些一律不看——转码行为由你账号的设置决定，不由请求决定。`,
+      success: (code: string) => `成功返回 ${code}，结构是这样（只列常用字段）：`,
+      directLinkOnly: "只要直链的话：",
+      note: (imageKey: string, dedupKey: string, path: string, wrong: string) =>
+        `顶层只有 ${imageKey} 和 ${dedupKey} 两个键。填 JSON 路径的地方要写 ${path}，不是 ${wrong}——这是接入时最常踩的一脚。`,
+      noteEmphasis: (imageKey: string) => `图片对象在 ${imageKey} 下面`,
+      dedup: (flag: string, emphasis: string) =>
+        `${flag} 表示服务端已经存过一模一样的字节，走秒传：不重新转码、不重新写对象，但${emphasis}。`,
+      dedupEmphasis: "配额照样全额扣",
+      variants: (variants: string, isString: string, urls: string) =>
+        `另外 ${variants} 是逗号分隔的${isString}，${urls} 才是对象——两个字段同时存在，容易看混。`,
+      variantsEmphasis: "字符串",
+    },
+    picgo: {
+      heading: "PicGo",
+      install: (plugin: string) => `装插件 ${plugin}，然后逐项填：`,
+      fieldApiUrl: "API 地址",
+      fieldPostName: "POST 参数名",
+      fieldJsonPath: "JSON 路径",
+      fieldHeaders: "自定义请求头",
+      fieldBody: "自定义 Body",
+      valueEmpty: "留空",
+      shortLink: (path: string) => `想让粘贴出来的是短链，把 JSON 路径改成 ${path} 就行。`,
+      note: "PicGo 相册里的「删除」只删本地记录，不会真的删服务器上的图——自定义 Web 图床没有删除回调。要真删见下面第 7 节。",
+    },
+    typora: {
+      heading: "Typora",
+      intro: (emphasis: string) =>
+        `${emphasis}它的上传服务只有 PicGo、iPic、uPic 和「自定义命令」几个选项，没有可以填 API 地址和请求头的表单。两条路：`,
+      introEmphasis: "Typora 不能直连。",
+      viaPicgo: "走 PicGo（推荐）",
+      viaPicgoSteps: (picgoApp: string) =>
+        `按上一节配好 PicGo，然后 Typora → 偏好设置 → 图像 → 上传服务选 ${picgoApp}，指定可执行文件路径，点「验证图片上传选项」。`,
+      viaScript: "不想装 PicGo：自定义命令",
+      viaScriptIntro: (path: string, chmod: string) =>
+        `Typora 会把待上传的文件路径作为参数传给命令，并读取输出的最后几行当 URL。存成 ${path} 并 ${chmod}：`,
+      viaScriptTail: (custom: string, curl: string, jq: string) =>
+        `然后上传服务选 ${custom}，命令填这个脚本的路径。需要本机有 ${curl} 和 ${jq}。`,
+    },
+    errors: {
+      heading: "出错了怎么办",
+      shape: (json: string) => `错误响应统一是 ${json}，个别会多带字段。`,
+      colStatus: "状态码",
+      colFix: "怎么办",
+      note: (emphasis: string, retryAfter: string, used: string, limit: string) =>
+        `${emphasis}只看状态码会误判：带 ${retryAfter} 的是频率限制（每 IP 每分钟 60 次），退避之后可以继续；带 ${used} / ${limit} 的是当天配额用完了，退避没有意义，要等第二天。`,
+      noteEmphasis: "两种 429 要分开处理。",
+    },
+    limits: {
+      heading: "限制",
+      intro: (emphasis: string) =>
+        `单文件大小、每日次数、允许格式、像素尺寸都按${emphasis}走，管理员可能调整过。别把数字写死在客户端里，现取：`,
+      introEmphasis: "用户组",
+      fields: (a: string, b: string, c: string, d: string) =>
+        `返回里有 ${a}、${b}、${c}，以及 ${d} 剩余空间。`,
+      note: (emphasis: string) =>
+        `大小上限卡的是${emphasis}，不只是文件本身——multipart 的边界和头部也算进去。所以一个字节数刚好等于上限的文件仍然会被拒，留 1% 余量比较稳。`,
+      noteEmphasis: "整个请求体",
+    },
+    more: {
+      heading: "其余接口",
+      intro: "这些接口同样用 Token 调：",
+      commentList: "列表（分页、搜索、排序）",
+      commentDetail: "单张详情",
+      commentDelete: "删除一张",
+      commentBulk: "批量删除",
+      commentCheckin: "每日签到领空间",
+      note: (emphasis: string) =>
+        `改密码、管理 Token、绑定自有存储这些${emphasis}，只能在网页上操作。一枚泄漏的 Token 不该能接管账号——它能传图删图，但改不了密码、发不了新 Token、读不到你的 S3 密钥。`,
+      noteEmphasis: "不能用 Token 调",
+    },
+    errorRows: [
+      /* The `error` column is the API's own wording, taken from the backend
+         catalogue, so this table and the responses cannot drift apart. */
+      ["401", "auth: invalid token format", "Token 不以 oimg_ 开头，多半是粘贴时丢了字符"],
+      ["401", "auth: invalid token", "查不到这枚 Token —— 已被删除，或者抄错了"],
+      ["401", "auth: token expired", "过期了，重建一枚（创建时不填有效期即永不过期）"],
+      ["401", "尚未登录", "一个认证头都没带"],
+      ["403", "请先验证邮箱后再上传", "带 code: email_unverified，去网页验证邮箱"],
+      ["413", "文件超过大小上限 X MB", "压缩后重传"],
+      ["400", "缺少上传文件字段 file", "字段名不是 file，或请求不是合法 multipart"],
+      ["415", "不支持的图片格式：X", "格式不在白名单。SVG、PDF 明确拒绝"],
+      ["415", "当前用户组不允许上传 X 格式", "响应里的 allowed 数组是你能传的格式"],
+      ["415", "图片尺寸 AxB 超出上限 CxD", "像素超限。注意是 415 不是 413"],
+      ["429", "上传过于频繁，请稍后再试", "带 retry_after 秒数，退避后重试"],
+      ["429", "今日上传数量已达上限", "带 used / limit，等第二天"],
+      ["507", "空间不足：需要 X，剩余 Y", "删图或签到领空间"],
+      ["503", "存储不可用：…", "后端存储出问题，稍后重试"],
+    ] as [string, string, string][],
+    feedback: (link: string) => `文档和代码对不上，或者哪里没写清楚？${link}。`,
+    feedbackLink: "提个 issue",
+  },
 };

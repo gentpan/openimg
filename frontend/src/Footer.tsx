@@ -50,7 +50,12 @@ export default function Footer() {
               title={s.label}
               // The box stays 5×5 and only the glyph scales, so growing one
               // icon never nudges its neighbours along the row.
-              className={`flex h-5 w-5 items-center justify-center text-neutral-500 transition-[color,transform] duration-200 hover:scale-150 ${
+              //
+              // 500ms and ease-out, not the 200ms it started at: 1.5× is a
+              // large jump for a 20px mark, and covering it that fast reads as
+              // a pop rather than a response. ease-out spends most of the time
+              // near the end, so it settles instead of arriving.
+              className={`flex h-5 w-5 items-center justify-center text-neutral-500 transition-[color,transform] duration-500 ease-out hover:scale-150 ${
                 s.hover ?? "hover:text-brand-300"
               }`}
             >

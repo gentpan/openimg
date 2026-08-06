@@ -201,10 +201,6 @@ type Options struct {
 	KeepOriginal bool
 }
 
-// VariantFormat values.
-const (
-	VariantNone = "none"
-)
 
 // ErrTooLarge means the image's pixel dimensions exceed the caller's limits.
 // Reported before any full decode, so a decompression bomb costs us a header

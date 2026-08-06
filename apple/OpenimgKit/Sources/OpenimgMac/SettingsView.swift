@@ -194,20 +194,6 @@ struct SettingsView: View {
         }
     }
 
-    private func siteHint(_ text: String) -> some View {
-        HStack(spacing: 6) {
-            Text(text).font(.caption2).foregroundStyle(.tertiary)
-            Button("去网站") {
-                if let u = URL(string: model.server + "/settings") {
-                    NSWorkspace.shared.open(u)
-                }
-            }
-            .buttonStyle(LinkButton()).font(.caption2)
-            Spacer(minLength: 0)
-        }
-        .padding(.top, 8)
-    }
-
     /// The same three values the upload page offers. Both write to the account,
     /// so whichever one the user reaches for, the website agrees.
     private var conversionCard: some View {

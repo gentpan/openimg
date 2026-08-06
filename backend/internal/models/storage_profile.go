@@ -22,7 +22,6 @@ type ProfileStatus string
 const (
 	ProfileActive  ProfileStatus = "active"
 	ProfileInvalid ProfileStatus = "invalid" // last probe failed
-	ProfileTesting ProfileStatus = "testing"
 )
 
 // StorageProfile is one S3-compatible destination. Exactly one platform

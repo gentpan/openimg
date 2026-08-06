@@ -116,12 +116,3 @@ func seedDefaults(db *gorm.DB) {
 		}
 	}
 }
-
-// DefaultGroup returns the group new registrations land in.
-func DefaultGroup(db *gorm.DB) (*models.UserGroup, error) {
-	var g models.UserGroup
-	if err := db.Where("name = ?", "free").First(&g).Error; err != nil {
-		return nil, err
-	}
-	return &g, nil
-}

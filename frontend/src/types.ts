@@ -209,18 +209,6 @@ export interface PublicStats {
   images_today: number;
 }
 
-export interface Stats {
-  total_users: number;
-  active_today: number;
-  total_images: number;
-  images_today: number;
-  blocked_images: number;
-  pending_backup: number;
-  queue_depth: number;
-  stored_bytes: number;
-  granted_bytes: number;
-  unique_objects: number;
-}
 
 export interface DaySeries {
   date: string;

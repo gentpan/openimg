@@ -318,4 +318,3 @@ private struct Card<Content: View>: View {
     }
 }
 
-/// GitHub-style contribution grid for the check-in streak.

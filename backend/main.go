@@ -123,7 +123,6 @@ func main() {
 	srv.ReactionSalt = cfg.JWTSecret
 	// Existing rows predate short links; give them one.
 	go srv.BackfillShortCodes()
-	srv.TempDir = cfg.TempDir
 	srv.MaxUploadSize = cfg.MaxUploadSize
 	srv.RequireEmailVerified = cfg.RequireEmailVerified
 	srv.CookieDomain = cfg.CookieDomain

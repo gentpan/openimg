@@ -7,7 +7,7 @@ import { authApi, resetApi, nativeAuth } from "../api";
 import PasskeyLoginForm from "./PasskeyLoginForm";
 import OAuthButtons from "./OAuthButtons";
 
-type Mode = "password" | "otp" | "passkey";
+
 
 export default function LoginPage() {
   const { login, user } = useAuth();
@@ -17,7 +17,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [mode, setMode] = useState<Mode>("password");
+  type Mode = "password" | "passkey";
+
+const [mode, setMode] = useState<Mode>("password");
   const [reset, setReset] = useState(false);
   const [providers, setProviders] = useState<string[]>([]);
   const next = (loc.state as { from?: string } | null)?.from || "/";

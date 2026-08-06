@@ -70,7 +70,6 @@ function storedBrand(): Brand {
 interface BrandCtx {
   brand: Brand;
   setBrand: (b: Brand) => void;
-  toggle: () => void;
 }
 
 const Ctx = createContext<BrandCtx | null>(null);
@@ -97,7 +96,7 @@ export function BrandProvider({ children }: { children: ReactNode }) {
 
   return (
     <Ctx.Provider
-      value={{ brand, setBrand, toggle: () => setBrand(brand === "green" ? "violet" : "green") }}
+      value={{ brand, setBrand }}
     >
       {children}
     </Ctx.Provider>

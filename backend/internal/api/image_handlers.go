@@ -26,7 +26,6 @@ type imageOut struct {
 	Markdown  string            `json:"markdown"`
 	HTML      string            `json:"html"`
 	BBCode    string            `json:"bbcode"`
-	DeleteURL string            `json:"delete_url,omitempty"`
 }
 
 // decorate resolves each image's profile once and builds its public URLs.

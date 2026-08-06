@@ -11,7 +11,6 @@ type SiteSetting struct {
 }
 
 const (
-	SiteSettingStorage = "storage" // value is JSON of storage config
 	SiteSettingUpload  = "upload"  // value is JSON of UploadSettings
 )
 

@@ -9,8 +9,6 @@ interface AuthCtx {
   register: (email: string, password: string, code: string, name?: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
-  requestOtp: (email: string) => Promise<void>;
-  verifyOtp: (email: string, code: string, name?: string) => Promise<void>;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -55,15 +53,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
         },
         refresh,
-        requestOtp: async (e) => {
-          await authApi.requestOtp(e);
-        },
-        verifyOtp: async (e, c, n) => {
-          const ref = readRef();
-          const u = await authApi.verifyOtp(e, c, n, ref);
-          if (ref) clearRef();
-          setUser(u);
-        },
       }}
     >
       {children}

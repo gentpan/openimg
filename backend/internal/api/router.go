@@ -40,7 +40,6 @@ type Server struct {
 	Cipher       *crypto.Cipher
 
 	StorageDir string
-	TempDir    string
 	// PublicBaseURL is this site's own origin, used to absolutise object URLs
 	// when a storage profile doesn't carry one.
 	PublicBaseURL string

@@ -14,7 +14,6 @@ import type {
   QuotaTransaction,
   Report,
   OAuthStatus,
-  Stats,
   StorageProfile,
   User,
   UserGroup,
@@ -166,7 +165,6 @@ export const imageApi = {
       "/api/images?" + qs.toString(),
     ).then((r) => ({ ...r, images: r.images ?? [] }));
   },
-  get: (id: string) => jfetch<Image>(`/api/images/${id}`),
   remove: (id: string) => jfetch<{ ok: true }>(`/api/images/${id}`, { method: "DELETE" }),
   /**
    * Deletes many at once. `all: true` takes everything matching `q` rather
@@ -184,11 +182,6 @@ export const imageApi = {
       `/api/images/${id}/variant`,
       { method: "POST", body: JSON.stringify({ width }) },
     ),
-  report: (imageId: string, reason: string, contact?: string) =>
-    jfetch<{ ok: true; message: string }>("/api/report", {
-      method: "POST",
-      body: JSON.stringify({ image_id: imageId, reason, contact }),
-    }),
 };
 
 // ----- Quota & check-in -----
@@ -231,11 +224,6 @@ export const storageApi = {
   remove: (id: string) => jfetch<{ ok: true }>(`/api/storage/profiles/${id}`, { method: "DELETE" }),
   test: (id: string) => jfetch<{ ok: boolean; error?: string }>(`/api/storage/profiles/${id}/test`, { method: "POST" }),
   setDefault: (id: string) => jfetch<{ ok: true }>(`/api/storage/profiles/${id}/default`, { method: "POST" }),
-  setBackup: (id: string, backupOfId: string) =>
-    jfetch<{ ok: true }>(`/api/storage/profiles/${id}/backup`, {
-      method: "POST",
-      body: JSON.stringify({ backup_of_id: backupOfId }),
-    }),
 };
 
 // ----- API tokens -----
@@ -257,10 +245,6 @@ export const referralApi = {
     jfetch<{ invitees: { name: string; email: string; created_at: string }[] | null }>(
       "/api/referral/list",
     ).then((r) => r.invitees ?? []),
-  lookup: (code: string) =>
-    jfetch<{ valid: boolean; referrer_name?: string; bonus_bytes?: number }>(
-      "/api/referral/lookup?code=" + encodeURIComponent(code),
-    ),
 };
 
 // ----- Admin -----
@@ -373,7 +357,6 @@ export function reportCategoryLabel(key?: string): string {
 }
 
 export const adminApi = {
-  stats: () => jfetch<Stats>("/admin/api/stats"),
   dashboard: () => jfetch<Dashboard>("/admin/api/dashboard"),
   listImages: (filters: { status?: string; user_id?: string; limit?: number } = {}) => {
     const qs = new URLSearchParams(filters as Record<string, string>);
@@ -387,8 +370,6 @@ export const adminApi = {
       method: "POST",
       body: JSON.stringify({ purge_images: purgeImages, reason }),
     }),
-  reconcileUser: (id: string) =>
-    jfetch<{ ok: true; delta: number }>(`/admin/api/users/${id}/reconcile`, { method: "POST" }),
   listGroups: () => jfetch<{ groups: UserGroup[] | null }>("/admin/api/groups").then((r) => r.groups ?? []),
   updateGroup: (id: string, patch: Partial<UserGroup>) =>
     jfetch<UserGroup>("/admin/api/groups/" + id, { method: "PATCH", body: JSON.stringify(patch) }),

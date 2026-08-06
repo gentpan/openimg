@@ -148,25 +148,6 @@ struct UploadView: View {
         .foregroundStyle(.secondary)
     }
 
-    private func group<C: View>(_ title: String, _ hint: String?,
-                                @ViewBuilder control: () -> C) -> some View {
-        VStack(spacing: 5) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
-            control()
-            if let hint {
-                Text(hint).font(.caption2).foregroundStyle(.tertiary)
-            }
-        }
-    }
-
-    /// Saves on change. Wrapping the binding keeps the write next to the value
-    /// it belongs to, instead of an onChange hanging off each control.
-    private func preference<T>(_ b: Binding<T>) -> Binding<T> {
-        Binding(get: { b.wrappedValue },
-                set: { b.wrappedValue = $0; Task { await model.savePreferences() } })
-    }
-
-
     struct Width: Hashable, Identifiable {
         let px: Int
         init(_ px: Int) { self.px = px }

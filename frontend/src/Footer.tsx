@@ -29,6 +29,9 @@ export default function Footer() {
             <span className="text-brand-400">img</span>
           </Link>
           <span className="ml-1.5 text-neutral-600">All Rights Reserved.</span>
+          <Link to="/docs" className="ml-3 text-neutral-500 hover:text-brand-300 transition">
+            接入文档
+          </Link>
         </div>
         {/* The middle column. It used to carry a tagline; the stats moved here
             from a full-width band above and had to change shape to fit — four

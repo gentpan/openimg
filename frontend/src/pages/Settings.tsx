@@ -92,7 +92,20 @@ export default function SettingsPage() {
           <ConvertSettings />
         </Section>
 
-        <Section icon="fa-key" title="API Token" subtitle="用于 PicGo、Typora、curl 等外部工具上传">
+        <Section
+          icon="fa-key"
+          title="API Token"
+          subtitle={
+            <>
+              用于 PicGo、Typora、curl 等外部工具上传 ·{" "}
+              {/* The question "now what?" arrives exactly here, the moment a
+                  token exists and its plaintext is on screen. */}
+              <Link to="/docs" className="text-brand-400 hover:underline">
+                怎么接入
+              </Link>
+            </>
+          }
+        >
           <ApiTokens />
         </Section>
 
@@ -467,7 +480,7 @@ function Section({
   children,
 }: {
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   icon?: string;
   danger?: boolean;
   children: React.ReactNode;

@@ -12,6 +12,7 @@ import SharePage from "./pages/Share";
 import Home from "./pages/Home";
 import LoginPage from "./pages/Login";
 import ReferPage from "./pages/Refer";
+import DocsPage from "./pages/Docs";
 import RegisterPage from "./pages/Register";
 import SettingsPage from "./pages/Settings";
 import SpacePage from "./pages/Space";
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="/space" element={<SpacePage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/refer" element={<ReferPage />} />
+            <Route path="/docs" element={<DocsPage />} />
             <Route
               path="/admin/*"
               element={

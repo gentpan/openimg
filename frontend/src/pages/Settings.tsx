@@ -14,8 +14,10 @@ import PasswordField from "../components/PasswordField";
 import ConvertSettings from "../components/ConvertSettings";
 import DeleteAccount from "../components/DeleteAccount";
 import StorageProfiles from "../components/StorageProfiles";
+import { useLang } from "../LangContext";
 
 export default function SettingsPage() {
+  const { t } = useLang();
   const [pwOpen, setPwOpen] = useState(false);
   const { user, refresh } = useAuth();
   const [params, setParams] = useSearchParams();
@@ -26,7 +28,7 @@ export default function SettingsPage() {
   // pick up callback flash messages from ?linked=google or ?error=...
   useEffect(() => {
     if (params.get("linked")) {
-      setInfo(`已成功绑定 ${params.get("linked")}`);
+      setInfo(t.settings.oauth.linked(params.get("linked") ?? ""));
       params.delete("linked");
       setParams(params, { replace: true });
       refresh();
@@ -41,20 +43,20 @@ export default function SettingsPage() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center text-neutral-500">
-        请先 <Link to="/login" className="text-brand-400 hover:underline mx-1">登录</Link>
+        {t.common.authRequired(t.common.signIn)}
       </div>
     );
   }
 
   async function unlink(provider: "google" | "github") {
-    if (!confirm(`确定要解绑 ${provider}？解绑后这个 ${provider} 账号不能再用来登录。`)) return;
+    if (!confirm(t.settings.oauth.unlinkConfirm(provider))) return;
     setBusy(provider);
     setErr(null);
     setInfo(null);
     try {
       await authApi.unlinkOAuth(provider);
       await refresh();
-      setInfo(`已解绑 ${provider}`);
+      setInfo(t.settings.oauth.unlinked(provider));
     } catch (e) {
       setErr(String(e instanceof Error ? e.message : e));
     } finally {
@@ -70,25 +72,25 @@ export default function SettingsPage() {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-brand-400">
             <i className="fa-solid fa-gear text-sm" />
           </span>
-          账号设置
+          {t.settings.title}
         </h1>
 
         {info && <div className="mb-4 rounded-lg border border-teal-900/60 bg-teal-900/15 px-4 py-2 text-sm text-teal-300">{info}</div>}
         {err && <div className="mb-4 rounded-lg border border-red-900/60 bg-red-900/15 px-4 py-2 text-sm text-red-300">{err}</div>}
 
-        <Section icon="fa-id-badge" title="个人资料" subtitle="头像和昵称会显示在页面顶部，昵称可以重复">
+        <Section icon="fa-id-badge" title={t.settings.profile.title} subtitle={t.settings.profile.subtitle}>
           <Profile />
         </Section>
 
         <Section
           icon="fa-hard-drive"
-          title="存储位置"
-          subtitle="默认存在平台空间；也可以绑定你自己的 R2 / S3，容量不受平台限制"
+          title={t.settings.storage.title}
+          subtitle={t.settings.storage.subtitle}
         >
           <StorageProfiles />
         </Section>
 
-        <Section icon="fa-wand-magic-sparkles" title="图片压缩与转换" subtitle="只影响之后上传的图片，已上传的不受影响">
+        <Section icon="fa-wand-magic-sparkles" title={t.settings.convert.title} subtitle={t.settings.convert.subtitle}>
           <ConvertSettings />
         </Section>
 
@@ -97,11 +99,11 @@ export default function SettingsPage() {
           title="API Token"
           subtitle={
             <>
-              用于 PicGo、Typora、curl 等外部工具上传 ·{" "}
+              {t.settings.apiTokens.subtitle} ·{" "}
               {/* The question "now what?" arrives exactly here, the moment a
                   token exists and its plaintext is on screen. */}
               <Link to="/docs" className="text-brand-400 hover:underline">
-                怎么接入
+                {t.settings.apiTokens.docsLink}
               </Link>
             </>
           }
@@ -110,38 +112,38 @@ export default function SettingsPage() {
         </Section>
 
         {/* Account info */}
-        <Section icon="fa-circle-info" title="账号信息">
-          <Row label="邮箱" value={
+        <Section icon="fa-circle-info" title={t.settings.accountInfo.title}>
+          <Row label={t.common.email} value={
             <span>
               {user.email}{" "}
-              {user.email_verified && <Tag color="teal">已验证</Tag>}
+              {user.email_verified && <Tag color="teal">{t.common.verified}</Tag>}
             </span>
           } />
-          <Row label="角色" value={<Tag color="brand">{user.role}</Tag>} />
-          {user.group && <Row label="用户组" value={user.group} />}
+          <Row label={t.settings.accountInfo.role} value={<Tag color="brand">{user.role}</Tag>} />
+          {user.group && <Row label={t.settings.accountInfo.tier} value={user.group} />}
         </Section>
 
         {/* Login methods */}
-        <Section icon="fa-right-to-bracket" title="登录方式" subtitle="可以同时绑定多种登录方式，任意一种都能登录此账号">
+        <Section icon="fa-right-to-bracket" title={t.settings.loginMethods.title} subtitle={t.settings.loginMethods.subtitle}>
           {/* Password */}
           <ConnectionRow
             icon={<KeyIcon />}
-            label="邮箱 + 密码"
+            label={t.common.emailPassword}
             connected={user.has_password}
-            connectedLabel="已设置"
-            note={user.has_password ? "" : "未设置（使用其他方式登录）"}
-            actionLabel={user.has_password ? "改密码" : "设置密码"}
+            connectedLabel={t.settings.loginMethods.passwordSet}
+            note={user.has_password ? "" : t.settings.loginMethods.passwordNotSet}
+            actionLabel={user.has_password ? t.settings.loginMethods.changePasswordAction : t.common.setPassword}
             onAction={() => setPwOpen(true)}
           />
           {/* Email OTP */}
           <ConnectionRow
             icon={<MailIcon />}
-            label="邮箱验证码"
+            label={t.common.emailCode}
             connected={user.email_verified}
-            connectedLabel="已验证"
-            note="验证后可用邮箱验证码登录"
-            actionLabel={user.email_verified ? "" : "验证邮箱"}
-            onAction={() => alert("验证邮箱功能即将上线")}
+            connectedLabel={t.common.verified}
+            note={t.settings.loginMethods.emailOtpNote}
+            actionLabel={user.email_verified ? "" : t.settings.loginMethods.verifyEmail}
+            onAction={() => alert(t.settings.loginMethods.verifyEmailComingSoon)}
           />
           {/* Google */}
           <ConnectionRow
@@ -149,7 +151,7 @@ export default function SettingsPage() {
             label="Google"
             connected={user.google_connected}
             actionBusy={busy === "google"}
-            actionLabel={user.google_connected ? "解绑" : "绑定"}
+            actionLabel={user.google_connected ? t.settings.oauth.unlink : t.settings.oauth.link}
             danger={user.google_connected}
             onAction={() => {
               if (user.google_connected) unlink("google");
@@ -162,7 +164,7 @@ export default function SettingsPage() {
             label="GitHub"
             connected={user.github_connected}
             actionBusy={busy === "github"}
-            actionLabel={user.github_connected ? "解绑" : "绑定"}
+            actionLabel={user.github_connected ? t.settings.oauth.unlink : t.settings.oauth.link}
             danger={user.github_connected}
             onAction={() => {
               if (user.github_connected) unlink("github");
@@ -173,7 +175,7 @@ export default function SettingsPage() {
 
         <PasskeySection />
 
-        <Section icon="fa-triangle-exclamation" danger title="危险操作" subtitle="这里的操作不可撤销，请谨慎">
+        <Section icon="fa-triangle-exclamation" danger title={t.settings.danger.title} subtitle={t.settings.danger.subtitle}>
           <DeleteAccount />
         </Section>
       </div>
@@ -195,6 +197,7 @@ export default function SettingsPage() {
  * commit for "pick a file" is friction with nothing to protect.
  */
 function Profile() {
+  const { t } = useLang();
   const { user, refresh } = useAuth();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
@@ -206,9 +209,9 @@ function Profile() {
     try {
       await accountApi.uploadAvatar(file);
       await refresh();
-      toast.success("头像已更新");
+      toast.success(t.settings.profile.avatarUpdated);
     } catch (e) {
-      toast.error("头像上传失败", e instanceof Error ? e.message : String(e));
+      toast.error(t.settings.profile.avatarUploadFailed, e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -220,9 +223,9 @@ function Profile() {
     try {
       await accountApi.removeAvatar();
       await refresh();
-      toast.success("头像已移除");
+      toast.success(t.settings.profile.avatarRemoved);
     } catch (e) {
-      toast.error("移除失败", e instanceof Error ? e.message : String(e));
+      toast.error(t.settings.profile.removeFailed, e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
@@ -235,12 +238,12 @@ function Profile() {
       <button
         onClick={() => fileRef.current?.click()}
         disabled={busy}
-        title="点击更换头像"
+        title={t.settings.profile.avatarButtonTitle}
         className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-neutral-800 bg-neutral-800 transition hover:border-brand-500 disabled:opacity-60"
       >
         <Avatar user={user} size={64} />
         <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
-          {busy ? <RingSpinner className="h-4 w-4" /> : "更换"}
+          {busy ? <RingSpinner className="h-4 w-4" /> : t.settings.profile.avatarChangeOverlay}
         </span>
       </button>
       <input
@@ -252,11 +255,11 @@ function Profile() {
       />
 
       <div className="min-w-0 flex-1">
-        <label className="block text-[10px] text-neutral-500 mb-1">昵称</label>
+        <label className="block text-[10px] text-neutral-500 mb-1">{t.common.displayName}</label>
         <NicknameField />
         <div className="mt-2 flex items-center gap-2">
           <span className="text-[10px] text-faint">
-            点击左侧头像更换 · 支持 JPG / PNG / WebP / HEIC，自动裁成 256px 方图并转为 AVIF
+            {t.settings.profile.avatarHint}
           </span>
           {user.avatar_url && (
             <button
@@ -264,7 +267,7 @@ function Profile() {
               disabled={busy}
               className="inline-flex h-8 items-center justify-center rounded-lg px-3 text-xs text-neutral-500 hover:text-red-400 disabled:opacity-60 transition"
             >
-              移除
+              {t.common.remove}
             </button>
           )}
         </div>
@@ -279,6 +282,7 @@ function Profile() {
  * ceremony. Blank is allowed and falls back to the email in the UI.
  */
 function NicknameField() {
+  const { t } = useLang();
   const { user, refresh } = useAuth();
   const [value, setValue] = useState(user?.name ?? "");
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -296,7 +300,7 @@ function NicknameField() {
       await accountApi.setNickname(next);
       await refresh();
       setState("saved");
-      toast.success(next ? `昵称已改为「${next}」` : "昵称已清空", "邮箱仍是你的账号标识");
+      toast.success(next ? t.settings.profile.displayNameChanged(next) : t.settings.profile.displayNameCleared, t.settings.profile.displayNameToastDetail);
       setTimeout(() => setState("idle"), 1800);
     } catch (e) {
       setState("error");
@@ -309,7 +313,7 @@ function NicknameField() {
       <input
         value={value}
         maxLength={32}
-        placeholder="未设置，可留空"
+        placeholder={t.settings.profile.displayNamePlaceholder}
         onChange={(e) => setValue(e.target.value)}
         onBlur={save}
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
@@ -319,7 +323,7 @@ function NicknameField() {
       {state === "saved" && <i className="fa-solid fa-check text-[10px] text-teal-400" />}
       {state === "error" && <span className="text-[10px] text-red-400">{err}</span>}
       {state === "idle" && (
-        <span className="text-[10px] text-faint">昵称可重复，邮箱才是账号标识</span>
+        <span className="text-[10px] text-faint">{t.settings.profile.displayNameHint}</span>
       )}
     </span>
   );
@@ -338,6 +342,7 @@ function NicknameField() {
  * password to give.
  */
 function ChangePassword({ onClose }: { onClose: () => void }) {
+  const { t } = useLang();
   const { user, refresh } = useAuth();
   const toast = useToast();
   const [code, setCode] = useState("");
@@ -355,8 +360,8 @@ function ChangePassword({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((n) => n - 1), 1000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setCooldown((n) => n - 1), 1000);
+    return () => clearTimeout(timer);
   }, [cooldown]);
 
   useEffect(() => {
@@ -387,7 +392,7 @@ function ChangePassword({ onClose }: { onClose: () => void }) {
       await accountApi.changePassword(pw, code);
       await refresh();
       onClose();
-      toast.success("密码已更新", "下次登录请使用新密码");
+      toast.success(t.settings.password.updated, t.settings.password.updatedDetail);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
       setCode("");
@@ -401,21 +406,21 @@ function ChangePassword({ onClose }: { onClose: () => void }) {
       <div className="absolute inset-0 bg-black/50" onClick={() => !busy && onClose()} />
       <div className="relative w-full max-w-sm rounded-2xl border border-neutral-800 bg-neutral-900 p-5 shadow-panel">
         <div className="text-sm text-neutral-100 mb-1">
-          {user?.has_password ? "修改密码" : "设置密码"}
+          {user?.has_password ? t.common.changePassword : t.common.setPassword}
         </div>
         <p className="text-[11px] leading-relaxed text-neutral-500 mb-4">
-          需要邮箱验证码才能修改。
-          {sentTo && <> 验证码已发送到 <span className="text-neutral-300">{sentTo}</span>，5 分钟内有效。</>}
+          {t.settings.password.dialogIntro}
+          {sentTo && <> {t.common.otpSentTo(sentTo)}</>}
         </p>
 
-        <label className="block text-[10px] text-neutral-500 mb-1">邮箱验证码</label>
+        <label className="block text-[10px] text-neutral-500 mb-1">{t.common.emailCode}</label>
         <div className="flex gap-1.5 mb-3">
           <input
             value={code}
             inputMode="numeric"
             autoComplete="one-time-code"
             maxLength={6}
-            placeholder="6 位数字"
+            placeholder={t.common.otpPlaceholder}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
             className="flex-1 min-w-0 h-8 rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 text-xs tabular-nums tracking-[0.2em] outline-none focus:border-brand-500 placeholder-faint placeholder:tracking-normal"
           />
@@ -429,25 +434,25 @@ function ChangePassword({ onClose }: { onClose: () => void }) {
             ) : cooldown > 0 ? (
               `${cooldown}s`
             ) : sentTo ? (
-              "重新发送"
+              t.common.resend
             ) : (
-              "发送验证码"
+              t.common.sendCode
             )}
           </button>
         </div>
 
-        <label className="block text-[10px] text-neutral-500 mb-1">新密码</label>
+        <label className="block text-[10px] text-neutral-500 mb-1">{t.common.newPassword}</label>
         <PasswordField value={pw} onChange={setPw} className="mb-2" />
         <PasswordField
           value={pw2}
           onChange={setPw2}
-          placeholder="再输入一次"
+          placeholder={t.common.enterAgain}
           showStrength={false}
           showGenerate={false}
         />
 
-        {tooShort && <div className="mt-2 text-[11px] text-red-400">密码至少 8 位</div>}
-        {mismatch && <div className="mt-2 text-[11px] text-red-400">两次输入不一致</div>}
+        {tooShort && <div className="mt-2 text-[11px] text-red-400">{t.settings.password.tooShort}</div>}
+        {mismatch && <div className="mt-2 text-[11px] text-red-400">{t.common.passwordMismatch}</div>}
         {err && <div className="mt-2 text-[11px] text-red-400">{err}</div>}
 
         <div className="mt-4 flex items-center gap-2">
@@ -457,14 +462,14 @@ function ChangePassword({ onClose }: { onClose: () => void }) {
             disabled={busy}
             className="inline-flex h-8 items-center justify-center rounded-lg px-3 text-xs text-neutral-400 hover:text-neutral-100 transition"
           >
-            取消
+            {t.common.cancel}
           </button>
           <button
             onClick={submit}
             disabled={!ready || busy}
             className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
           >
-            {busy ? <RingSpinner className="h-3.5 w-3.5" /> : "确认修改"}
+            {busy ? <RingSpinner className="h-3.5 w-3.5" /> : t.common.confirmChange}
           </button>
         </div>
       </div>
@@ -522,7 +527,7 @@ function ConnectionRow({
   icon,
   label,
   connected,
-  connectedLabel = "已绑定",
+  connectedLabel,
   note,
   actionLabel,
   onAction,
@@ -539,6 +544,7 @@ function ConnectionRow({
   actionBusy?: boolean;
   danger?: boolean;
 }) {
+  const { t } = useLang();
   return (
     <div className="flex items-center gap-3 py-2">
       <div className="text-neutral-300">{icon}</div>
@@ -561,7 +567,7 @@ function ConnectionRow({
           {actionBusy ? "…" : actionLabel}
         </button>
       )}
-      {connected && <Tag color="teal">{connectedLabel}</Tag>}
+      {connected && <Tag color="teal">{connectedLabel ?? t.settings.loginMethods.connected}</Tag>}
     </div>
   );
 }
@@ -603,6 +609,7 @@ function KeyIcon() {
 }
 
 function PasskeySection() {
+  const { t, locale } = useLang();
   const [list, setList] = useState<{ id: string; name: string; created_at: string; last_used_at?: string }[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -631,14 +638,14 @@ function PasskeySection() {
     try {
       const { flow, options } = await authApi.passkeyEnrollBegin(code);
       const credential = await startRegistration({ optionsJSON: options.publicKey });
-      const name = prompt("给这个 passkey 起个名（如：MacBook Touch ID、iPhone）", defaultPasskeyName()) || "Passkey";
+      const name = prompt(t.settings.passkey.namePrompt, defaultPasskeyName()) || "Passkey";
       await authApi.passkeyEnrollFinish(flow, name, credential);
       setInfo(null);
-      toast.success("Passkey 添加成功", "以后可以用指纹或面容直接登录");
+      toast.success(t.settings.passkey.added, t.settings.passkey.addedDetail);
       load();
     } catch (e: any) {
       if (e?.name === "NotAllowedError") {
-        setErr("已取消");
+        setErr(t.common.cancelled);
       } else {
         setErr(String(e?.message || e));
       }
@@ -648,7 +655,7 @@ function PasskeySection() {
   }
 
   async function remove(id: string, name: string) {
-    if (!confirm(`删除 passkey「${name}」？删除后这个设备不能再用 passkey 登录。`)) return;
+    if (!confirm(t.settings.passkey.deleteConfirm(name))) return;
     try {
       await authApi.passkeyDelete(id);
       load();
@@ -658,11 +665,11 @@ function PasskeySection() {
   }
 
   return (
-    <Section icon="fa-fingerprint" title="Passkey" subtitle="用 Touch ID / Face ID / 安全密钥免密码登录">
+    <Section icon="fa-fingerprint" title="Passkey" subtitle={t.settings.passkey.subtitle}>
       {enroll && (
         <OtpConfirm
           purpose="passkey"
-          detail="验证通过后浏览器会请求你的指纹或面容。"
+          detail={t.settings.passkey.otpDetail}
           onCancel={() => setEnroll(false)}
           onVerified={async (code) => {
             setEnroll(false);
@@ -681,19 +688,19 @@ function PasskeySection() {
             <div className="flex-1">
               <div className="text-sm text-neutral-200">{pk.name}</div>
               <div className="text-xs text-neutral-500">
-                添加于 {new Date(pk.created_at).toLocaleDateString()}
-                {pk.last_used_at && ` · 最近使用 ${new Date(pk.last_used_at).toLocaleString()}`}
+                {t.settings.passkey.addedOn(new Date(pk.created_at).toLocaleDateString(locale))}
+                {pk.last_used_at && ` · ${t.common.lastUsed(new Date(pk.last_used_at).toLocaleString(locale))}`}
               </div>
             </div>
             <button
               onClick={() => remove(pk.id, pk.name)}
               className="text-xs text-red-400 hover:text-red-300"
             >
-              删除
+              {t.common.delete}
             </button>
           </div>
         ))}
-        {list.length === 0 && <div className="text-xs text-neutral-500 py-2">还没有 Passkey，点下方按钮添加第一个。</div>}
+        {list.length === 0 && <div className="text-xs text-neutral-500 py-2">{t.settings.passkey.empty}</div>}
       </div>
       <button
         onClick={() => setEnroll(true)}
@@ -701,20 +708,21 @@ function PasskeySection() {
         className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
       >
         <i className="fa-solid fa-plus" aria-hidden></i>
-        {busy ? "等待授权…" : "添加 Passkey"}
+        {busy ? t.settings.passkey.waiting : t.common.addPasskey}
       </button>
     </Section>
   );
 }
 
 function defaultPasskeyName(): string {
+  const { t } = useLang();
   const ua = navigator.userAgent;
   if (/iPhone/.test(ua)) return "iPhone";
   if (/iPad/.test(ua)) return "iPad";
   if (/Mac/.test(ua)) return "Mac";
   if (/Android/.test(ua)) return "Android";
   if (/Windows/.test(ua)) return "Windows";
-  return "我的设备";
+  return t.settings.passkey.defaultDeviceName;
 }
 
 function MailIcon() {

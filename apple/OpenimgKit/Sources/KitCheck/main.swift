@@ -258,32 +258,72 @@ check("尺寸为 NaN 不崩",
 
 section("本地缩放")
 
-let scratch = "/private/tmp/claude-501/-Users-peter-projects-openimg-io/6a0adad5-8d72-4802-a42c-5a93af436413/scratchpad"
-let bigPNG = URL(fileURLWithPath: scratch + "/big.png")   // 2752x1536, 6 MB
+/// The sample is drawn here rather than read from disk.
+///
+/// It used to point at a file in a scratch directory, guarded by a
+/// `fileExists` check that printed "跳过" and moved on. The directory was
+/// eventually cleaned, and this section quietly shrank from six assertions to
+/// one — the suite still said "全部通过" while testing almost nothing. A test
+/// that can skip itself is a test that will.
+func makeSamplePNG(width: Int, height: Int) -> URL {
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("kitcheck-\(width)x\(height).png")
 
-if FileManager.default.fileExists(atPath: bigPNG.path) {
-    let before = (try! bigPNG.resourceValues(forKeys: [.fileSizeKey]).fileSize)!
-
-    if let out = LocalResize.shrink(bigPNG, maxWidth: 1920) {
-        defer { try? FileManager.default.removeItem(at: out) }
-        let after = (try! out.resourceValues(forKeys: [.fileSizeKey]).fileSize)!
-        let src = CGImageSourceCreateWithURL(out as CFURL, nil)!
-        let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as! [CFString: Any]
-        let w = props[kCGImagePropertyPixelWidth] as! Int
-
-        check("缩到了指定宽度（\(w)px）", w == 1920)
-        check("格式没变（仍是 PNG）", (CGImageSourceGetType(src)! as String) == UTType.png.identifier)
-        check("体积确实变小（\(before/1024)KB → \(after/1024)KB）", after < before)
-    } else {
-        check("2752px 的图应当被缩", false)
+    // Per-pixel noise, written straight into the buffer.
+    //
+    // The first attempt filled 4x4 blocks of flat colour, which PNG squeezed to
+    // 94 KB for a 2752x1536 image — and downscaling it produced a *larger* file
+    // (518 KB), because interpolation turns crisp block edges into gradients
+    // that no longer run-length encode. LocalResize correctly refused to call
+    // that a shrink, so the assertion failed on a fixture that was nothing like
+    // a photograph. Real photographs are incompressible at the pixel level,
+    // which is the property being tested.
+    let bytesPerRow = width * 4
+    var pixels = [UInt8](repeating: 0, count: bytesPerRow * height)
+    var seed: UInt64 = 0x2545F4914F6CDD1D
+    for i in stride(from: 0, to: pixels.count, by: 4) {
+        seed ^= seed << 13; seed ^= seed >> 7; seed ^= seed << 17
+        pixels[i]     = UInt8(truncatingIfNeeded: seed)
+        pixels[i + 1] = UInt8(truncatingIfNeeded: seed >> 8)
+        pixels[i + 2] = UInt8(truncatingIfNeeded: seed >> 16)
+        pixels[i + 3] = 255
     }
 
-    // 已经够小的不该动，白花一次编码
-    check("宽度已达标时返回 nil", LocalResize.shrink(bigPNG, maxWidth: 4000) == nil)
-    check("未设上限时返回 nil", LocalResize.shrink(bigPNG, maxWidth: 0) == nil)
-} else {
-    print("  (跳过：样本文件不在)")
+    let img: CGImage = pixels.withUnsafeMutableBytes { buf in
+        let ctx = CGContext(data: buf.baseAddress, width: width, height: height,
+                            bitsPerComponent: 8, bytesPerRow: bytesPerRow,
+                            space: CGColorSpaceCreateDeviceRGB(),
+                            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        return ctx.makeImage()!
+    }
+    let dest = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil)!
+    CGImageDestinationAddImage(dest, img, nil)
+    CGImageDestinationFinalize(dest)
+    return url
 }
+
+let bigPNG = makeSamplePNG(width: 2752, height: 1536)
+defer { try? FileManager.default.removeItem(at: bigPNG) }
+
+let before = (try! bigPNG.resourceValues(forKeys: [.fileSizeKey]).fileSize)!
+
+if let out = LocalResize.shrink(bigPNG, maxWidth: 1920) {
+    defer { try? FileManager.default.removeItem(at: out) }
+    let after = (try! out.resourceValues(forKeys: [.fileSizeKey]).fileSize)!
+    let src = CGImageSourceCreateWithURL(out as CFURL, nil)!
+    let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as! [CFString: Any]
+    let w = props[kCGImagePropertyPixelWidth] as! Int
+
+    check("缩到了指定宽度（\(w)px）", w == 1920)
+    check("格式没变（仍是 PNG）", (CGImageSourceGetType(src)! as String) == UTType.png.identifier)
+    check("体积确实变小（\(before/1024)KB → \(after/1024)KB）", after < before)
+} else {
+    check("2752px 的图应当被缩", false)
+}
+
+// 已经够小的不该动，白花一次编码
+check("宽度已达标时返回 nil", LocalResize.shrink(bigPNG, maxWidth: 4000) == nil)
+check("未设上限时返回 nil", LocalResize.shrink(bigPNG, maxWidth: 0) == nil)
 
 check("非图片文件安全返回 nil",
       LocalResize.shrink(URL(fileURLWithPath: "/etc/hosts"), maxWidth: 1920) == nil)

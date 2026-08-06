@@ -27,8 +27,12 @@ VIOLET="#8E47FF"
 # The sizes index.html actually references, plus the PWA and Apple ones the
 # manifest points at. Nothing here is speculative — a size no document asks for
 # is a file nobody fetches.
-PNG_SIZES=(32 48 64 96 128 192 256 384 512)
-APPLE_SIZES=(152 167 180)
+# Exactly the sizes something asks for: index.html links 32/48/96/192,
+# site.webmanifest lists 192/256/384/512, and apple-touch-icon.png is the one
+# unsized file Safari looks for. 64 and 128 were generated for a while and
+# referenced by nothing; the per-device Apple sizes likewise — iOS has scaled
+# the single 180 down since iOS 8.
+PNG_SIZES=(32 48 96 192 256 384 512)
 
 render() {          # render <svg> <size> <out>
   rsvg-convert -w "$2" -h "$2" -o "$3" "$1"
@@ -39,10 +43,7 @@ build_set() {       # build_set <svg> <suffix>
   for s in "${PNG_SIZES[@]}"; do
     render "$svg" "$s" "$PUB/favicon$sfx-${s}x${s}.png"
   done
-  for s in "${APPLE_SIZES[@]}"; do
-    render "$svg" "$s" "$PUB/apple-touch-icon$sfx-${s}x${s}.png"
-  done
-  cp "$PUB/apple-touch-icon$sfx-180x180.png" "$PUB/apple-touch-icon$sfx.png"
+  render "$svg" 180 "$PUB/apple-touch-icon$sfx.png"
   # The ICO carries the small sizes only; the large ones would quadruple the
   # file for tabs that never render above 32.
   magick "$PUB/favicon$sfx-16x16.png" "$PUB/favicon$sfx-32x32.png" \

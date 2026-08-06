@@ -19,12 +19,6 @@
   --color-brand-400: #90ec65; /* text on dark — 13.8:1 */
   --color-brand-500: #76e740; /* hover fill, borders, rings */
   --color-brand-600: #5de31d; /* the brand */
-  --color-brand-700: #46b312;
-  /* The one tier that may carry white, at 4.98:1. It exists for places where
-     the foreground is not ours to set: a native checkbox painted by
-     `brand-color` gets a white tick from the UA whatever we say, so the only
-     lever left is darkening what is under it. Never use it for a control we
-     draw ourselves — those take brand-ink on brand-600. */
   --color-brand-800: #2f800a;
   --color-brand-900: #204b0c;
   --color-brand-950: #152c09;
@@ -60,7 +54,6 @@
   --scrim: rgb(0 0 0 / 0.6);
   --scrim-fg: #ffffff;
   --shadow-panel: 0 8px 32px rgb(0 0 0 / 0.5);
-  --shadow-card: 0 1px 3px rgb(0 0 0 / 0.4);
   /* Neutral track behind gauges and heat cells, where a utility class can't
      reach (SVG stroke attributes, inline styles). */
   --track: rgb(64 64 64 / 0.4);
@@ -176,7 +169,6 @@ html, body {
   --color-brand-400: #a87dff;
   --color-brand-500: #8e47ff; /* hover fill — white 4.67:1 */
   --color-brand-600: #7c2ee0; /* resting fill — white 6.32:1 */
-  --color-brand-700: #5e1cc4;
   --color-brand-800: #5e1cc4;
   --color-brand-900: #2d0e63;
   --color-brand-950: #1b0840;

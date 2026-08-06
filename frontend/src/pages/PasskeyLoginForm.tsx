@@ -4,8 +4,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { authApi } from "../api";
 import { useAuth } from "../AuthContext";
 import { Field, inputCls } from "./Login";
+import { useLang } from "../LangContext";
 
 export default function PasskeyLoginForm() {
+  const { t } = useLang();
   const { refresh } = useAuth();
   const nav = useNavigate();
   const loc = useLocation();
@@ -31,7 +33,7 @@ export default function PasskeyLoginForm() {
       nav(next, { replace: true });
     } catch (e: any) {
       if (e?.name === "NotAllowedError") {
-        setErr("已取消或失败");
+        setErr(t.auth.passkey.cancelledOrFailed);
       } else {
         setErr(String(e?.message || e));
       }
@@ -42,13 +44,13 @@ export default function PasskeyLoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <Field label="邮箱（可选 — 留空让浏览器选择 Passkey）">
+      <Field label={t.auth.passkey.email}>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="username webauthn"
-          placeholder="留空使用本机 Passkey 直接登录"
+          placeholder={t.auth.passkey.emailPlaceholder}
           className={inputCls}
         />
       </Field>
@@ -59,10 +61,10 @@ export default function PasskeyLoginForm() {
         className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-700 disabled:text-neutral-500 inline-flex items-center justify-center gap-2"
       >
         <i className="fa-solid fa-fingerprint" aria-hidden></i>
-        {busy ? "等待 Passkey…" : "用 Passkey 登录"}
+        {busy ? t.auth.passkey.submitBusy : t.auth.passkey.submit}
       </button>
       <p className="text-xs text-neutral-500 text-center">
-        会调用本机 Touch ID / Face ID / 安全密钥
+        {t.auth.passkey.hint}
       </p>
     </form>
   );

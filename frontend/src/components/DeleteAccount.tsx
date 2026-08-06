@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../AuthContext";
 import { userApi } from "../api";
 import { RingSpinner } from "./Spinner";
+import { useLang } from "../LangContext";
 
 /**
  * Account deletion. Typing the account's own email is the confirmation — a
@@ -9,6 +10,7 @@ import { RingSpinner } from "./Spinner";
  * password prompt would lock out OAuth-only and passkey-only accounts.
  */
 export default function DeleteAccount() {
+  const { t } = useLang();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState("");
@@ -38,7 +40,7 @@ export default function DeleteAccount() {
         className="inline-flex h-8 items-center justify-center rounded-lg bg-red-600 px-3 text-xs font-medium text-white hover:bg-red-700 transition"
       >
         <i className="fa-solid fa-trash-can mr-1.5" />
-        删除账户
+        {t.deleteAccount.button}
       </button>
     );
   }
@@ -47,10 +49,10 @@ export default function DeleteAccount() {
     <div className="rounded-xl border border-red-500/30 bg-red-950/15 p-4">
       <div className="text-sm text-red-200 mb-2">
         <i className="fa-solid fa-triangle-exclamation mr-1.5" />
-        删除账户是不可撤销的
+        {t.deleteAccount.warningTitle}
       </div>
       <ul className="text-[11px] text-neutral-400 space-y-1 mb-3 leading-relaxed">
-        <li>· 你上传的<b className="text-red-300">全部图片会被永久删除</b>，所有外链立即失效</li>
+        <li>· 你上传的<b className="text-red-300">{t.deleteAccount.warning.imagesEmphasis}</b>，所有外链立即失效</li>
         <li>· 已获得的空间、签到记录、邀请奖励全部清空</li>
         <li>· API Token 立即失效，绑定的自有存储配置会被移除（不会删除你自己桶里的文件）</li>
         <li>· 该邮箱可以重新注册，但数据无法找回</li>
@@ -75,7 +77,7 @@ export default function DeleteAccount() {
           disabled={!matches || busy}
           className="inline-flex h-8 items-center justify-center rounded-lg bg-red-600 px-3 text-xs font-medium text-white hover:bg-red-700 disabled:bg-neutral-800 disabled:text-neutral-600 transition"
         >
-          {busy ? <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" /> : "永久删除我的账户"}
+          {busy ? <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" /> : t.deleteAccount.confirmButton}
         </button>
         <button
           onClick={() => {
@@ -85,7 +87,7 @@ export default function DeleteAccount() {
           }}
           className="text-xs text-neutral-500 hover:text-neutral-300"
         >
-          取消
+          {t.common.cancel}
         </button>
       </div>
     </div>

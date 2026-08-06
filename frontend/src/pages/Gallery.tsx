@@ -308,6 +308,7 @@ function PageSizeMenu({
   value: number;
   onChange: (v: number) => void;
 }) {
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -418,6 +419,7 @@ function Card({
   onToggle: () => void;
   onOpen: () => void;
 }) {
+  const { t } = useLang();
   return (
     <div
       className={`group relative rounded-2xl overflow-hidden border transition ${
@@ -461,7 +463,6 @@ function Card({
     </div>
   );
 }
-  const { t } = useLang();
 
 function Center({ children }: { children: React.ReactNode }) {
   return <div className="min-h-screen flex items-center justify-center text-neutral-500">{children}</div>;

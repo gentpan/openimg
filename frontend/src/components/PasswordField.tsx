@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useLang } from "../LangContext";
 
 /**
  * Generates a password from crypto/getRandomValues, never Math.random.
@@ -24,9 +25,12 @@ function generatePassword(length = 20): string {
   return out.join("");
 }
 
-/** Rough strength, for the bar under the field. */
-function score(pw: string): { level: 0 | 1 | 2 | 3 | 4; label: string } {
-  if (!pw) return { level: 0, label: "" };
+/** Rough strength, for the bar under the field.
+ *
+ * Returns a level only. The label is looked up by the component, because this
+ * runs outside React and has no access to the dictionary. */
+function score(pw: string): 0 | 1 | 2 | 3 | 4 {
+  if (!pw) return 0;
   let n = 0;
   if (pw.length >= 8) n++;
   if (pw.length >= 12) n++;
@@ -35,8 +39,7 @@ function score(pw: string): { level: 0 | 1 | 2 | 3 | 4; label: string } {
   if (/[^a-zA-Z0-9]/.test(pw)) n++;
   // A long passphrase beats a short jumble, so length alone can reach "strong".
   if (pw.length >= 20) n = Math.max(n, 4);
-  const level = Math.min(4, n) as 0 | 1 | 2 | 3 | 4;
-  return { level, label: ["", "很弱", "较弱", "一般", "很强"][level] };
+  return Math.min(4, n) as 0 | 1 | 2 | 3 | 4;
 }
 
 const BAR = ["bg-neutral-700", "bg-red-500", "bg-amber-500", "bg-brand-500", "bg-teal-500"];
@@ -51,7 +54,7 @@ const BAR = ["bg-neutral-700", "bg-red-500", "bg-amber-500", "bg-brand-500", "bg
 export default function PasswordField({
   value,
   onChange,
-  placeholder = "至少 8 位",
+  placeholder,
   autoComplete = "new-password",
   showStrength = true,
   showGenerate = true,
@@ -65,9 +68,17 @@ export default function PasswordField({
   showGenerate?: boolean;
   className?: string;
 }) {
+  const { t } = useLang();
   const [visible, setVisible] = useState(false);
   const [copied, setCopied] = useState(false);
-  const s = useMemo(() => score(value), [value]);
+  const level = useMemo(() => score(value), [value]);
+  const strengthLabel = [
+    "",
+    t.passwordField.strength.veryWeak,
+    t.passwordField.strength.weak,
+    t.passwordField.strength.fair,
+    t.passwordField.strength.strong,
+  ][level];
 
   function generate() {
     const pw = generatePassword(20);
@@ -91,7 +102,7 @@ export default function PasswordField({
           type={visible ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t.passwordField.placeholder}
           autoComplete={autoComplete}
           className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2.5 pr-[4.5rem] text-sm outline-none transition placeholder-faint focus:border-brand-500"
         />
@@ -100,8 +111,8 @@ export default function PasswordField({
             <button
               type="button"
               onClick={generate}
-              title="随机生成一个 20 位强密码"
-              aria-label="随机生成密码"
+              title={t.passwordField.generateTitle}
+              aria-label={t.passwordField.generateAria}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-800 hover:text-brand-300"
             >
               <i className="fa-solid fa-dice text-xs" />
@@ -110,8 +121,8 @@ export default function PasswordField({
           <button
             type="button"
             onClick={() => setVisible((v) => !v)}
-            title={visible ? "隐藏密码" : "显示密码"}
-            aria-label={visible ? "隐藏密码" : "显示密码"}
+            title={visible ? t.passwordField.hide : t.passwordField.show}
+            aria-label={visible ? t.passwordField.hide : t.passwordField.show}
             className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-800 hover:text-brand-300"
           >
             <i className={`fa-solid ${visible ? "fa-eye-slash" : "fa-eye"} text-xs`} />
@@ -126,19 +137,19 @@ export default function PasswordField({
               <span
                 key={i}
                 className={`h-1 flex-1 rounded-full transition-colors ${
-                  i <= s.level ? BAR[s.level] : "bg-neutral-800"
+                  i <= level ? BAR[level] : "bg-neutral-800"
                 }`}
               />
             ))}
           </div>
-          <span className="shrink-0 text-[10px] text-neutral-500">{s.label}</span>
+          <span className="shrink-0 text-[10px] text-neutral-500">{strengthLabel}</span>
         </div>
       )}
 
       {copied && (
         <div className="mt-1.5 text-[10px] text-teal-400">
           <i className="fa-solid fa-check mr-1" />
-          已生成并复制到剪贴板，请立即保存
+          {t.passwordField.generatedCopied}
         </div>
       )}
     </div>

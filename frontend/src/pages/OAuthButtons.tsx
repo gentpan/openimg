@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { authApi } from "../api";
+import { useLang } from "../LangContext";
 
 /**
  * Third-party sign-in as a single row of round buttons.
@@ -10,6 +11,7 @@ import { authApi } from "../api";
  * rather than navigating, since passkey auth happens in-page.
  */
 export default function OAuthButtons({ onPasskey }: { onPasskey?: () => void }) {
+  const { t } = useLang();
   const [providers, setProviders] = useState<string[]>([]);
 
   useEffect(() => {
@@ -29,23 +31,23 @@ export default function OAuthButtons({ onPasskey }: { onPasskey?: () => void }) 
     <div className="space-y-3">
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-neutral-800" />
-        <span className="text-[11px] text-neutral-600">或使用</span>
+        <span className="text-[11px] text-neutral-600">{t.auth.oauth.divider}</span>
         <div className="flex-1 h-px bg-neutral-800" />
       </div>
 
       <div className="flex items-center justify-center gap-3 pb-1">
         {hasGoogle && (
-          <RoundButton href="/auth/google/start" label="用 Google 账号登录">
+          <RoundButton href="/auth/google/start" label={t.auth.oauth.google}>
             <GoogleIcon />
           </RoundButton>
         )}
         {hasGithub && (
-          <RoundButton href="/auth/github/start" label="用 GitHub 账号登录">
+          <RoundButton href="/auth/github/start" label={t.auth.oauth.github}>
             <GithubIcon />
           </RoundButton>
         )}
         {hasPasskey && (
-          <RoundButton onClick={onPasskey} label="用 Passkey / 指纹登录">
+          <RoundButton onClick={onPasskey} label={t.auth.oauth.passkey}>
             <PasskeyIcon />
           </RoundButton>
         )}

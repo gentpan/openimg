@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { useLang } from "../LangContext";
 
 export interface HeatCell {
   /** Drives the shade. Zero or missing renders as the empty state. */
@@ -19,7 +20,7 @@ export default function HeatCalendar({
   cells,
   days = 56,
   columns = 14,
-  emptyLabel = "无数据",
+  emptyLabel,
   summary,
 }: {
   cells: Map<string, HeatCell>;
@@ -28,6 +29,7 @@ export default function HeatCalendar({
   emptyLabel?: string;
   summary?: ReactNode;
 }) {
+  const { t } = useLang();
   const [hover, setHover] = useState<{ date: string; cell?: HeatCell; x: number } | null>(null);
 
   const grid = useMemo(() => {
@@ -81,19 +83,19 @@ export default function HeatCalendar({
                       }`}
         >
           <div className="text-neutral-300">{hover.date}</div>
-          <div className="mt-0.5">{hover.cell ? hover.cell.tooltip : <span className="text-neutral-600">{emptyLabel}</span>}</div>
+          <div className="mt-0.5">{hover.cell ? hover.cell.tooltip : <span className="text-neutral-600">{emptyLabel ?? t.heatCalendar.noData}</span>}</div>
         </div>
       )}
 
       <div className="mt-2 flex items-center justify-between text-[10px] text-neutral-600">
         <span>{summary}</span>
         <span className="flex items-center gap-1">
-          少
+          {t.heatCalendar.legendLess}
           <span className="w-2 h-2 rounded-[2px] [background:var(--heat-1)]" />
           <span className="w-2 h-2 rounded-[2px] [background:var(--heat-2)]" />
           <span className="w-2 h-2 rounded-[2px] [background:var(--heat-3)]" />
           <span className="w-2 h-2 rounded-[2px] [background:var(--heat-4)]" />
-          多
+          {t.heatCalendar.legendMore}
         </span>
       </div>
     </div>

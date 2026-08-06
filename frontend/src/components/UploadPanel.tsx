@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FORMAT_LABELS, linkFor, useUpload, type QueueItem } from "../UploadContext";
 import { formatBytes } from "../api";
 import { RingSpinner } from "./Spinner";
+import { useLang } from "../LangContext";
 
 /**
  * Floating upload panel, bottom-right. Uploads keep running while you browse,
@@ -12,6 +13,7 @@ import { RingSpinner } from "./Spinner";
  * everything finishes, so a finished queue stops competing for attention.
  */
 export default function UploadPanel() {
+  const { t } = useLang();
   const {
     items,
     remove,
@@ -143,7 +145,7 @@ export default function UploadPanel() {
                     className="rounded-lg bg-brand-600 px-2.5 py-1 text-[10px] font-medium text-brand-ink hover:bg-brand-500 transition whitespace-nowrap"
                   >
                     <i className={`fa-solid ${copied === "all" ? "fa-check" : "fa-copy"} mr-1`} />
-                    {copied === "all" ? "已复制" : `复制 ${done.length} 条`}
+                    {copied === "all" ? t.common.copied : `复制 ${done.length} 条`}
                   </button>
                 </>
               )}
@@ -153,15 +155,15 @@ export default function UploadPanel() {
                   onClick={clearFinished}
                   className="text-[10px] text-neutral-600 hover:text-neutral-300 whitespace-nowrap"
                 >
-                  清除已完成
+                  {t.uploadPanel.clearFinished}
                 </button>
               )}
               <button
                 onClick={clear}
-                title="清空队列"
+                title={t.uploadPanel.clearQueueTitle}
                 className="text-[10px] text-neutral-600 hover:text-red-400 whitespace-nowrap"
               >
-                清空
+                {t.uploadPanel.clear}
               </button>
             </div>
           </>
@@ -186,6 +188,7 @@ function Row({
   onRemove: () => void;
   onRetry: () => void;
 }) {
+  const { t } = useLang();
   const saved =
     item.image && item.image.size_orig > item.image.size_stored
       ? item.image.size_orig - item.image.size_stored
@@ -221,10 +224,10 @@ function Row({
           </span>
           {item.deduplicated && (
             <span
-              title="服务器上已有相同内容，直接秒传"
+              title={t.uploadPanel.dedupTitle}
               className="shrink-0 rounded-full bg-teal-900/50 px-1 text-[9px] text-teal-300"
             >
-              秒传
+              {t.uploadPanel.dedupBadge}
             </span>
           )}
         </div>
@@ -252,7 +255,7 @@ function Row({
         {item.state === "done" && link && (
           <button
             onClick={() => onCopy(link, item.id)}
-            title="复制链接"
+            title={t.uploadPanel.copyLink}
             className={`w-6 h-6 rounded-md text-[10px] transition ${
               copied === item.id
                 ? "bg-brand-600 text-brand-ink"
@@ -265,7 +268,7 @@ function Row({
         {item.state === "error" && (
           <button
             onClick={onRetry}
-            title="重试"
+            title={t.uploadPanel.retry}
             className="w-6 h-6 rounded-md text-[10px] text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200 transition"
           >
             <i className="fa-solid fa-rotate-right" />
@@ -273,7 +276,7 @@ function Row({
         )}
         <button
           onClick={onRemove}
-          title="移除"
+          title={t.common.remove}
           className="w-6 h-6 rounded-md text-[10px] text-neutral-600 hover:bg-neutral-800 hover:text-neutral-300 transition opacity-0 group-hover:opacity-100"
         >
           <i className="fa-solid fa-xmark" />

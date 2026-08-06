@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import HeatCalendar, { type HeatCell } from "./HeatCalendar";
 import { formatBytes } from "../api";
 import type { CheckinRecord } from "../types";
+import { useLang } from "../LangContext";
 
 /**
  * Check-in history. The shade reflects how much space that day paid out —
@@ -17,6 +18,7 @@ export default function CheckinCalendar({
   days?: number;
   columns?: number;
 }) {
+  const { t } = useLang();
   const { cells, total } = useMemo(() => {
     const cells = new Map<string, HeatCell>();
     let total = 0;
@@ -27,7 +29,7 @@ export default function CheckinCalendar({
         tooltip: (
           <>
             <span className="text-brand-300">
-              {r.bytes > 0 ? `+${formatBytes(r.bytes)}` : "已达上限，未发放"}
+              {r.bytes > 0 ? `+${formatBytes(r.bytes)}` : t.checkinCalendar.cappedNoGrant}
             </span>
             <span className="text-neutral-600 ml-1.5">连续 {r.streak} 天</span>
           </>
@@ -42,7 +44,7 @@ export default function CheckinCalendar({
       cells={cells}
       days={days}
       columns={columns}
-      emptyLabel="未签到"
+      emptyLabel={t.checkinCalendar.empty}
       summary={
         <>
           {records.length} 天签到 · 累计 <span className="text-brand-400">+{formatBytes(total)}</span>

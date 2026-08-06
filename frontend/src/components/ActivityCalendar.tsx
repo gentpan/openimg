@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import HeatCalendar, { type HeatCell } from "./HeatCalendar";
 import { formatBytes } from "../api";
 import type { QuotaTransaction } from "../types";
+import { useLang } from "../LangContext";
 
 /**
  * Upload activity, derived from the quota ledger rather than a dedicated
@@ -18,6 +19,7 @@ export default function ActivityCalendar({
   days?: number;
   columns?: number;
 }) {
+  const { t } = useLang();
   const { cells, totals } = useMemo(() => {
     const agg = new Map<string, { uploads: number; bytes: number }>();
     for (const tx of transactions) {
@@ -52,7 +54,7 @@ export default function ActivityCalendar({
       cells={cells}
       days={days}
       columns={columns}
-      emptyLabel="没有上传"
+      emptyLabel={t.activityCalendar.empty}
       summary={
         <>
           {totals.days} 天有上传 · 共 <span className="text-brand-400">{totals.uploads} 张</span>

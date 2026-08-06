@@ -3,6 +3,7 @@ import { formatBytes, imageApi, reportApi } from "../api";
 import Spinner, { RingSpinner } from "./Spinner";
 import { useToast } from "../ToastContext";
 import type { Image } from "../types";
+import { useLang } from "../LangContext";
 
 /**
  * Slide-over detail panel for one image: preview, metadata, every link format,
@@ -12,6 +13,7 @@ import type { Image } from "../types";
 const SIZES = [200, 600, 1200] as const;
 
 export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; onClose: () => void; onDeleted: () => void }) {
+  const { t, locale } = useLang();
   const [copied, setCopied] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [reporting, setReporting] = useState(false);
@@ -46,7 +48,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
   }
 
   async function remove() {
-    if (!confirm("确定删除这张图片？删除后会释放对应空间，且无法恢复。")) return;
+    if (!confirm(t.imageDetail.deleteConfirm)) return;
     setBusy(true);
     try {
       await imageApi.remove(img.id);
@@ -74,7 +76,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
     img.url;
 
   const links = [
-    ...(img.short_url ? [{ key: "short", label: "短链", value: img.short_url }] : []),
+    ...(img.short_url ? [{ key: "short", label: t.common.shortLink, value: img.short_url }] : []),
     { key: "url", label: "URL", value: img.url },
     { key: "md", label: "Markdown", value: img.markdown },
     { key: "html", label: "HTML", value: img.html },
@@ -105,17 +107,17 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
           />
 
           <dl className="space-y-1 text-[11px] mb-4">
-            <Row label="尺寸" value={`${img.width} × ${img.height}`} />
-            <Row label="原始大小" value={formatBytes(img.size_orig)} />
-            <Row label="存储占用" value={formatBytes(img.size_stored)} />
-            <Row label="格式" value={img.ext.toUpperCase()} />
-            <Row label="上传时间" value={new Date(img.created_at).toLocaleString("zh-CN")} />
+            <Row label={t.imageDetail.dimensions} value={`${img.width} × ${img.height}`} />
+            <Row label={t.imageDetail.originalSize} value={formatBytes(img.size_orig)} />
+            <Row label={t.imageDetail.storedSize} value={formatBytes(img.size_stored)} />
+            <Row label={t.imageDetail.format} value={img.ext.toUpperCase()} />
+            <Row label={t.imageDetail.uploadedAt} value={new Date(img.created_at).toLocaleString(locale)} />
             {img.variants && (
               <Row
-                label="已生成"
+                label={t.imageDetail.generated}
                 value={img.variants
                   .split(",")
-                  .map((v) => (v.startsWith("orig-") ? "原图" : v))
+                  .map((v) => (v.startsWith("orig-") ? t.imageDetail.originalVariant : v))
                   .join(" · ")}
               />
             )}
@@ -149,8 +151,8 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
 
           <div className="mb-4">
             <div className="text-[10px] text-neutral-600 mb-1.5">
-              其他规格
-              <span className="ml-1 text-faint">· 按需生成，生成后才占用空间</span>
+              {t.imageDetail.otherSizes}
+              <span className="ml-1 text-faint">{t.imageDetail.otherSizesHint}</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {SIZES.map((w) => {
@@ -189,7 +191,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
                   href={variants[originalKey]}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="未经压缩、保留 EXIF 的上传原件"
+                  title={t.imageDetail.originalTitle}
                   className="inline-flex items-center gap-1 rounded-md bg-amber-600/15 border border-amber-500/30 px-2 py-1 text-[10px] text-amber-300 hover:bg-amber-600/25 transition"
                 >
                   <i className="fa-solid fa-file-arrow-down text-[8px]" />
@@ -227,7 +229,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
               className="flex-1 text-center rounded-xl bg-neutral-800 px-4 py-2 text-xs text-neutral-200 hover:bg-neutral-700 transition"
             >
               <i className="fa-solid fa-download mr-1.5" />
-              下载
+              {t.common.download}
             </a>
             <button
               onClick={remove}
@@ -235,7 +237,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
               className="flex-1 rounded-xl bg-red-600 px-4 py-2 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50 transition"
             >
               <i className="fa-solid fa-trash-can mr-1.5" />
-              删除
+              {t.common.delete}
             </button>
           </div>
 
@@ -271,6 +273,7 @@ function Row({ label, value }: { label: string; value: string }) {
  * filters out exactly the people least willing to attach their name.
  */
 function ReportDialog({ img, onClose }: { img: Image; onClose: () => void }) {
+  const { t } = useLang();
   const toast = useToast();
   const [reason, setReason] = useState("");
   const [preset, setPreset] = useState<string | null>(null);
@@ -278,7 +281,7 @@ function ReportDialog({ img, onClose }: { img: Image; onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const PRESETS = ["色情或血腥内容", "侵犯版权", "个人隐私信息", "诈骗或恶意链接", "其他"];
+  const PRESETS = ["色情或血腥内容", t.report.category.copyright, "个人隐私信息", t.report.category.fraud, "其他"];
   const full = preset && preset !== "其他" ? `${preset}${reason ? " — " + reason : ""}` : reason;
   const ready = (full || "").trim().length >= 4;
 
@@ -332,14 +335,14 @@ function ReportDialog({ img, onClose }: { img: Image; onClose: () => void }) {
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           maxLength={500}
-          placeholder={preset && preset !== "其他" ? "补充说明（可选）" : "请说明问题，至少 4 个字"}
+          placeholder={preset && preset !== "其他" ? t.report.detailsOptionalPlaceholder : t.report.reasonPlaceholder}
           className="w-full rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 py-2 text-xs outline-none focus:border-red-500 placeholder-faint resize-none"
         />
 
         <input
           value={contact}
           onChange={(e) => setContact(e.target.value)}
-          placeholder="联系方式（可选，便于回复处理结果）"
+          placeholder={t.report.contactPlaceholder}
           className="mt-2 w-full h-8 rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 text-xs outline-none focus:border-red-500 placeholder-faint"
         />
 
@@ -352,7 +355,7 @@ function ReportDialog({ img, onClose }: { img: Image; onClose: () => void }) {
             disabled={busy}
             className="inline-flex h-8 items-center justify-center rounded-lg px-3 text-xs text-neutral-400 hover:text-neutral-100 transition"
           >
-            取消
+            {t.common.cancel}
           </button>
           <button
             onClick={submit}

@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatBytes, imageApi } from "./api";
 import type { PublicStats } from "./types";
+import { useLang } from "./LangContext";
 
 export default function Footer() {
+  const { t } = useLang();
   const [stats, setStats] = useState<PublicStats | null>(null);
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function Footer() {
           </Link>
           <span className="ml-1.5 text-neutral-600">All Rights Reserved.</span>
           <Link to="/docs" className="ml-3 text-neutral-500 hover:text-brand-300 transition">
-            接入文档
+            {t.footer.docs}
           </Link>
         </div>
         {/* The middle column. It used to carry a tagline; the stats moved here
@@ -113,11 +115,12 @@ const SOCIALS: { label: string; href: string; icon: React.ReactNode; hover?: str
  * whole line each time a digit changed width.
  */
 function StatLine({ stats }: { stats: PublicStats }) {
+  const { t } = useLang();
   const items: [string, string][] = [
-    [stats.total_images.toLocaleString(), "张图片"],
-    [stats.total_users.toLocaleString(), "位用户"],
-    [formatBytes(stats.stored_bytes, 0), "已存储"],
-    [stats.images_today.toLocaleString(), "今日上传"],
+    [stats.total_images.toLocaleString(), t.footer.statImages(stats.total_images)],
+    [stats.total_users.toLocaleString(), t.footer.statUsers(stats.total_users)],
+    [formatBytes(stats.stored_bytes, 0), t.footer.statStored],
+    [stats.images_today.toLocaleString(), t.footer.statToday],
   ];
   return (
     <div className="flex flex-wrap items-baseline justify-center gap-x-2.5 gap-y-1 text-[11px]">

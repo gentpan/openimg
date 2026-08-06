@@ -2,19 +2,23 @@ import { useState } from "react";
 import { useAuth } from "../AuthContext";
 import { userApi } from "../api";
 import { useToast } from "../ToastContext";
+import { useLang } from "../LangContext";
+import type { Dict } from "../i18n";
 
-const WIDTH_PRESETS = [
-  { px: 0, label: "保持原尺寸" },
+// Takes the dictionary rather than closing over it: a module constant is
+// evaluated once at import, and the language can change at any point after.
+const widthPresets = (t: Dict) => [
+  { px: 0, label: t.convertSettings.width.keepOriginal },
   { px: 3840, label: "4K · 3840" },
   { px: 2560, label: "2K · 2560" },
   { px: 1920, label: "1080p · 1920" },
   { px: 1280, label: "720p · 1280" },
 ];
 
-const VARIANTS = [
-  { key: "webp", label: "WebP", desc: "比原图小 25–35%，浏览器全面支持" },
-  { key: "avif", label: "AVIF", desc: "比 WebP 再小 20–30%，编码慢，后台异步生成" },
-  { key: "none", label: "不生成", desc: "只保留主图，最省空间" },
+const variants = (t: Dict) => [
+  { key: "webp", label: "WebP", desc: t.convertSettings.variant.webpDesc },
+  { key: "avif", label: "AVIF", desc: t.convertSettings.variant.avifDesc },
+  { key: "none", label: t.convertSettings.variant.noneLabel, desc: t.convertSettings.variant.noneDesc },
 ];
 
 /**
@@ -26,6 +30,7 @@ const VARIANTS = [
  * "my photos leaked where I live" is not a recoverable mistake.
  */
 export default function ConvertSettings() {
+  const { t } = useLang();
   const { user, refresh } = useAuth();
   const [busy, setBusy] = useState<string | null>(null);
   const toast = useToast();
@@ -38,9 +43,9 @@ export default function ConvertSettings() {
     try {
       await userApi.updatePreferences(patch);
       await refresh();
-      toast.success("已保存", "对之后上传的图片生效，已上传的不受影响");
+      toast.success(t.common.saved, t.convertSettings.savedDetail);
     } catch (e) {
-      toast.error("保存失败", e instanceof Error ? e.message : String(e));
+      toast.error(t.common.saveFailed, e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(null);
     }
@@ -50,22 +55,22 @@ export default function ConvertSettings() {
     <div>
       {/* Mode */}
       <div className="pb-3 mb-3 border-b border-neutral-800/60">
-        <div className="text-xs text-neutral-200 mb-2">上传模式</div>
+        <div className="text-xs text-neutral-200 mb-2">{t.convertSettings.mode.title}</div>
         <div className="grid sm:grid-cols-2 gap-2">
           <ModeCard
             active={!original}
             busy={busy === "mode"}
             onClick={() => save("mode", { upload_mode: "optimized" })}
-            title="优化模式"
-            badge="推荐"
-            lines={["重新编码，剥离 EXIF 与 GPS", "可限制最大宽度", "体积通常只剩 10–30%"]}
+            title={t.convertSettings.mode.optimized}
+            badge={t.convertSettings.badgeRecommended}
+            lines={[t.convertSettings.mode.optimizedLine1, t.convertSettings.mode.optimizedLine2, t.convertSettings.mode.optimizedLine3]}
           />
           <ModeCard
             active={original}
             busy={busy === "mode"}
             onClick={() => save("mode", { upload_mode: "original" })}
-            title="原图模式"
-            lines={["字节不变，保留全部 EXIF 与拍摄地点", "不压缩、不缩放", "占用空间显著更大"]}
+            title={t.convertSettings.mode.original}
+            lines={[t.convertSettings.mode.originalLine1, t.convertSettings.mode.originalLine2, t.convertSettings.mode.originalLine3]}
             danger
           />
         </div>
@@ -73,7 +78,7 @@ export default function ConvertSettings() {
         {original && (
           <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-950/20 px-3 py-2 text-[10px] text-amber-200/90 leading-relaxed">
             <i className="fa-solid fa-triangle-exclamation mr-1" />
-            原图会连同 <b>EXIF 与 GPS 定位</b>一起公开 —— 任何拿到链接的人都能读出拍摄地点、时间和设备。
+            原图会连同 <b>{t.convertSettings.original.warningEmphasis}</b>一起公开 —— 任何拿到链接的人都能读出拍摄地点、时间和设备。
             分享手机拍摄的照片前请确认这是你想要的。
             <br />
             为安全起见，上传仍会校验真实格式（拒绝 SVG 与非图片），并强制以图片类型返回。
@@ -83,12 +88,12 @@ export default function ConvertSettings() {
 
       {/* Width — meaningless in original mode */}
       <div className={`pb-3 mb-3 border-b border-neutral-800/60 ${original ? "opacity-40" : ""}`}>
-        <div className="text-xs text-neutral-200">最大宽度</div>
+        <div className="text-xs text-neutral-200">{t.convertSettings.width.title}</div>
         <div className="text-[10px] text-neutral-600 mt-0.5 mb-2 leading-relaxed">
-          {original ? "原图模式下不缩放" : "超过该宽度的图片会等比缩小后再存储，小图不会被放大"}
+          {original ? t.convertSettings.width.disabledHint : t.convertSettings.width.hint}
         </div>
         <div className="flex flex-wrap gap-1.5">
-          {WIDTH_PRESETS.map((w) => (
+          {widthPresets(t).map((w) => (
             <button
               key={w.px}
               disabled={busy === "width" || original}
@@ -107,12 +112,12 @@ export default function ConvertSettings() {
 
       {/* Single derivative */}
       <div>
-        <div className="text-xs text-neutral-200">附加格式</div>
+        <div className="text-xs text-neutral-200">{t.convertSettings.variant.title}</div>
         <div className="text-[10px] text-neutral-600 mt-0.5 mb-2 leading-relaxed">
-          只能选一种 —— 支持 AVIF 的浏览器必然也支持 WebP，两个都存等于为同一个回退付两次空间。
+          {t.convertSettings.variant.hint}
         </div>
         <div className="space-y-1.5">
-          {VARIANTS.map((v) => (
+          {variants(t).map((v) => (
             <button
               key={v.key}
               disabled={busy === "variant"}

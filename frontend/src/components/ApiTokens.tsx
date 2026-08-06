@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { tokenApi } from "../api";
 import type { ApiToken } from "../types";
+import { useLang } from "../LangContext";
 
 /**
  * Personal access tokens for PicGo / Typora / curl. The plaintext is shown
  * exactly once, on creation — the server only ever stores its SHA-256.
  */
 export default function ApiTokens() {
+  const { t, locale } = useLang();
   const [tokens, setTokens] = useState<ApiToken[]>([]);
   const [name, setName] = useState("");
   const [days, setDays] = useState(0);
@@ -38,11 +40,11 @@ export default function ApiTokens() {
     }
   }
 
-  async function remove(t: ApiToken) {
-    if (!confirm(`删除 Token「${t.name}」？使用它的工具会立即失效。`)) return;
+  async function remove(tok: ApiToken) {
+    if (!confirm(t.apiTokens.deleteConfirm(tok.name))) return;
     setBusy(true);
     try {
-      await tokenApi.remove(t.id);
+      await tokenApi.remove(tok.id);
       await load();
     } finally {
       setBusy(false);
@@ -55,7 +57,7 @@ export default function ApiTokens() {
         <div className="mb-3 rounded-xl border border-brand-500/30 bg-brand-950/20 p-3">
           <div className="text-[11px] text-brand-200 mb-2">
             <i className="fa-solid fa-triangle-exclamation mr-1" />
-            这个 Token 只显示这一次，请立即保存
+            {t.apiTokens.shownOnce}
           </div>
           <div className="flex items-center gap-1.5">
             <input
@@ -75,13 +77,13 @@ export default function ApiTokens() {
               className="shrink-0 rounded-md bg-brand-600 px-2.5 py-1.5 text-[10px] text-brand-ink hover:bg-brand-500 transition"
             >
               <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"} mr-1`} />
-              {copied ? "已复制" : "复制"}
+              {copied ? t.common.copied : t.common.copy}
             </button>
             <button
               onClick={() => setFresh(null)}
               className="shrink-0 rounded-md bg-neutral-800 px-2.5 py-1.5 text-[10px] text-neutral-400 hover:bg-neutral-700 transition"
             >
-              知道了
+              {t.apiTokens.gotIt}
             </button>
           </div>
         </div>
@@ -91,30 +93,30 @@ export default function ApiTokens() {
 
       {tokens.length > 0 && (
         <div className="space-y-1.5 mb-3">
-          {tokens.map((t) => (
+          {tokens.map((tok) => (
             <div
-              key={t.id}
+              key={tok.id}
               className="flex items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-950/40 px-3 py-2"
             >
               <div className="flex-1 min-w-0">
                 <div className="text-xs text-neutral-200">
-                  {t.name}
-                  {t.revoked && <span className="ml-1.5 text-[10px] text-red-400">已失效</span>}
+                  {tok.name}
+                  {tok.revoked && <span className="ml-1.5 text-[10px] text-red-400">{t.apiTokens.revoked}</span>}
                 </div>
                 <div className="text-[10px] text-neutral-600 font-mono">
-                  {t.prefix}••••••
-                  {t.last_used_at
-                    ? ` · 最近使用 ${new Date(t.last_used_at).toLocaleDateString("zh-CN")}`
-                    : " · 从未使用"}
-                  {t.expires_at && ` · 到期 ${new Date(t.expires_at).toLocaleDateString("zh-CN")}`}
+                  {tok.prefix}••••••
+                  {tok.last_used_at
+                    ? ` · ${t.common.lastUsed(new Date(tok.last_used_at).toLocaleDateString(locale))}`
+                    : ` · ${t.apiTokens.neverUsed}`}
+                  {tok.expires_at && ` · ${t.apiTokens.expiresAt(new Date(tok.expires_at).toLocaleDateString(locale))}`}
                 </div>
               </div>
               <button
-                onClick={() => remove(t)}
+                onClick={() => remove(tok)}
                 disabled={busy}
                 className="shrink-0 text-[10px] text-red-400 hover:underline"
               >
-                删除
+                {t.common.delete}
               </button>
             </div>
           ))}
@@ -126,7 +128,7 @@ export default function ApiTokens() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && create()}
-          placeholder="Token 名称，如 PicGo"
+          placeholder={t.apiTokens.namePlaceholder}
           className="flex-1 rounded-lg bg-neutral-900 border border-neutral-800 h-8 px-2.5 text-xs outline-none focus:border-brand-500 placeholder-faint"
         />
         <select
@@ -134,22 +136,22 @@ export default function ApiTokens() {
           onChange={(e) => setDays(Number(e.target.value))}
           className="h-8 rounded-lg bg-neutral-900 border border-neutral-800 px-2 text-xs outline-none focus:border-brand-500"
         >
-          <option value={0}>永不过期</option>
-          <option value={30}>30 天</option>
-          <option value={90}>90 天</option>
-          <option value={365}>1 年</option>
+          <option value={0}>{t.apiTokens.expiry.never}</option>
+          <option value={30}>{t.apiTokens.expiry.days30}</option>
+          <option value={90}>{t.apiTokens.expiry.days90}</option>
+          <option value={365}>{t.apiTokens.expiry.year1}</option>
         </select>
         <button
           onClick={create}
           disabled={busy || !name.trim()}
           className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition whitespace-nowrap"
         >
-          生成
+          {t.apiTokens.generate}
         </button>
       </div>
 
       <p className="mt-2 text-[10px] text-neutral-600">
-        Token 只能用于上传和管理图片，不能修改账号设置、存储凭据或 Passkey。
+        {t.apiTokens.scopeNote}
       </p>
     </div>
   );

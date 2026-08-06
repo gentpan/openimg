@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { formatBytes, storageApi } from "../api";
 import type { ProfileInput, StorageProfile } from "../types";
 import { RingSpinner } from "./Spinner";
+import { useLang } from "../LangContext";
 
 const EMPTY: ProfileInput = {
   name: "",
@@ -16,15 +17,16 @@ const EMPTY: ProfileInput = {
 
 // Shown under the endpoint field so the user can sanity-check what we guessed.
 function describeEndpoint(endpoint: string): string {
+  const { t } = useLang();
   const e = endpoint.toLowerCase();
   if (!e) return "";
-  if (e.includes("r2.cloudflarestorage.com")) return "识别为 Cloudflare R2 · 虚拟主机寻址";
-  if (e.includes("amazonaws.com")) return "识别为 AWS S3 · 虚拟主机寻址";
-  if (e.includes("backblazeb2.com")) return "识别为 Backblaze B2 · 虚拟主机寻址";
-  if (e.includes("digitaloceanspaces.com")) return "识别为 DigitalOcean Spaces · 虚拟主机寻址";
-  if (e.includes("aliyuncs.com")) return "识别为阿里云 OSS · 虚拟主机寻址";
-  if (e.includes("myqcloud.com")) return "识别为腾讯云 COS · 虚拟主机寻址";
-  return "按自建 S3（MinIO 等）处理 · 路径寻址";
+  if (e.includes("r2.cloudflarestorage.com")) return t.storageProfiles.endpoint.r2;
+  if (e.includes("amazonaws.com")) return t.storageProfiles.endpoint.s3;
+  if (e.includes("backblazeb2.com")) return t.storageProfiles.endpoint.b2;
+  if (e.includes("digitaloceanspaces.com")) return t.storageProfiles.endpoint.spaces;
+  if (e.includes("aliyuncs.com")) return t.storageProfiles.endpoint.oss;
+  if (e.includes("myqcloud.com")) return t.storageProfiles.endpoint.cos;
+  return t.storageProfiles.endpoint.custom;
 }
 
 /**
@@ -43,6 +45,7 @@ function hostOf(url: string): string {
 }
 
 export default function StorageProfiles() {
+  const { t } = useLang();
   const [profiles, setProfiles] = useState<StorageProfile[]>([]);
   const [editing, setEditing] = useState<StorageProfile | "new" | null>(null);
   const [form, setForm] = useState<ProfileInput>(EMPTY);
@@ -83,9 +86,9 @@ export default function StorageProfiles() {
       if (editing === "new") await storageApi.create(payload);
       else if (editing) await storageApi.update(editing.id, payload);
       if (testOnly) {
-        setMsg({ kind: "ok", text: "连接测试通过，可以保存了" });
+        setMsg({ kind: "ok", text: t.storageProfiles.testPassed });
       } else {
-        setMsg({ kind: "ok", text: "已保存" });
+        setMsg({ kind: "ok", text: t.common.saved });
         setEditing(null);
         await load();
       }
@@ -131,22 +134,22 @@ export default function StorageProfiles() {
                   <span className="text-xs text-neutral-100">{p.name}</span>
                   {p.is_default && (
                     <span className="rounded-full bg-brand-900/50 px-1.5 py-0.5 text-[9px] text-brand-300">
-                      默认
+                      {t.storageProfiles.badge.default}
                     </span>
                   )}
                   {p.is_platform && (
                     <span className="rounded-full bg-neutral-800 px-1.5 py-0.5 text-[9px] text-neutral-400">
-                      平台
+                      {t.storageProfiles.badge.platform}
                     </span>
                   )}
                   {p.backup_of_id && (
                     <span className="rounded-full bg-amber-900/40 px-1.5 py-0.5 text-[9px] text-amber-300">
-                      备份
+                      {t.storageProfiles.badge.backup}
                     </span>
                   )}
                   {p.status !== "active" && (
                     <span className="rounded-full bg-red-900/50 px-1.5 py-0.5 text-[9px] text-red-300">
-                      不可用
+                      {t.storageProfiles.badge.unavailable}
                     </span>
                   )}
                 </div>
@@ -160,7 +163,7 @@ export default function StorageProfiles() {
                   {p.is_platform ? (
                     <>
                       <i className="fa-solid fa-globe mr-1 text-neutral-700" />
-                      {hostOf(p.public_base_url) || "平台托管"}
+                      {hostOf(p.public_base_url) || t.storageProfiles.platformHosted}
                     </>
                   ) : (
                     <>
@@ -170,7 +173,7 @@ export default function StorageProfiles() {
                   )}
                 </div>
                 <div className="text-[10px] text-neutral-600">
-                  {p.image_count} 张 · {formatBytes(p.stored_bytes, 0)}
+                  {t.common.countAndSize(p.image_count, formatBytes(p.stored_bytes, 0))}
                   {!p.is_platform && p.access_key_mask && ` · ${p.access_key_mask}`}
                 </div>
                 {p.last_error && <div className="mt-1 text-[10px] text-red-400">{p.last_error}</div>}
@@ -179,38 +182,38 @@ export default function StorageProfiles() {
               <div className="flex flex-col gap-1 shrink-0 text-[10px]">
                 {!p.is_default && !p.backup_of_id && (
                   <button
-                    onClick={() => act(p.id, () => storageApi.setDefault(p.id), "已设为默认上传目标")}
+                    onClick={() => act(p.id, () => storageApi.setDefault(p.id), t.storageProfiles.setDefaultDone)}
                     disabled={!!busy}
                     className="rounded-md bg-neutral-800 px-2 py-1 text-neutral-300 hover:bg-neutral-700 transition"
                   >
-                    设为默认
+                    {t.storageProfiles.setDefault}
                   </button>
                 )}
                 {!p.is_platform && (
                   <>
                     <button
-                      onClick={() => act(p.id, () => storageApi.test(p.id), "连接正常")}
+                      onClick={() => act(p.id, () => storageApi.test(p.id), t.storageProfiles.connectionOk)}
                       disabled={!!busy}
                       className="rounded-md bg-neutral-800 px-2 py-1 text-neutral-300 hover:bg-neutral-700 transition"
                     >
-                      测试
+                      {t.storageProfiles.test}
                     </button>
                     <button
                       onClick={() => startEdit(p)}
                       disabled={!!busy}
                       className="rounded-md bg-neutral-800 px-2 py-1 text-neutral-300 hover:bg-neutral-700 transition"
                     >
-                      编辑
+                      {t.common.edit}
                     </button>
                     <button
                       onClick={() => {
-                        if (confirm(`删除存储配置「${p.name}」？`))
-                          act(p.id, () => storageApi.remove(p.id), "已删除");
+                        if (confirm(t.storageProfiles.deleteConfirm(p.name)))
+                          act(p.id, () => storageApi.remove(p.id), t.storageProfiles.deleted);
                       }}
                       disabled={!!busy}
                       className="rounded-md bg-neutral-800 px-2 py-1 text-red-400 hover:bg-neutral-700 transition"
                     >
-                      删除
+                      {t.common.delete}
                     </button>
                   </>
                 )}
@@ -223,17 +226,17 @@ export default function StorageProfiles() {
       {editing ? (
         <div className="rounded-xl border border-brand-500/30 bg-neutral-950/60 p-4">
           <div className="text-xs text-neutral-200 mb-3">
-            {editing === "new" ? "添加自有存储" : `编辑 ${editing.name}`}
+            {editing === "new" ? t.storageProfiles.addTitle : t.storageProfiles.editTitle(editing.name)}
           </div>
           <div className="grid sm:grid-cols-2 gap-2.5">
-            <Field label="名称" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="我的存储" />
+            <Field label={t.storageProfiles.field.name} value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder={t.storageProfiles.field.namePlaceholder} />
             <Field label="Bucket" value={form.bucket} onChange={(v) => setForm({ ...form, bucket: v })} />
             <div className="sm:col-span-2">
               <Field
                 label="Endpoint"
                 value={form.endpoint}
                 onChange={(v) => setForm({ ...form, endpoint: v })}
-                placeholder="https://<account>.r2.cloudflarestorage.com 或 https://s3.example.com"
+                placeholder={t.storageProfiles.field.endpointPlaceholder}
               />
               {form.endpoint && (
                 <div className="mt-1 text-[10px] text-brand-400/80">
@@ -244,7 +247,7 @@ export default function StorageProfiles() {
             </div>
             <Field label="Region" value={form.region} onChange={(v) => setForm({ ...form, region: v })} />
             <Field
-              label="Key 前缀（可选）"
+              label={t.storageProfiles.field.keyPrefix}
               value={form.key_prefix}
               onChange={(v) => setForm({ ...form, key_prefix: v })}
               placeholder="img/"
@@ -253,18 +256,18 @@ export default function StorageProfiles() {
               label="Access Key"
               value={form.access_key}
               onChange={(v) => setForm({ ...form, access_key: v })}
-              placeholder={editing === "new" ? "" : "留空表示不修改"}
+              placeholder={editing === "new" ? "" : t.storageProfiles.field.unchangedPlaceholder}
             />
             <Field
               label="Secret Key"
               value={form.secret_key}
               onChange={(v) => setForm({ ...form, secret_key: v })}
               type="password"
-              placeholder={editing === "new" ? "" : "留空表示不修改"}
+              placeholder={editing === "new" ? "" : t.storageProfiles.field.unchangedPlaceholder}
             />
             <div className="sm:col-span-2">
               <Field
-                label="公开访问地址"
+                label={t.storageProfiles.field.publicBaseUrl}
                 value={form.public_base_url}
                 onChange={(v) => setForm({ ...form, public_base_url: v })}
                 placeholder="https://img.example.com"
@@ -274,7 +277,7 @@ export default function StorageProfiles() {
 
           <div className="mt-3 rounded-lg bg-amber-950/20 border border-amber-500/20 px-3 py-2 text-[10px] text-amber-200/90">
             <i className="fa-solid fa-shield-halved mr-1" />
-            建议创建<b>仅限该 bucket、仅有对象读写权限</b>的令牌。密钥会以 AES-256-GCM 加密存储，页面上永不回显。
+            建议创建<b>{t.storageProfiles.securityNoteEmphasis}</b>的令牌。密钥会以 AES-256-GCM 加密存储，页面上永不回显。
           </div>
 
           <div className="mt-3 flex items-center gap-2">
@@ -283,14 +286,14 @@ export default function StorageProfiles() {
               disabled={!!busy}
               className="inline-flex h-8 items-center justify-center rounded-lg bg-neutral-800 px-3 text-xs text-neutral-200 hover:bg-neutral-700 disabled:opacity-50 transition"
             >
-              {busy === "test" ? <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" /> : "测试连接"}
+              {busy === "test" ? <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" /> : t.storageProfiles.testConnection}
             </button>
             <button
               onClick={() => submit(false)}
               disabled={!!busy}
               className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:opacity-50 transition"
             >
-              {busy === "save" ? <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" /> : "保存"}
+              {busy === "save" ? <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" /> : t.common.save}
             </button>
             <button
               onClick={() => {
@@ -299,7 +302,7 @@ export default function StorageProfiles() {
               }}
               className="text-xs text-neutral-500 hover:text-neutral-300"
             >
-              取消
+              {t.common.cancel}
             </button>
           </div>
         </div>
@@ -309,7 +312,7 @@ export default function StorageProfiles() {
           className="inline-flex h-8 items-center justify-center rounded-lg bg-neutral-800 px-3 text-xs text-neutral-200 hover:bg-neutral-700 transition"
         >
           <i className="fa-solid fa-plus mr-1.5" />
-          添加自有存储
+          {t.storageProfiles.addTitle}
         </button>
       )}
     </div>

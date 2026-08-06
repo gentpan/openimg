@@ -9,6 +9,7 @@ import CheckinCalendar from "../components/CheckinCalendar";
 import CheckinWeek, { MilestoneBar } from "../components/CheckinWeek";
 import type { CheckinRecord, QuotaInfo, QuotaTransaction } from "../types";
 import { RingSpinner } from "../components/Spinner";
+import { useLang } from "../LangContext";
 
 const TX_LABELS: Record<string, { label: string; icon: string; tone: string }> = {
   signup_grant: { label: "注册赠送", icon: "fa-gift", tone: "text-brand-300" },
@@ -27,6 +28,7 @@ function monthDone(streak: number, total: number) {
 }
 
 export default function SpacePage() {
+  const { locale } = useLang();
   const { user, loading, refresh } = useAuth();
   const [quota, setQuota] = useState<QuotaInfo | null>(null);
   const [txs, setTxs] = useState<QuotaTransaction[]>([]);
@@ -232,7 +234,7 @@ export default function SpacePage() {
                         {formatBytes(Math.abs(tx.bytes))}
                       </div>
                       <div className="text-[10px] text-neutral-600">
-                        {new Date(tx.created_at).toLocaleDateString("zh-CN")}
+                        {new Date(tx.created_at).toLocaleDateString(locale)}
                       </div>
                     </div>
                   </div>

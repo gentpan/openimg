@@ -15,6 +15,7 @@ import Avatar from "./Avatar";
  * knows whether their next upload will fit.
  */
 export default function Nav() {
+  const { t } = useLang();
   const { user, logout, refresh } = useAuth();
   const { brand, setBrand } = useBrand();
   const { lang, setLang } = useLang();
@@ -32,13 +33,13 @@ export default function Nav() {
     try {
       const res = await quotaApi.checkin();
       if (res.capped) {
-        toast.info("空间已达上限", "今天的签到没有增加容量");
+        toast.info(t.nav.checkinCappedTitle, t.nav.checkinCappedDetail);
       } else {
-        toast.success(`签到成功，+${formatBytes(res.granted_bytes)}`, "已永久累加到你的总容量");
+        toast.success(`签到成功，+${formatBytes(res.granted_bytes)}`, t.nav.checkinSuccessDetail);
       }
       await refresh();
     } catch (e) {
-      toast.error("签到失败", e instanceof Error ? e.message : undefined);
+      toast.error(t.nav.checkinFailed, e instanceof Error ? e.message : undefined);
     } finally {
       setBusy(false);
     }
@@ -60,15 +61,15 @@ export default function Nav() {
         <div className="flex items-center gap-2.5 text-xs">
           {user && (
             <>
-              <NavItem to="/dashboard" icon="fa-gauge" label="概览" active={pathname === "/dashboard"} />
-              <NavItem to="/upload" icon="fa-cloud-arrow-up" label="上传" active={pathname === "/upload"} />
-              <NavItem to="/gallery" icon="fa-images" label="图库" active={pathname === "/gallery"} />
-              <NavItem to="/refer" icon="fa-gift" label="邀请" active={pathname === "/refer"} />
+              <NavItem to="/dashboard" icon="fa-gauge" label={t.nav.overview} active={pathname === "/dashboard"} />
+              <NavItem to="/upload" icon="fa-cloud-arrow-up" label={t.common.upload} active={pathname === "/upload"} />
+              <NavItem to="/gallery" icon="fa-images" label={t.nav.gallery} active={pathname === "/gallery"} />
+              <NavItem to="/refer" icon="fa-gift" label={t.nav.refer} active={pathname === "/refer"} />
             </>
           )}
           {user?.role === "admin" && (
             <Link to="/admin" className="text-brand-400 hover:underline hidden sm:inline">
-              管理
+              {t.nav.admin}
             </Link>
           )}
           {user ? (
@@ -79,7 +80,7 @@ export default function Nav() {
                 title={
                   user.checked_in_today
                     ? `今日已签到 · 连续 ${user.checkin_streak} 天`
-                    : "点击签到，随机领取空间"
+                    : t.nav.checkinHint
                 }
                 className={`rounded-full px-2.5 py-0.5 transition whitespace-nowrap ${
                   user.checked_in_today
@@ -97,7 +98,7 @@ export default function Nav() {
                 ) : (
                   <>
                     <i className="fa-solid fa-calendar-check text-[10px] mr-1" />
-                    签到
+                    {t.nav.checkin}
                   </>
                 )}
               </button>
@@ -115,8 +116,8 @@ export default function Nav() {
               </Link>
               <button
                 onClick={() => setBrand(brand === "green" ? "violet" : "green")}
-                title={brand === "green" ? "切换到紫色" : "切换到绿色"}
-                aria-label={brand === "green" ? "切换到紫色" : "切换到绿色"}
+                title={brand === "green" ? t.nav.switchToViolet : t.nav.switchToGreen}
+                aria-label={brand === "green" ? t.nav.switchToViolet : t.nav.switchToGreen}
                 className="w-6 h-6 rounded-full text-neutral-500 hover:text-brand-300 hover:bg-neutral-900 transition inline-flex items-center justify-center"
               >
                 {/* The swatch is the brand colour itself — a paint-can icon
@@ -142,15 +143,15 @@ export default function Nav() {
                 <span className="truncate max-w-[8rem]">{user.name || user.email}</span>
               </Link>
               <button onClick={() => logout()} className="text-neutral-600 hover:text-neutral-300">
-                退出
+                {t.common.signOut}
               </button>
             </>
           ) : (
             <>
               <button
                 onClick={() => setBrand(brand === "green" ? "violet" : "green")}
-                title={brand === "green" ? "切换到紫色" : "切换到绿色"}
-                aria-label={brand === "green" ? "切换到紫色" : "切换到绿色"}
+                title={brand === "green" ? t.nav.switchToViolet : t.nav.switchToGreen}
+                aria-label={brand === "green" ? t.nav.switchToViolet : t.nav.switchToGreen}
                 className="w-6 h-6 rounded-full text-neutral-500 hover:text-brand-300 hover:bg-neutral-900 transition inline-flex items-center justify-center"
               >
                 {/* The swatch is the brand colour itself — a paint-can icon
@@ -158,10 +159,10 @@ export default function Nav() {
                 <span className="w-3 h-3 rounded-full bg-brand-600 ring-1 ring-white/25" />
               </button>
               <Link to="/login" className="text-brand-400 hover:underline">
-                登录
+                {t.common.signIn}
               </Link>
               <Link to="/register" className="text-neutral-500 hover:text-neutral-200">
-                注册
+                {t.common.signUp}
               </Link>
             </>
           )}

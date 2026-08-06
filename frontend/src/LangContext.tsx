@@ -33,6 +33,14 @@ interface LangCtx {
   setLang: (l: Lang) => void;
   /** The active dictionary. Access it directly: `t.nav.upload`. */
   t: Dict;
+  /**
+   * BCP 47 tag for Intl and toLocaleDateString.
+   *
+   * Dates were formatted with a hardcoded "zh-CN" in a handful of places, which
+   * an English reader sees as "2026/8/6" — translated interface, Chinese dates.
+   * Exposed here so there is one place to get it right.
+   */
+  locale: string;
 }
 
 const Ctx = createContext<LangCtx | null>(null);
@@ -53,7 +61,11 @@ export function LangProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  return <Ctx.Provider value={{ lang, setLang, t: dicts[lang] }}>{children}</Ctx.Provider>;
+  const locale = lang === "zh" ? "zh-CN" : "en-US";
+
+  return (
+    <Ctx.Provider value={{ lang, setLang, t: dicts[lang], locale }}>{children}</Ctx.Provider>
+  );
 }
 
 export function useLang() {

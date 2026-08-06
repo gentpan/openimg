@@ -4,6 +4,7 @@ import { REPORT_CATEGORIES, formatBytes, shareApi, type SharePayload } from "../
 import Logo from "../Logo";
 import { useToast } from "../ToastContext";
 import { RingSpinner } from "../components/Spinner";
+import { useLang } from "../LangContext";
 
 /**
  * The page behind a short link.
@@ -23,6 +24,7 @@ const REACTIONS: { kind: string; emoji: string; label: string }[] = [
 ];
 
 export default function SharePage() {
+  const { locale } = useLang();
   const { code = "" } = useParams();
   
   const [data, setData] = useState<SharePayload | null>(null);
@@ -84,7 +86,7 @@ export default function SharePage() {
           <div className="flex-1" />
           {data.uploader && <span>由 {data.uploader} 上传</span>}
           <span className="text-neutral-700">·</span>
-          <span>{new Date(data.created_at).toLocaleString("zh-CN")}</span>
+          <span>{new Date(data.created_at).toLocaleString(locale)}</span>
         </>
       }
     >

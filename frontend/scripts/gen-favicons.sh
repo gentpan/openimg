@@ -69,6 +69,21 @@ echo
 # transparency: flattening it to sample a pixel mixes the fill with whatever
 # background the flatten used, and reports that instead. The SVG fill is the
 # actual source of truth, and the PNGs are rendered from it in the same run.
+# Stamp the hrefs with a hash of the source art.
+#
+# Cloudflare caches these for four hours and this project has no purge
+# credentials configured, so a recolour otherwise keeps serving the old icon to
+# anyone who has visited before — which is exactly what happened: the .ico went
+# green on disk and browsers kept showing the August violet for hours.
+#
+# A content hash makes a recoloured file a different URL, which no cache
+# anywhere can confuse with the old one. Derived from favicon.svg because every
+# other file in the set is rendered from it.
+HASH=$(md5 -q "$SRC" | cut -c1-8)
+perl -0pi -e "s{(href=\"/(?:favicon|apple-touch-icon)[^\"?]*)(\?v=[a-f0-9]+)?\"}{\$1?v=$HASH\"}g" index.html
+echo "  版本戳 ?v=$HASH 已写入 index.html"
+echo
+
 echo "核对"
 for f in "$SRC" "$PUB/favicon-violet.svg"; do
   printf "  %-30s %s\n" "$(basename "$f")" "$(grep -oE '#[0-9A-Fa-f]{6}' "$f" | sort -u | tr '\n' ' ')"

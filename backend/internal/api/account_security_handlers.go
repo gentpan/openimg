@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"strings"
 
@@ -27,14 +28,14 @@ func (s *Server) handleAccountOTP(c *gin.Context) {
 	u := auth.MustUser(c)
 	var req actionOTPReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "auth.bad_params")})
 		return
 	}
 	// Login codes are issued by the public endpoint; letting an authenticated
 	// caller mint one here would hand a signed-in session a way to produce
 	// login codes for its own address on demand.
 	if !models.ValidOTPPurpose(req.Purpose) || req.Purpose == models.OTPPurposeLogin {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的验证用途"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "otp.purpose_unknown")})
 		return
 	}
 	if status, msg := s.issueOTP(c, strings.ToLower(u.Email), req.Purpose); msg != "" {
@@ -93,7 +94,7 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 	}
 	hash, err := auth.HashPassword(req.NewPassword)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "密码处理失败"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T(c, "auth.password_hash")})
 		return
 	}
 	if err := s.DB.Model(u).Update("password_hash", hash).Error; err != nil {
@@ -116,12 +117,12 @@ func (s *Server) handleUpdateNickname(c *gin.Context) {
 	u := auth.MustUser(c)
 	var req nicknameReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "auth.bad_params")})
 		return
 	}
 	name := strings.TrimSpace(req.Name)
 	if len([]rune(name)) > 32 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "昵称最多 32 个字符"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "auth.name_too_long")})
 		return
 	}
 	if err := s.DB.Model(u).Update("name", name).Error; err != nil {

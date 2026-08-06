@@ -95,7 +95,7 @@ func (s *Server) handleUpload(c *gin.Context) {
 
 	raw, sum, err := readAndHash(fh)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "读取上传内容失败：" + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "upload.read_failed", err.Error())})
 		return
 	}
 
@@ -109,7 +109,7 @@ func (s *Server) handleUpload(c *gin.Context) {
 	}
 	if !g.AllowsFormat(ext) {
 		c.JSON(http.StatusUnsupportedMediaType, gin.H{
-			"error":   "当前用户组不允许上传 " + ext + " 格式",
+			"error":   i18n.T(c, "upload.format_denied", ext),
 			"allowed": g.FormatList(),
 		})
 		return
@@ -120,7 +120,7 @@ func (s *Server) handleUpload(c *gin.Context) {
 
 	backend, profile, err := s.Storage.Resolve(ctx, u)
 	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "存储不可用：" + err.Error()})
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": i18n.T(c, "storage.unavailable", err.Error())})
 		return
 	}
 	onPlatform := profile == nil || profile.IsPlatform()
@@ -210,7 +210,7 @@ func (s *Server) storeUpload(ctx context.Context, p storeParams) (*models.Image,
 	// Reserve quota before writing objects. Doing it the other way round means
 	// a user over their limit still costs us the bytes.
 	if p.OnPlatform {
-		if err := quota.Consume(s.DB, p.User.ID, total, "上传 "+p.OrigName, &imageID); err != nil {
+		if err := quota.Consume(s.DB, p.User.ID, total, fmt.Sprintf("上传 %s", p.OrigName), &imageID); err != nil {
 			if errors.Is(err, quota.ErrInsufficient) {
 				return nil, false, fmt.Errorf("%w：需要 %s，剩余 %s",
 					quota.ErrInsufficient, humanBytes(total), humanBytes(quota.Available(p.User)))
@@ -299,7 +299,7 @@ func (s *Server) storeUpload(ctx context.Context, p storeParams) (*models.Image,
 func (s *Server) cloneImage(twin models.Image, p storeParams) (*models.Image, error) {
 	imageID := uuid.New()
 	if p.OnPlatform {
-		if err := quota.Consume(s.DB, p.User.ID, twin.SizeStored, "上传 "+p.OrigName+"（秒传）", &imageID); err != nil {
+		if err := quota.Consume(s.DB, p.User.ID, twin.SizeStored, fmt.Sprintf("上传 %s", p.OrigName), &imageID); err != nil {
 			if errors.Is(err, quota.ErrInsufficient) {
 				return nil, fmt.Errorf("%w：需要 %s，剩余 %s",
 					quota.ErrInsufficient, humanBytes(twin.SizeStored), humanBytes(quota.Available(p.User)))

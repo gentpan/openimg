@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"strings"
 	"time"
@@ -34,7 +35,7 @@ func (s *Server) handleDeleteAccount(c *gin.Context) {
 		return
 	}
 	if !strings.EqualFold(strings.TrimSpace(req.Confirm), u.Email) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "确认文本与账号邮箱不一致"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "account.delete.mismatch")})
 		return
 	}
 	// The last admin deleting themselves would lock everyone out of the
@@ -43,7 +44,7 @@ func (s *Server) handleDeleteAccount(c *gin.Context) {
 		var admins int64
 		s.DB.Model(&models.User{}).Where("role = ?", models.RoleAdmin).Count(&admins)
 		if admins <= 1 {
-			c.JSON(http.StatusForbidden, gin.H{"error": "这是最后一个管理员账号，不能删除"})
+			c.JSON(http.StatusForbidden, gin.H{"error": i18n.T(c, "account.delete.last_admin")})
 			return
 		}
 	}
@@ -79,7 +80,7 @@ func (s *Server) handleDeleteAccount(c *gin.Context) {
 		return tx.Delete(&models.User{}, "id = ?", u.ID).Error
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "删除失败：" + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T(c, "account.delete.failed", err.Error())})
 		return
 	}
 

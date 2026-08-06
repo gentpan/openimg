@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"strings"
 	"sync"
@@ -87,7 +88,7 @@ func (n *nativeCodes) redeem(code string) (uuid.UUID, bool) {
 func (s *Server) handleNativeCode(c *gin.Context) {
 	u := auth.MustUser(c)
 	if u.Status != models.UserActive {
-		c.JSON(http.StatusForbidden, gin.H{"error": "账号已被停用"})
+		c.JSON(http.StatusForbidden, gin.H{"error": i18n.T(c, "upload.suspended")})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": s.nativeCodes.issue(u.ID)})
@@ -104,22 +105,22 @@ type nativeExchangeReq struct {
 func (s *Server) handleNativeExchange(c *gin.Context) {
 	var req nativeExchangeReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "auth.bad_params")})
 		return
 	}
 	userID, ok := s.nativeCodes.redeem(strings.TrimSpace(req.Code))
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "登录码无效或已过期，请重新登录"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": i18n.T(c, "auth.native_code")})
 		return
 	}
 
 	var u models.User
 	if err := s.DB.First(&u, "id = ?", userID).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "账号不存在"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": i18n.T(c, "account.not_found")})
 		return
 	}
 	if u.Status != models.UserActive {
-		c.JSON(http.StatusForbidden, gin.H{"error": "账号已被停用"})
+		c.JSON(http.StatusForbidden, gin.H{"error": i18n.T(c, "upload.suspended")})
 		return
 	}
 

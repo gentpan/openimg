@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 
 	"github.com/gentpan/openimg/backend/internal/auth"
@@ -37,7 +38,7 @@ func (s *Server) handleUpdatePreferences(c *gin.Context) {
 	updates := map[string]any{}
 	if req.UploadMode != nil {
 		if !allowedModes[*req.UploadMode] {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "upload_mode 必须是 optimized 或 original"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "prefs.bad_upload_mode")})
 			return
 		}
 		updates["upload_mode"] = *req.UploadMode
@@ -46,14 +47,14 @@ func (s *Server) handleUpdatePreferences(c *gin.Context) {
 		// One derivative at most: any browser that decodes AVIF also decodes
 		// WebP, so keeping both is paying twice for the same fallback.
 		if !allowedVariants[*req.VariantFormat] {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "variant_format 必须是 none / webp / avif"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "prefs.bad_variant_format")})
 			return
 		}
 		updates["variant_format"] = *req.VariantFormat
 	}
 	if req.MaxImageWidth != nil {
 		if !allowedWidths[*req.MaxImageWidth] {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的宽度预设"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "prefs.bad_width_preset")})
 			return
 		}
 		updates["max_image_width"] = *req.MaxImageWidth

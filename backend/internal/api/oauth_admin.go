@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"strings"
 
@@ -76,7 +77,7 @@ type oauthSaveReq struct {
 func (s *Server) adminOAuthSave(c *gin.Context) {
 	if !s.Cipher.Enabled() {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "服务端未配置 STORAGE_MASTER_KEY，无法加密保存 OAuth 密钥；请改用环境变量配置",
+			"error": i18n.T(c, "admin.oauth.no_master_key"),
 		})
 		return
 	}
@@ -87,7 +88,7 @@ func (s *Server) adminOAuthSave(c *gin.Context) {
 	}
 	provider := strings.ToLower(strings.TrimSpace(req.Provider))
 	if provider != "google" && provider != "github" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "provider 必须是 google 或 github"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "admin.oauth.bad_provider")})
 		return
 	}
 
@@ -130,7 +131,7 @@ func (s *Server) adminOAuthSave(c *gin.Context) {
 			envSecret = s.OAuth.GithubClientSecret
 		}
 		if envSecret == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "填写 Client ID 时必须同时提供 Client Secret"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "admin.oauth.secret_needed")})
 			return
 		}
 	}

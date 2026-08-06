@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"log"
 	"net/http"
 	"strings"
@@ -31,26 +32,26 @@ func (s *Server) handleUploadAvatar(c *gin.Context) {
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请选择一张图片"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "avatar.choose_image")})
 		return
 	}
 	defer file.Close()
 	if header.Size > avatarMaxUpload {
-		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "头像不能超过 8 MB"})
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": i18n.T(c, "avatar.too_large")})
 		return
 	}
 
 	raw := make([]byte, 0, header.Size)
 	buf := bytes.NewBuffer(raw)
 	if _, err := buf.ReadFrom(http.MaxBytesReader(c.Writer, file, avatarMaxUpload)); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "读取失败：" + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "avatar.read_failed", err.Error())})
 		return
 	}
 
 	// Sniff the real format before handing anything to the decoder — the
 	// filename and the declared content type are both attacker-controlled.
 	if _, err := imageproc.Detect(buf.Bytes()); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "不是受支持的图片格式"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "avatar.bad_format")})
 		return
 	}
 
@@ -63,7 +64,7 @@ func (s *Server) handleUploadAvatar(c *gin.Context) {
 	ctx := c.Request.Context()
 	backend, profile, err := s.Storage.Platform(ctx)
 	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "存储不可用"})
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": i18n.T(c, "storage.unavailable_bare")})
 		return
 	}
 
@@ -73,7 +74,7 @@ func (s *Server) handleUploadAvatar(c *gin.Context) {
 	// not serving a picture the user just replaced.
 	key := "avatar/" + models.NewKeyID() + "." + out.Ext
 	if err := backend.Put(ctx, key, bytes.NewReader(out.Data), out.Size(), out.MIME); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "写入存储失败：" + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T(c, "storage.write_failed", err.Error())})
 		return
 	}
 

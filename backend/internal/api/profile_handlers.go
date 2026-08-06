@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"strings"
 	"time"
@@ -158,7 +159,7 @@ func (s *Server) handleCreateProfile(c *gin.Context) {
 	u := auth.MustUser(c)
 	g := s.groupFor(u)
 	if !g.AllowBYOS {
-		c.JSON(http.StatusForbidden, gin.H{"error": "当前用户组不允许绑定自有存储"})
+		c.JSON(http.StatusForbidden, gin.H{"error": i18n.T(c, "profile.byos_denied")})
 		return
 	}
 	if !s.Cipher.Enabled() {
@@ -192,7 +193,7 @@ func (s *Server) handleCreateProfile(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
 	if err := probeConfig(ctx, cfg); err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "连接测试失败：" + err.Error()})
+		c.JSON(http.StatusBadGateway, gin.H{"error": i18n.T(c, "profile.test_failed", err.Error())})
 		return
 	}
 	if req.TestOnly {
@@ -257,7 +258,7 @@ func (s *Server) handleUpdateProfile(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
 	if err := probeConfig(ctx, cfg); err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "连接测试失败：" + err.Error()})
+		c.JSON(http.StatusBadGateway, gin.H{"error": i18n.T(c, "profile.test_failed", err.Error())})
 		return
 	}
 	if req.TestOnly {
@@ -335,11 +336,11 @@ func (s *Server) handleSetDefaultProfile(c *gin.Context) {
 		return
 	}
 	if p.Status != models.ProfileActive {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "该存储当前不可用，请先测试连接"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "profile.not_ready")})
 		return
 	}
 	if p.BackupOfID != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "备份存储不能作为默认上传目标"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "profile.backup_as_default")})
 		return
 	}
 	var val any = p.ID
@@ -367,7 +368,7 @@ func (s *Server) handleSetBackupProfile(c *gin.Context) {
 		return
 	}
 	if p.IsPlatform() {
-		c.JSON(http.StatusForbidden, gin.H{"error": "平台存储的备份关系由管理员配置"})
+		c.JSON(http.StatusForbidden, gin.H{"error": i18n.T(c, "profile.platform_backup")})
 		return
 	}
 	var req setBackupReq
@@ -382,11 +383,11 @@ func (s *Server) handleSetBackupProfile(c *gin.Context) {
 	}
 	srcID, err := uuid.Parse(req.BackupOfID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "backup_of_id 无效"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "profile.bad_backup_of_id")})
 		return
 	}
 	if srcID == p.ID {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "不能把存储设为自己的备份"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "profile.backup_self")})
 		return
 	}
 	// The source must be visible to this user, and must not itself be a backup
@@ -394,18 +395,18 @@ func (s *Server) handleSetBackupProfile(c *gin.Context) {
 	var src models.StorageProfile
 	if err := s.DB.Where("id = ? AND (user_id = ? OR kind = ?)", srcID, u.ID, models.ProfilePlatform).
 		First(&src).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "源存储不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "profile.source_not_found")})
 		return
 	}
 	if src.BackupOfID != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "源存储本身已是备份，不能再作为备份源"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "profile.source_is_backup")})
 		return
 	}
 	var existing int64
 	s.DB.Model(&models.StorageProfile{}).
 		Where("backup_of_id = ? AND id <> ?", srcID, p.ID).Count(&existing)
 	if existing > 0 {
-		c.JSON(http.StatusConflict, gin.H{"error": "该存储已经有一个备份目标了"})
+		c.JSON(http.StatusConflict, gin.H{"error": i18n.T(c, "profile.backup_exists")})
 		return
 	}
 	if err := s.DB.Model(p).Update("backup_of_id", srcID).Error; err != nil {
@@ -424,7 +425,7 @@ func (s *Server) handleDeleteProfile(c *gin.Context) {
 		return
 	}
 	if p.IsPlatform() {
-		c.JSON(http.StatusForbidden, gin.H{"error": "平台存储不可删除"})
+		c.JSON(http.StatusForbidden, gin.H{"error": i18n.T(c, "profile.platform_locked")})
 		return
 	}
 	var n int64
@@ -453,7 +454,7 @@ func (s *Server) handleDeleteProfile(c *gin.Context) {
 func (s *Server) ownedProfile(c *gin.Context, u *models.User) (*models.StorageProfile, error) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "存储 id 无效"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "profile.bad_id")})
 		return nil, err
 	}
 	var p models.StorageProfile
@@ -464,7 +465,7 @@ func (s *Server) ownedProfile(c *gin.Context, u *models.User) (*models.StoragePr
 	// Admins may touch platform profiles; nobody may touch another user's.
 	if p.UserID == nil {
 		if !u.IsAdmin() {
-			c.JSON(http.StatusForbidden, gin.H{"error": "无权修改平台存储"})
+			c.JSON(http.StatusForbidden, gin.H{"error": i18n.T(c, "profile.platform_readonly")})
 			return nil, gorm.ErrRecordNotFound
 		}
 	} else if *p.UserID != u.ID {

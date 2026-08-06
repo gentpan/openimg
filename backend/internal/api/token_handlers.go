@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"strings"
 	"time"
@@ -72,7 +73,7 @@ func (s *Server) handleCreateToken(c *gin.Context) {
 	s.DB.Model(&models.APIToken{}).Where("user_id = ? AND revoked = ?", u.ID, false).Count(&count)
 	if count >= maxTokensPerUser {
 		c.JSON(http.StatusForbidden, gin.H{
-			"error": "有效 Token 数量已达上限，请先删除不用的", "max": maxTokensPerUser,
+			"error": i18n.T(c, "token.limit_reached"), "max": maxTokensPerUser,
 		})
 		return
 	}
@@ -107,7 +108,7 @@ func (s *Server) handleDeleteToken(c *gin.Context) {
 	u := auth.MustUser(c)
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "token id 无效"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "token.bad_id")})
 		return
 	}
 	res := s.DB.Where("id = ? AND user_id = ?", id, u.ID).Delete(&models.APIToken{})
@@ -116,7 +117,7 @@ func (s *Server) handleDeleteToken(c *gin.Context) {
 		return
 	}
 	if res.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Token 不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "token.not_found")})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})

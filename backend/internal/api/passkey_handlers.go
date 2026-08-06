@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"strings"
 	"time"
@@ -31,7 +32,7 @@ func (s *Server) handlePasskeyEnrollBegin(c *gin.Context) {
 	user := auth.MustUser(c)
 	var req enrollBeginReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "需要邮箱验证码"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "passkey.otp_required")})
 		return
 	}
 	if status, msg := s.consumeOTP(user.Email, req.Code, models.OTPPurposePasskey); msg != "" {
@@ -106,7 +107,7 @@ func (s *Server) handlePasskeyLoginBegin(c *gin.Context) {
 
 	var u models.User
 	if err := s.DB.Where("email = ?", emailAddr).First(&u).Error; err == gorm.ErrRecordNotFound {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "此账号未绑定 Passkey"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": i18n.T(c, "passkey.none_registered")})
 		return
 	} else if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -160,7 +161,7 @@ func (s *Server) handlePasskeyLoginFinish(c *gin.Context) {
 	} else {
 		var got models.User
 		if err := s.DB.Where("email = ?", emailAddr).First(&got).Error; err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "登录失败"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": i18n.T(c, "passkey.login_failed")})
 			return
 		}
 		if err := s.Passkey.FinishLogin(&got, req.Flow, parsed); err != nil {

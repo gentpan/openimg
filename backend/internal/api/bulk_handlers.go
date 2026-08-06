@@ -2,9 +2,10 @@ package api
 
 import (
 	"context"
+	"fmt"
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -45,13 +46,13 @@ func (s *Server) handleBulkDelete(c *gin.Context) {
 	u := auth.MustUser(c)
 	var req bulkDeleteReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "auth.bad_params")})
 		return
 	}
 
 	if req.All {
 		if len(req.Code) != 6 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "清空图库需要邮箱验证码"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "gallery.purge_otp_required")})
 			return
 		}
 		if status, msg := s.consumeOTP(u.Email, req.Code, models.OTPPurposePurge); msg != "" {
@@ -71,14 +72,14 @@ func (s *Server) handleBulkDelete(c *gin.Context) {
 		for _, raw := range req.IDs {
 			id, err := uuid.Parse(raw)
 			if err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "无效的图片 ID"})
+				c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "gallery.bad_image_id")})
 				return
 			}
 			ids = append(ids, id)
 		}
 		q = q.Where("id IN ?", ids)
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "没有选中任何图片"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "gallery.no_selection")})
 		return
 	}
 
@@ -118,7 +119,7 @@ func (s *Server) handleBulkDelete(c *gin.Context) {
 	}
 
 	if refund > 0 {
-		if err := quota.Release(s.DB, u.ID, refund, "批量删除 "+strconv.Itoa(len(ids))+" 张图片", nil); err != nil {
+		if err := quota.Release(s.DB, u.ID, refund, fmt.Sprintf("批量删除 %d 张图片", len(ids)), nil); err != nil {
 			// The rows are already gone; failing the response here would tell
 			// the user nothing happened when it did. Log for the reconcile
 			// sweep instead — it recomputes usage from the surviving rows.

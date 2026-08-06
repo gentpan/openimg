@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"strconv"
 	"time"
@@ -103,7 +104,7 @@ func (s *Server) handleCheckin(c *gin.Context) {
 			"granted": 0,
 			"streak":  res.Streak,
 			"capped":  true,
-			"message": "签到成功，但空间已达上限，本次未发放",
+			"message": i18n.T(c, "checkin.capped"),
 		})
 		return
 	}

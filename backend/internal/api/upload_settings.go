@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"sync"
 
@@ -55,16 +56,16 @@ func (s *Server) adminUploadSettings(c *gin.Context) {
 func (s *Server) adminSaveUploadSettings(c *gin.Context) {
 	var req models.UploadSettings
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "auth.bad_params")})
 		return
 	}
 	body, err := json.Marshal(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "序列化失败"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T(c, "prefs.serialize_failed")})
 		return
 	}
 	if err := s.DB.Save(&models.SiteSetting{Key: models.SiteSettingUpload, Value: string(body)}).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "保存失败"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T(c, "prefs.save_failed")})
 		return
 	}
 

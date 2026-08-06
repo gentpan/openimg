@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"io"
 	"net/http"
 	"time"
@@ -46,7 +48,7 @@ func (s *Server) handleMakeVariant(c *gin.Context) {
 	}
 	name, ok := allowedThumbWidths[req.Width]
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的尺寸"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "variant.size_unsupported")})
 		return
 	}
 
@@ -56,7 +58,7 @@ func (s *Server) handleMakeVariant(c *gin.Context) {
 		q = q.Where("user_id = ?", u.ID)
 	}
 	if err := q.First(&img).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "图片不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "image.not_found")})
 		return
 	}
 
@@ -65,7 +67,7 @@ func (s *Server) handleMakeVariant(c *gin.Context) {
 
 	backend, profile, err := s.Storage.ForStored(ctx, img.ProfileID)
 	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "存储不可用：" + err.Error()})
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": i18n.T(c, "storage.unavailable", err.Error())})
 		return
 	}
 
@@ -82,7 +84,7 @@ func (s *Server) handleMakeVariant(c *gin.Context) {
 
 	rc, err := backend.Get(ctx, img.ObjectKey)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "读取原图失败：" + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T(c, "variant.read_failed", err.Error())})
 		return
 	}
 	raw, err := io.ReadAll(rc)
@@ -98,17 +100,17 @@ func (s *Server) handleMakeVariant(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "生成失败：" + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T(c, "variant.generate_failed", err.Error())})
 		return
 	}
 
 	onPlatform := profile == nil || profile.IsPlatform()
 	if onPlatform {
 		id := img.ID
-		if err := quota.Consume(s.DB, img.UserID, out.Size(), "生成 "+name+" 尺寸", &id); err != nil {
+		if err := quota.Consume(s.DB, img.UserID, out.Size(), fmt.Sprintf("生成 %s 尺寸", name), &id); err != nil {
 			if errors.Is(err, quota.ErrInsufficient) {
 				c.JSON(http.StatusInsufficientStorage, gin.H{
-					"error": "空间不足，无法生成该尺寸（需要 " + humanBytes(out.Size()) + "）",
+					"error": i18n.T(c, "variant.no_space", humanBytes(out.Size())),
 				})
 				return
 			}
@@ -122,7 +124,7 @@ func (s *Server) handleMakeVariant(c *gin.Context) {
 			id := img.ID
 			_ = quota.Release(s.DB, img.UserID, out.Size(), "生成尺寸失败回退", &id)
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "写入存储失败：" + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T(c, "storage.write_failed", err.Error())})
 		return
 	}
 

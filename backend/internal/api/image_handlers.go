@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -19,13 +20,13 @@ import (
 // stored, so changing a CDN domain re-points every historical image.
 type imageOut struct {
 	models.Image
-	URL       string            `json:"url"`
-	Variants  map[string]string `json:"variant_urls"`
-	Thumb     string            `json:"thumb_url"`
-	ShortURL  string            `json:"short_url,omitempty"`
-	Markdown  string            `json:"markdown"`
-	HTML      string            `json:"html"`
-	BBCode    string            `json:"bbcode"`
+	URL      string            `json:"url"`
+	Variants map[string]string `json:"variant_urls"`
+	Thumb    string            `json:"thumb_url"`
+	ShortURL string            `json:"short_url,omitempty"`
+	Markdown string            `json:"markdown"`
+	HTML     string            `json:"html"`
+	BBCode   string            `json:"bbcode"`
 }
 
 // decorate resolves each image's profile once and builds its public URLs.
@@ -191,7 +192,7 @@ func (s *Server) handleDeleteImage(c *gin.Context) {
 	var p models.StorageProfile
 	if err := s.DB.First(&p, "id = ?", img.ProfileID).Error; err == nil && p.IsPlatform() {
 		id := img.ID
-		if err := quota.Release(s.DB, img.UserID, img.SizeStored, "删除图片 "+img.OrigName, &id); err != nil {
+		if err := quota.Release(s.DB, img.UserID, img.SizeStored, fmt.Sprintf("删除图片 %s", img.OrigName), &id); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

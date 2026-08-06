@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"strings"
 
@@ -29,7 +30,7 @@ type resetRequestReq struct {
 func (s *Server) handleResetRequest(c *gin.Context) {
 	var req resetRequestReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请输入有效的邮箱"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "auth.email_invalid")})
 		return
 	}
 	emailAddr := strings.ToLower(strings.TrimSpace(req.Email))
@@ -85,17 +86,17 @@ func (s *Server) handleResetConfirm(c *gin.Context) {
 
 	var u models.User
 	if err := s.DB.Where("email = ?", emailAddr).First(&u).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "验证码无效或已过期"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": i18n.T(c, "otp.invalid_or_expired")})
 		return
 	}
 	if u.Status != models.UserActive {
-		c.JSON(http.StatusForbidden, gin.H{"error": "账号已被停用"})
+		c.JSON(http.StatusForbidden, gin.H{"error": i18n.T(c, "upload.suspended")})
 		return
 	}
 
 	hash, err := auth.HashPassword(req.NewPassword)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "密码处理失败"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T(c, "auth.password_hash")})
 		return
 	}
 	updates := map[string]any{"password_hash": hash}

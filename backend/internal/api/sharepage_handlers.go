@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"strings"
 	"time"
@@ -77,7 +78,7 @@ func (s *Server) findByShortCode(code string) (*models.Image, error) {
 func (s *Server) handleShareInfo(c *gin.Context) {
 	img, err := s.findByShortCode(c.Param("code"))
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "链接不存在或已失效"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "share.link_not_found")})
 		return
 	}
 	if err != nil {
@@ -85,7 +86,7 @@ func (s *Server) handleShareInfo(c *gin.Context) {
 		return
 	}
 	if img.Status == models.ImageBlocked {
-		c.JSON(http.StatusGone, gin.H{"error": "该图片已被屏蔽"})
+		c.JSON(http.StatusGone, gin.H{"error": i18n.T(c, "share.image_blocked")})
 		return
 	}
 	c.JSON(http.StatusOK, s.buildSharePayload(c, img))
@@ -173,16 +174,16 @@ type reactReq struct {
 func (s *Server) handleReact(c *gin.Context) {
 	var req reactReq
 	if err := c.ShouldBindJSON(&req); err != nil || !models.ValidReactionKind(req.Kind) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的表情"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "share.bad_reaction")})
 		return
 	}
 	img, err := s.findByShortCode(c.Param("code"))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "链接不存在或已失效"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "share.link_not_found")})
 		return
 	}
 	if img.Status == models.ImageBlocked {
-		c.JSON(http.StatusGone, gin.H{"error": "该图片已被屏蔽"})
+		c.JSON(http.StatusGone, gin.H{"error": i18n.T(c, "share.image_blocked")})
 		return
 	}
 
@@ -223,12 +224,12 @@ func (s *Server) handleShareReport(c *gin.Context) {
 	// demanding four characters just teaches people to type "aaaa".
 	reason := strings.TrimSpace(req.Reason)
 	if !models.ValidReportCategory(strings.TrimSpace(req.Category)) && len([]rune(reason)) < 4 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请选择举报类型，或填写说明"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "report.reason_required")})
 		return
 	}
 	img, err := s.findByShortCode(c.Param("code"))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "链接不存在或已失效"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "share.link_not_found")})
 		return
 	}
 
@@ -253,5 +254,5 @@ func (s *Server) handleShareReport(c *gin.Context) {
 		return
 	}
 	s.notifyAdminsOfReport(&rep, img)
-	c.JSON(http.StatusOK, gin.H{"ok": true, "message": "举报已收到，我们会尽快处理"})
+	c.JSON(http.StatusOK, gin.H{"ok": true, "message": i18n.T(c, "report.received")})
 }

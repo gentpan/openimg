@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"strconv"
 	"strings"
@@ -32,12 +33,12 @@ func (s *Server) handleReport(c *gin.Context) {
 	}
 	imageID, err := uuid.Parse(req.ImageID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "image_id 无效"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "report.bad_image_id")})
 		return
 	}
 	var img models.Image
 	if err := s.DB.First(&img, "id = ?", imageID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "图片不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "image.not_found")})
 		return
 	}
 
@@ -62,7 +63,7 @@ func (s *Server) handleReport(c *gin.Context) {
 		return
 	}
 	s.notifyAdminsOfReport(&rep, &img)
-	c.JSON(http.StatusCreated, gin.H{"ok": true, "message": "举报已收到，我们会尽快处理"})
+	c.JSON(http.StatusCreated, gin.H{"ok": true, "message": i18n.T(c, "report.received")})
 }
 
 // GET /admin/api/reports — the moderation queue.
@@ -128,7 +129,7 @@ func (s *Server) adminResolveReport(c *gin.Context) {
 	admin := auth.MustUser(c)
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "report id 无效"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "admin.report.bad_id")})
 		return
 	}
 	var req resolveReportReq
@@ -138,12 +139,12 @@ func (s *Server) adminResolveReport(c *gin.Context) {
 	}
 	var rep models.Report
 	if err := s.DB.First(&rep, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "举报不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "admin.report.not_found")})
 		return
 	}
 	var img models.Image
 	if err := s.DB.First(&img, "id = ?", rep.ImageID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "图片不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "image.not_found")})
 		return
 	}
 
@@ -159,7 +160,7 @@ func (s *Server) adminResolveReport(c *gin.Context) {
 				Update("status", models.UserSuspended)
 		}
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "action 必须是 dismiss / block / block_and_ban"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "admin.report.bad_action")})
 		return
 	}
 
@@ -179,12 +180,12 @@ func (s *Server) adminResolveReport(c *gin.Context) {
 func (s *Server) adminBlockImage(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "image id 无效"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "admin.image.bad_id")})
 		return
 	}
 	var img models.Image
 	if err := s.DB.First(&img, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "图片不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "image.not_found")})
 		return
 	}
 	next := models.ImageBlocked
@@ -208,7 +209,7 @@ type banUserReq struct {
 func (s *Server) adminBanUser(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "user id 无效"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "admin.user.bad_id")})
 		return
 	}
 	var req banUserReq
@@ -216,11 +217,11 @@ func (s *Server) adminBanUser(c *gin.Context) {
 
 	var target models.User
 	if err := s.DB.First(&target, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "admin.user.not_found")})
 		return
 	}
 	if target.IsAdmin() {
-		c.JSON(http.StatusForbidden, gin.H{"error": "不能封禁管理员账号"})
+		c.JSON(http.StatusForbidden, gin.H{"error": i18n.T(c, "admin.user.is_admin")})
 		return
 	}
 
@@ -248,7 +249,7 @@ func (s *Server) adminBanUser(c *gin.Context) {
 		// Reset their occupancy rather than issuing one refund per image —
 		// the ledger entry should read as the single administrative act it is.
 		if _, err := quota.Reconcile(s.DB, target.ID); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "对账失败：" + err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": i18n.T(c, "admin.reconcile_failed", err.Error())})
 			return
 		}
 	}

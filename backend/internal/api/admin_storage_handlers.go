@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"strings"
 
@@ -88,7 +89,7 @@ type platformStorageReq struct {
 func (s *Server) adminUpdatePlatformStorage(c *gin.Context) {
 	var req platformStorageReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "auth.bad_params")})
 		return
 	}
 	base := strings.TrimRight(strings.TrimSpace(req.PublicBaseURL), "/")
@@ -100,14 +101,14 @@ func (s *Server) adminUpdatePlatformStorage(c *gin.Context) {
 	var p models.StorageProfile
 	if err := s.DB.Where("kind = ? AND backup_of_id IS NULL", models.ProfilePlatform).
 		Order("is_default DESC, created_at ASC").First(&p).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "尚未配置平台存储"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "admin.storage.missing")})
 		return
 	}
 	updates := map[string]any{"public_base_url": base}
 	thumb := strings.TrimRight(strings.TrimSpace(req.ThumbBaseURL), "/")
 	if thumb != "" {
 		if err := storage.ValidatePublicBaseURL(thumb); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "缩略图域名：" + err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "admin.storage.thumb_domain", err.Error())})
 			return
 		}
 	}

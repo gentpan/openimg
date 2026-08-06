@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"io"
 	"log"
 	"net/http"
@@ -425,7 +426,7 @@ func (s *Server) handleOAuthUnlink(provider string) gin.HandlerFunc {
 			methods++
 		}
 		if methods == 0 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "无法解绑：这是你唯一的登录方式，请先设置密码或绑定其他账号"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "oauth.unlink_last")})
 			return
 		}
 		if err := s.DB.Model(user).Update(col, "").Error; err != nil {

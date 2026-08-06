@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"log"
 	"net/http"
 	"strings"
@@ -97,7 +98,7 @@ func (s *Server) handleRegister(c *gin.Context) {
 
 	var existing models.User
 	if err := s.DB.Where("email = ?", email).First(&existing).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "该邮箱已注册，请直接登录"})
+		c.JSON(http.StatusConflict, gin.H{"error": i18n.T(c, "auth.email_taken")})
 		return
 	}
 
@@ -216,14 +217,14 @@ type registerCodeReq struct {
 func (s *Server) handleRegisterCode(c *gin.Context) {
 	var req registerCodeReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请输入有效的邮箱"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "auth.email_invalid")})
 		return
 	}
 	email := strings.ToLower(strings.TrimSpace(req.Email))
 
 	var existing models.User
 	if err := s.DB.Where("email = ?", email).First(&existing).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "该邮箱已注册，请直接登录"})
+		c.JSON(http.StatusConflict, gin.H{"error": i18n.T(c, "auth.email_taken")})
 		return
 	}
 	if status, msg := s.issueOTP(c, email, models.OTPPurposeRegister); msg != "" {

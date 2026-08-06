@@ -5,6 +5,7 @@ import Logo from "../Logo";
 import { formatBytes, quotaApi } from "../api";
 import { RingSpinner } from "./Spinner";
 import { useBrand } from "../BrandContext";
+import { useLang } from "../LangContext";
 import { useToast } from "../ToastContext";
 import Avatar from "./Avatar";
 
@@ -16,6 +17,7 @@ import Avatar from "./Avatar";
 export default function Nav() {
   const { user, logout, refresh } = useAuth();
   const { brand, setBrand } = useBrand();
+  const { lang, setLang } = useLang();
   const toast = useToast();
   const { pathname } = useLocation();
   const [busy, setBusy] = useState(false);
@@ -120,6 +122,17 @@ export default function Nav() {
                 {/* The swatch is the brand colour itself — a paint-can icon
                     would say "theme" without saying which one is on. */}
                 <span className="w-3 h-3 rounded-full bg-brand-600 ring-1 ring-white/25" />
+              </button>
+              <button
+                onClick={() => setLang(lang === "zh" ? "en" : "zh")}
+                title={lang === "zh" ? "Switch to English" : "切换到中文"}
+                aria-label={lang === "zh" ? "Switch to English" : "切换到中文"}
+                className="h-6 rounded-full px-1.5 text-[10px] font-medium text-neutral-500 hover:text-brand-300 hover:bg-neutral-900 transition"
+              >
+                {/* The label is the language you get, not the one you are in —
+                    a switch that shows its current state reads as a status
+                    light and gets ignored. */}
+                {lang === "zh" ? "EN" : "中"}
               </button>
               <Link
                 to="/settings"

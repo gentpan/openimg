@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { BrandProvider } from "./BrandContext";
+import { LangProvider } from "./LangContext";
 import { ToastProvider } from "./ToastContext";
 import { UploadProvider } from "./UploadContext";
 import UploadPanel from "./components/UploadPanel";
@@ -35,6 +36,7 @@ export default function App() {
   }, []);
 
   return (
+    <LangProvider>
     <BrandProvider>
       <ToastProvider>
       <AuthProvider>
@@ -73,6 +75,7 @@ export default function App() {
       </AuthProvider>
       </ToastProvider>
     </BrandProvider>
+    </LangProvider>
   );
 }
 

@@ -17,6 +17,16 @@
       // inline because any external file would already be too late.
       (function () {
         try {
+          // Language, before first paint. Not for styling — for the lang
+          // attribute, which decides how the browser breaks CJK lines and
+          // whether it offers to translate the page. Getting it after mount
+          // means the first screen is laid out under the wrong rules.
+          var l = localStorage.getItem("openimg-lang");
+          if (l !== "zh" && l !== "en") {
+            l = /^zh\b/i.test(navigator.language || "") ? "zh" : "en";
+          }
+          document.documentElement.lang = l === "zh" ? "zh-CN" : "en";
+
           if (localStorage.getItem("openimg-brand") === "violet") {
             document.documentElement.setAttribute("data-brand", "violet");
             // The icon links too. They are files, not variables, so the only

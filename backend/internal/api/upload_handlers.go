@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/gentpan/openimg/backend/internal/auth"
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"github.com/gentpan/openimg/backend/internal/imageproc"
 	"github.com/gentpan/openimg/backend/internal/models"
 	"github.com/gentpan/openimg/backend/internal/quota"
@@ -42,12 +43,12 @@ func (s *Server) handleUpload(c *gin.Context) {
 
 	if s.RequireEmailVerified && !u.EmailVerified && !u.IsAdmin() {
 		c.JSON(http.StatusForbidden, gin.H{
-			"error": "请先验证邮箱后再上传", "code": "email_unverified",
+			"error": i18n.T(c, "upload.email_unverified"), "code": "email_unverified",
 		})
 		return
 	}
 	if u.Status != models.UserActive {
-		c.JSON(http.StatusForbidden, gin.H{"error": "账号已被停用"})
+		c.JSON(http.StatusForbidden, gin.H{"error": i18n.T(c, "upload.suspended")})
 		return
 	}
 
@@ -59,7 +60,7 @@ func (s *Server) handleUpload(c *gin.Context) {
 		Count(&todayCount)
 	if g.DailyUploadCount > 0 && todayCount >= int64(g.DailyUploadCount) {
 		c.JSON(http.StatusTooManyRequests, gin.H{
-			"error": "今日上传数量已达上限",
+			"error": i18n.T(c, "upload.daily_limit"),
 			"used":  todayCount, "limit": g.DailyUploadCount,
 		})
 		return
@@ -78,16 +79,16 @@ func (s *Server) handleUpload(c *gin.Context) {
 	if err != nil {
 		if strings.Contains(err.Error(), "request body too large") {
 			c.JSON(http.StatusRequestEntityTooLarge, gin.H{
-				"error": fmt.Sprintf("文件超过大小上限 %.1f MB", float64(maxSize)/(1<<20)),
+				"error": i18n.T(c, "upload.too_large", float64(maxSize)/(1<<20)),
 			})
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": "缺少上传文件字段 file"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "upload.missing_field")})
 		return
 	}
 	if fh.Size > maxSize {
 		c.JSON(http.StatusRequestEntityTooLarge, gin.H{
-			"error": fmt.Sprintf("文件超过大小上限 %.1f MB", float64(maxSize)/(1<<20)),
+			"error": i18n.T(c, "upload.too_large", float64(maxSize)/(1<<20)),
 		})
 		return
 	}

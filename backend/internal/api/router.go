@@ -11,6 +11,7 @@ import (
 	"github.com/gentpan/openimg/backend/internal/auth"
 	"github.com/gentpan/openimg/backend/internal/crypto"
 	"github.com/gentpan/openimg/backend/internal/email"
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"github.com/gentpan/openimg/backend/internal/models"
 	"github.com/gentpan/openimg/backend/internal/passkey"
 	"github.com/gentpan/openimg/backend/internal/scheduler"
@@ -76,8 +77,11 @@ func (s *Server) Router() *gin.Engine {
 	corsCfg := cors.DefaultConfig()
 	corsCfg.AllowAllOrigins = true
 	corsCfg.AllowCredentials = false
-	corsCfg.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
+	corsCfg.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Accept-Language", "Authorization"}
 	r.Use(cors.New(corsCfg))
+	// Records the caller's language for every handler. Before the routes so
+	// even a 404 answers in the right language.
+	r.Use(i18n.Middleware())
 
 	r.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"ok": true})

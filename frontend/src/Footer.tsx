@@ -19,17 +19,6 @@ export default function Footer() {
        64px gap as a 1440px one — on a narrow column that reads as the page
        having ended. */
     <footer className="mt-10 sm:mt-16 border-t border-neutral-900 bg-neutral-950/60">
-      {stats && (
-        <div className="border-b border-neutral-900/70">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Stat icon="fa-images" label="托管图片" value={stats.total_images.toLocaleString()} />
-            <Stat icon="fa-users" label="注册用户" value={stats.total_users.toLocaleString()} />
-            <Stat icon="fa-database" label="存储用量" value={formatBytes(stats.stored_bytes, 0)} />
-            <Stat icon="fa-arrow-trend-up" label="今日上传" value={stats.images_today.toLocaleString()} />
-          </div>
-        </div>
-      )}
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 grid grid-cols-2 sm:grid-cols-3 items-center text-xs text-neutral-500">
         <div className="text-left">
           © {new Date().getFullYear()}{" "}
@@ -41,8 +30,17 @@ export default function Footer() {
           </Link>
           <span className="ml-1.5 text-neutral-600">All Rights Reserved.</span>
         </div>
-        <div className="hidden sm:block text-center text-[11px] text-faint">
-          永久免费 · 无广告 · 不出售数据
+        {/* The middle column, which used to hold only the tagline.
+            The stats moved here from a full-width band above, and had to
+            change shape to fit: four icon-and-label cards need about 900px,
+            this column is a third of max-w-7xl — roughly 410. As a run of
+            inline figures they take ~260 and read as one sentence about the
+            service rather than four separate widgets.
+            The tagline keeps its meaning underneath, one step quieter, so the
+            column reads numbers-then-promise instead of losing one of them. */}
+        <div className="hidden sm:block text-center">
+          {stats && <StatLine stats={stats} />}
+          <div className="text-[11px] text-faint">永久免费 · 无广告 · 不出售数据</div>
         </div>
         <div className="flex items-center justify-end gap-4">
           {SOCIALS.map((s) => (
@@ -63,6 +61,16 @@ export default function Footer() {
             </a>
           ))}
         </div>
+
+        {/* Below sm the middle column is hidden, so the figures would vanish
+            with it. Given their own centred row instead — the bottom line is
+            already two columns there and a third would not fit. */}
+        {stats && (
+          <div className="col-span-2 mt-4 border-t border-neutral-900/70 pt-4 text-center sm:hidden">
+            <StatLine stats={stats} />
+            <div className="text-[11px] text-faint">永久免费 · 无广告 · 不出售数据</div>
+          </div>
+        )}
       </div>
     </footer>
   );
@@ -81,16 +89,29 @@ const SOCIALS: { label: string; href: string; icon: React.ReactNode; hover?: str
   },
 ];
 
-function Stat({ icon, label, value }: { icon: string; label: string; value: string }) {
+/**
+ * The four public figures as one line.
+ *
+ * `tabular-nums` on the values only: the labels are Chinese and unaffected,
+ * while the numbers tick up every 30 seconds and would otherwise reflow the
+ * whole line each time a digit changed width.
+ */
+function StatLine({ stats }: { stats: PublicStats }) {
+  const items: [string, string][] = [
+    [stats.total_images.toLocaleString(), "张图片"],
+    [stats.total_users.toLocaleString(), "位用户"],
+    [formatBytes(stats.stored_bytes, 0), "已存储"],
+    [stats.images_today.toLocaleString(), "今日上传"],
+  ];
   return (
-    <div className="flex items-center gap-2.5">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-900 text-brand-400">
-        <i className={`fa-solid ${icon} text-[11px]`} />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-[10px] text-neutral-600">{label}</span>
-        <span className="block text-sm font-brand text-neutral-100 tabular-nums leading-tight">{value}</span>
-      </span>
+    <div className="mb-1 flex flex-wrap items-baseline justify-center gap-x-2.5 gap-y-1 text-[11px]">
+      {items.map(([value, label], i) => (
+        <span key={label} className="inline-flex items-baseline gap-1">
+          {i > 0 && <span className="mr-1.5 text-neutral-700">·</span>}
+          <span className="font-brand tabular-nums text-neutral-300">{value}</span>
+          <span className="text-neutral-600">{label}</span>
+        </span>
+      ))}
     </div>
   );
 }

@@ -39,3 +39,6 @@ server-backup-*/
 # Logs
 *.log
 logs/
+
+# Local secrets — never committed
+/deploy/.env.local

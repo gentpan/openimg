@@ -21,6 +21,11 @@ REMOTE=/opt/openimg
 SITE=https://openimg.io
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Local credentials, if present. Untracked and 0600 — see .gitignore. Sourced
+# rather than exported by hand so a deploy never silently skips cache purging
+# because someone forgot to set the variables in this particular shell.
+[[ -f "$ROOT/deploy/.env.local" ]] && source "$ROOT/deploy/.env.local"
+
 ssh_() { ssh -i "$KEY" -o BatchMode=yes "$HOST" "$@"; }
 say()  { printf "\n\033[1m%s\033[0m\n" "$*"; }
 ok()   { printf "  \033[32m✓\033[0m %s\n" "$*"; }
@@ -86,17 +91,40 @@ ssh_ 'systemctl is-active openimg' | grep -q active || {
 ok "编译并重启完成"
 
 say "5/6  清 CDN 缓存"
-if [[ -n "${CF_API_KEY:-}" && -n "${CF_API_EMAIL:-}" ]]; then
+if [[ -n "${CF_API_KEY:-}" ]]; then
+    # Two credential shapes. A Global API Key needs the account email alongside
+    # it; a scoped API Token is a bearer credential and needs nothing else.
+    # Preferring the token means switching to one later is a matter of clearing
+    # CF_API_EMAIL, with no edit here.
+    if [[ -n "${CF_API_EMAIL:-}" ]]; then
+        CF_AUTH=(-H "X-Auth-Email: $CF_API_EMAIL" -H "X-Auth-Key: $CF_API_KEY")
+    else
+        CF_AUTH=(-H "Authorization: Bearer $CF_API_KEY")
+    fi
+
     ZONE=$(curl -s "https://api.cloudflare.com/client/v4/zones?name=openimg.io" \
-        -H "X-Auth-Email: $CF_API_EMAIL" -H "X-Auth-Key: $CF_API_KEY" \
-        | python3 -c "import sys,json;print(json.load(sys.stdin)['result'][0]['id'])")
-    curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE/purge_cache" \
-        -H "X-Auth-Email: $CF_API_EMAIL" -H "X-Auth-Key: $CF_API_KEY" \
-        -H "Content-Type: application/json" --data '{"purge_everything":true}' >/dev/null
-    ok "已清空 openimg.io 缓存"
-    sleep 5
+        "${CF_AUTH[@]}" \
+        | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['result'][0]['id'] if d.get('success') and d.get('result') else '')")
+
+    if [[ -z "$ZONE" ]]; then
+        # Loud, not fatal: the deploy itself succeeded, and a failed purge is a
+        # stale-asset problem rather than a broken site. Silent would be worse —
+        # that is how the favicons stayed violet for a day.
+        printf "  \033[33m!\033[0m 取不到 zone id，缓存未清（凭据无效或权限不足）\n"
+    else
+        RESP=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE/purge_cache" \
+            "${CF_AUTH[@]}" \
+            -H "Content-Type: application/json" --data '{"purge_everything":true}')
+        if python3 -c "import sys,json;sys.exit(0 if json.load(sys.stdin).get('success') else 1)" <<<"$RESP"; then
+            ok "已清空 openimg.io 缓存"
+            sleep 5
+        else
+            printf "  \033[33m!\033[0m 清缓存失败：%s\n" \
+                "$(python3 -c "import sys,json;d=json.load(sys.stdin);print((d.get('errors') or [{}])[0].get('message','未知'))" <<<"$RESP")"
+        fi
+    fi
 else
-    printf "  跳过：未设置 CF_API_KEY / CF_API_EMAIL\n"
+    printf "  跳过：未设置 CF_API_KEY（见 deploy/.env.local）\n"
     printf "  旧资源可能仍被 CDN 缓存，浏览器请强制刷新\n"
 fi
 

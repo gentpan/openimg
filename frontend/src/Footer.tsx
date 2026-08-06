@@ -54,11 +54,16 @@ export default function Footer() {
               // The box stays 5×5 and only the glyph scales, so growing one
               // icon never nudges its neighbours along the row.
               //
-              // 500ms and ease-out, not the 200ms it started at: 1.5× is a
-              // large jump for a 20px mark, and covering it that fast reads as
-              // a pop rather than a response. ease-out spends most of the time
-              // near the end, so it settles instead of arriving.
-              className={`flex h-5 w-5 items-center justify-center text-neutral-500 transition-[color,transform] duration-500 ease-out hover:scale-150 ${
+              // `scale`, not `transform`. Tailwind v4 compiles scale-150 to the
+              // standalone `scale` property — transition-[color,transform]
+              // therefore listed a property nothing was animating, and the grow
+              // was an instant jump. It read as a stutter because there was no
+              // animation at all, and raising the duration changed nothing.
+              //
+              // 500ms with ease-out: 1.5× is a large step for a 20px mark, and
+              // ease-out spends most of its time near the end, so it settles
+              // rather than arrives.
+              className={`flex h-5 w-5 items-center justify-center text-neutral-500 transition-[color,scale] duration-500 ease-out hover:scale-150 ${
                 s.hover ?? "hover:text-brand-300"
               }`}
             >

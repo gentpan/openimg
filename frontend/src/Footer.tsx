@@ -30,17 +30,14 @@ export default function Footer() {
           </Link>
           <span className="ml-1.5 text-neutral-600">All Rights Reserved.</span>
         </div>
-        {/* The middle column, which used to hold only the tagline.
-            The stats moved here from a full-width band above, and had to
-            change shape to fit: four icon-and-label cards need about 900px,
-            this column is a third of max-w-7xl — roughly 410. As a run of
-            inline figures they take ~260 and read as one sentence about the
-            service rather than four separate widgets.
-            The tagline keeps its meaning underneath, one step quieter, so the
-            column reads numbers-then-promise instead of losing one of them. */}
+        {/* The middle column. It used to carry a tagline; the stats moved here
+            from a full-width band above and had to change shape to fit — four
+            icon-and-label cards need about 900px, this column is a third of
+            max-w-7xl, roughly 410. As a run of inline figures they take ~260
+            and read as one sentence about the service rather than four
+            separate widgets. */}
         <div className="hidden sm:block text-center">
           {stats && <StatLine stats={stats} />}
-          <div className="text-[11px] text-faint">永久免费 · 无广告 · 不出售数据</div>
         </div>
         <div className="flex items-center justify-end gap-4">
           {SOCIALS.map((s) => (
@@ -68,7 +65,6 @@ export default function Footer() {
         {stats && (
           <div className="col-span-2 mt-4 border-t border-neutral-900/70 pt-4 text-center sm:hidden">
             <StatLine stats={stats} />
-            <div className="text-[11px] text-faint">永久免费 · 无广告 · 不出售数据</div>
           </div>
         )}
       </div>
@@ -104,7 +100,7 @@ function StatLine({ stats }: { stats: PublicStats }) {
     [stats.images_today.toLocaleString(), "今日上传"],
   ];
   return (
-    <div className="mb-1 flex flex-wrap items-baseline justify-center gap-x-2.5 gap-y-1 text-[11px]">
+    <div className="flex flex-wrap items-baseline justify-center gap-x-2.5 gap-y-1 text-[11px]">
       {items.map(([value, label], i) => (
         <span key={label} className="inline-flex items-baseline gap-1">
           {i > 0 && <span className="mr-1.5 text-neutral-700">·</span>}

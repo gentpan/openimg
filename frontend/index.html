@@ -19,6 +19,14 @@
         try {
           if (localStorage.getItem("openimg-brand") === "violet") {
             document.documentElement.setAttribute("data-brand", "violet");
+            // The icon links too. They are files, not variables, so the only
+            // lever is the href — and it has to move before the browser has
+            // fetched one, or the tab flashes the other brand.
+            document
+              .querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"]')
+              .forEach(function (l) {
+                l.href = l.getAttribute("href").replace(/(favicon|apple-touch-icon)/, "$1-violet");
+              });
           }
         } catch (e) {}
       })();

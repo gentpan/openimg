@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-type Direction = "up" | "down" | "left" | "right" | "scale" | "fade";
+// Only the two that are used. The other four shipped as options nothing
+// ever passed; HIDDEN is a Record<Direction, string> so the union and the
+// map have to be trimmed in the same edit or tsc breaks.
+type Direction = "up" | "scale";
 
 const HIDDEN: Record<Direction, string> = {
   up: "opacity-0 translate-y-6",
-  down: "opacity-0 -translate-y-6",
-  left: "opacity-0 translate-x-6",
-  right: "opacity-0 -translate-x-6",
   scale: "opacity-0 scale-95",
-  fade: "opacity-0",
 };
 
 const SHOWN = "opacity-100 translate-y-0 translate-x-0 scale-100";
@@ -27,13 +26,22 @@ const SHOWN = "opacity-100 translate-y-0 translate-x-0 scale-100";
  * `once` defaults to true: re-animating on every scroll-by is distracting on
  * a page people scroll up and down.
  */
+/// How much of the element has to be on screen before it fades in, and the
+/// stagger ceiling for a group.
+///
+/// Both were props with defaults, and in ten call sites nobody ever set either
+/// one. `once` was a prop too, always true, which left `else if (!once)` as a
+/// branch that could not run. Constants say the same thing without offering a
+/// knob that has never been turned — git still has the parameterised version if
+/// one is ever needed.
+const THRESHOLD = 0.15;
+const MAX_STAGGER = 400;
+
 export default function Reveal({
   children,
   direction = "up",
   delay = 0,
   duration = 600,
-  threshold = 0.15,
-  once = true,
   className = "",
 }: {
   children: ReactNode;
@@ -41,8 +49,6 @@ export default function Reveal({
   /** Stagger, in ms. */
   delay?: number;
   duration?: number;
-  threshold?: number;
-  once?: boolean;
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -64,12 +70,10 @@ export default function Reveal({
       ([entry]) => {
         if (entry.isIntersecting) {
           setVisible(true);
-          if (once) io.disconnect();
-        } else if (!once) {
-          setVisible(false);
+          io.disconnect();
         }
       },
-      { threshold, rootMargin: "0px 0px -40px 0px" },
+      { threshold: THRESHOLD, rootMargin: "0px 0px -40px 0px" },
     );
     io.observe(el);
 
@@ -90,7 +94,7 @@ export default function Reveal({
       clearTimeout(failsafe);
       io.disconnect();
     };
-  }, [threshold, once]);
+  }, []);
 
   return (
     <div
@@ -117,20 +121,18 @@ export default function Reveal({
 export function RevealGroup({
   children,
   step = 80,
-  maxDelay = 400,
   direction = "up",
   className = "",
 }: {
   children: ReactNode[];
   step?: number;
-  maxDelay?: number;
   direction?: Direction;
   className?: string;
 }) {
   return (
     <>
       {children.map((child, i) => (
-        <Reveal key={i} direction={direction} delay={Math.min(i * step, maxDelay)} className={className}>
+        <Reveal key={i} direction={direction} delay={Math.min(i * step, MAX_STAGGER)} className={className}>
           {child}
         </Reveal>
       ))}

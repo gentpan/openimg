@@ -79,14 +79,3 @@ func FormatFrom(name, addr string) string {
 	}
 	return mime.QEncoding.Encode("utf-8", name) + " <" + addr + ">"
 }
-
-// BareAddress strips a display name back off, for APIs whose "from" field
-// accepts only an address.
-func BareAddress(from string) string {
-	if i := strings.LastIndex(from, "<"); i >= 0 {
-		if j := strings.Index(from[i:], ">"); j > 0 {
-			return strings.TrimSpace(from[i+1 : i+j])
-		}
-	}
-	return strings.TrimSpace(from)
-}

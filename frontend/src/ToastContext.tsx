@@ -11,12 +11,20 @@ interface Toast {
   duration: number;
 }
 
+/// The full signature of the primitive the three helpers are built on. Named
+/// separately because it is no longer part of the public context type.
+type Show = (t: { kind?: ToastKind; text: string; detail?: string; duration?: number }) => void;
+
+/// What a consumer can call.
+///
+/// `show` and `dismiss` exist inside the provider — the three helpers below are
+/// built on `show`, and `ToastStack` calls `dismiss` through its own prop — but
+/// eleven `useToast()` sites all take only success/error/info. Keeping them on
+/// the public type advertised an API nobody used; the implementations stay.
 interface ToastCtx {
-  show: (t: { kind?: ToastKind; text: string; detail?: string; duration?: number }) => void;
   success: (text: string, detail?: string) => void;
   error: (text: string, detail?: string) => void;
   info: (text: string, detail?: string) => void;
-  dismiss: (id: number) => void;
 }
 
 const Ctx = createContext<ToastCtx | null>(null);
@@ -40,7 +48,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const show = useCallback<ToastCtx["show"]>(
+  const show = useCallback<Show>(
     ({ kind = "info", text, detail, duration }) => {
       const id = nextId.current++;
       const ms = duration ?? DEFAULT_MS[kind];
@@ -55,11 +63,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 
   const api: ToastCtx = {
-    show,
     success: (text, detail) => show({ kind: "success", text, detail }),
     error: (text, detail) => show({ kind: "error", text, detail }),
     info: (text, detail) => show({ kind: "info", text, detail }),
-    dismiss,
   };
 
   return (

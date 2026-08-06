@@ -38,7 +38,7 @@ const HUE: Record<Brand, string> = { green: "#5DE31D", violet: "#8E47FF" };
  * at runtime also prefers image/svg+xml, so rewriting the PNG fallbacks would
  * be work nothing reads.
  */
-export function applyFavicon(brand: Brand) {
+function applyFavicon(brand: Brand) {
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">` +
     `<path fill="${HUE[brand]}" d="${MARK_PATH}"/></svg>`;

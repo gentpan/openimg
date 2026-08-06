@@ -2,6 +2,7 @@ package passkey
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -111,6 +112,12 @@ func (s *Service) FinishEnroll(user *models.User, flowID, name string, raw *prot
 		SignCount:       cred.Authenticator.SignCount,
 		CloneWarning:    cred.Authenticator.CloneWarning,
 		Flags:           cred.Flags.MsgpByte(),
+		// What the authenticator said it speaks — usb, nfc, ble, internal,
+		// hybrid. The column existed from the start and was never written to,
+		// which made it look like dead schema; it is not. Passing these back in
+		// allowCredentials on the next sign-in is what lets a browser say "use
+		// your phone" instead of offering every transport and waiting.
+		Transports:      joinTransports(cred.Transport),
 		Name:            name,
 	}
 	if pkc.Name == "" {
@@ -307,4 +314,20 @@ func (u *webauthnUser) WebAuthnCredentials() []webauthn.Credential {
 		})
 	}
 	return out
+}
+
+// joinTransports flattens the library's typed transports into the comma
+// separated form the column holds. Empty when the authenticator declared none,
+// which is allowed — the spec makes the hint optional.
+func joinTransports(ts []protocol.AuthenticatorTransport) string {
+	if len(ts) == 0 {
+		return ""
+	}
+	out := make([]string, 0, len(ts))
+	for _, t := range ts {
+		if s := strings.TrimSpace(string(t)); s != "" {
+			out = append(out, s)
+		}
+	}
+	return strings.Join(out, ",")
 }

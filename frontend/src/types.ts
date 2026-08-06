@@ -313,11 +313,15 @@ export interface UserGroup {
 export interface AdminQuotaTx {
   id: string;
   user_email: string;
+  user_name: string;
   type: string;
   bytes: number;
   quota_after: number;
   used_after: number;
   reason: string;
+  /** Filename joined from the image, when the row has one. Check-ins, referral
+   *  bonuses and admin adjustments have no image and leave this null. */
+  image_name: string | null;
   created_at: string;
 }
 

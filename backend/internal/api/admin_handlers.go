@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 	"strings"
@@ -294,6 +295,19 @@ func (s *Server) adminReconcileQuota(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true, "delta": delta})
 }
 
+// likePattern turns a search term into a LIKE pattern with the wildcards
+// escaped.
+//
+// Without this, a filename containing _ or % silently becomes a wildcard:
+// searching "draft_v2.png" would also match "draftXv2.png", and a lone "%"
+// would match every row while looking like it found something. Backslash is
+// escaped first, or it would corrupt the escapes added after it.
+func likePattern(term string) string {
+	r := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+	return "%" + r.Replace(term) + "%"
+}
+
+// GET /admin/api/quota/transactions — the ledger, paged and searchable.
 func (s *Server) adminListTransactions(c *gin.Context) {
 	limit := 100
 	if v := c.Query("limit"); v != "" {
@@ -301,24 +315,71 @@ func (s *Server) adminListTransactions(c *gin.Context) {
 			limit = n
 		}
 	}
-	type row struct {
-		ID         string `json:"id"`
-		UserEmail  string `json:"user_email"`
-		Type       string `json:"type"`
-		Bytes      int64  `json:"bytes"`
-		QuotaAfter int64  `json:"quota_after"`
-		UsedAfter  int64  `json:"used_after"`
-		Reason     string `json:"reason"`
-		CreatedAt  string `json:"created_at"`
+	offset := 0
+	if v := c.Query("offset"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			offset = n
+		}
 	}
-	var rows []row
+	q := strings.TrimSpace(c.Query("q"))
+	if len(q) > 128 {
+		q = q[:128]
+	}
+
+	// LEFT JOIN, not INNER: most ledger rows carry an image_id (upload, delete,
+	// generate size) but check-ins, referral bonuses and admin adjustments do
+	// not, and an inner join would drop exactly those.
+	//
+	// Deleted images are deliberately not filtered out. Their rows survive —
+	// deletion only sets deleted_at, and the purge job removes the stored
+	// objects while leaving the row — and a deleted image is precisely what an
+	// admin is looking for when they come to this page.
+	from := `
+		FROM quota_transactions t
+		JOIN users u ON u.id = t.user_id
+		LEFT JOIN images i ON i.id = t.image_id`
+	where := ""
+	args := []any{}
+	if q != "" {
+		// One box, four columns. An admin arrives here with either a person or
+		// a file in mind and should not have to say which. reason is included
+		// because it is the only place bulk deletions and check-ins name
+		// themselves — they have no image to join to.
+		where = ` WHERE (u.email ILIKE @q ESCAPE '\' OR u.name ILIKE @q ESCAPE '\'
+		           OR i.orig_name ILIKE @q ESCAPE '\' OR t.reason ILIKE @q ESCAPE '\')`
+		args = append(args, sql.Named("q", likePattern(q)))
+	}
+
+	// Counted over the same FROM and WHERE, so the total always agrees with the
+	// rows: a total taken from the unfiltered table would tell the pager to
+	// render pages that come back empty.
+	var total int64
+	s.DB.Raw(`SELECT COUNT(*) `+from+where, args...).Scan(&total)
+
+	type row struct {
+		ID         string  `json:"id"`
+		UserEmail  string  `json:"user_email"`
+		UserName   string  `json:"user_name"`
+		Type       string  `json:"type"`
+		Bytes      int64   `json:"bytes"`
+		QuotaAfter int64   `json:"quota_after"`
+		UsedAfter  int64   `json:"used_after"`
+		Reason     string  `json:"reason"`
+		ImageName  *string `json:"image_name"`
+		CreatedAt  string  `json:"created_at"`
+	}
+	rows := []row{}
 	s.DB.Raw(`
-		SELECT t.id, u.email AS user_email, t.type, t.bytes,
-		       t.quota_after, t.used_after, t.reason, t.created_at
-		FROM quota_transactions t JOIN users u ON u.id = t.user_id
-		ORDER BY t.created_at DESC LIMIT ?
-	`, limit).Scan(&rows)
-	c.JSON(http.StatusOK, gin.H{"transactions": rows})
+		SELECT t.id, u.email AS user_email, u.name AS user_name, t.type, t.bytes,
+		       t.quota_after, t.used_after, t.reason,
+		       i.orig_name AS image_name, t.created_at`+from+where+`
+		ORDER BY t.created_at DESC, t.id DESC
+		LIMIT ? OFFSET ?
+	`, append(append([]any{}, args...), limit, offset)...).Scan(&rows)
+
+	c.JSON(http.StatusOK, gin.H{
+		"transactions": rows, "total": total, "limit": limit, "offset": offset,
+	})
 }
 
 func (s *Server) adminListGroups(c *gin.Context) {

@@ -384,10 +384,15 @@ export const adminApi = {
   listGroups: () => jfetch<{ groups: UserGroup[] | null }>("/admin/api/groups").then((r) => r.groups ?? []),
   updateGroup: (id: string, patch: Partial<UserGroup>) =>
     jfetch<UserGroup>("/admin/api/groups/" + id, { method: "PATCH", body: JSON.stringify(patch) }),
-  listTransactions: (limit = 100) =>
-    jfetch<{ transactions: AdminQuotaTx[] | null }>(`/admin/api/quota/transactions?limit=${limit}`).then(
-      (r) => r.transactions ?? [],
-    ),
+  listTransactions: (opts: { limit?: number; offset?: number; q?: string } = {}) => {
+    const p = new URLSearchParams();
+    if (opts.limit != null) p.set("limit", String(opts.limit));
+    if (opts.offset) p.set("offset", String(opts.offset));
+    if (opts.q) p.set("q", opts.q);
+    return jfetch<{ transactions: AdminQuotaTx[] | null; total: number }>(
+      `/admin/api/quota/transactions?${p}`,
+    ).then((r) => ({ transactions: r.transactions ?? [], total: r.total }));
+  },
   adjustQuota: (userId: string, bytes: number, reason?: string) =>
     jfetch<{ quota_bytes: number }>("/admin/api/quota/adjust", {
       method: "POST",

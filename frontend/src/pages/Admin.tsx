@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Nav from "../components/Nav";
 import Footer from "../Footer";
@@ -7,6 +7,8 @@ import LoginMethods from "./admin/LoginMethods";
 import UploadSettings from "./admin/UploadSettings";
 import { adminApi, formatBytes, imageApi, reportCategoryLabel } from "../api";
 import type { AdminImage, AdminQuotaTx, AdminUser, Report, UserGroup } from "../types";
+import Pager from "../components/Pager";
+import PageSizeMenu from "../components/PageSizeMenu";
 
 type Tab = "dashboard" | "users" | "groups" | "images" | "reports" | "ledger" | "login" | "upload";
 
@@ -822,20 +824,72 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 function LedgerTab() {
   const [txs, setTxs] = useState<AdminQuotaTx[]>([]);
-  useEffect(() => {
-    adminApi
-      .listTransactions(200)
-      .then(setTxs)
-      .catch(() => {});
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
+  const [perPage, setPerPage] = useState(50);
+  const [query, setQuery] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async (p: number, q: string, n: number) => {
+    setBusy(true);
+    try {
+      const r = await adminApi.listTransactions({ limit: n, offset: p * n, q: q || undefined });
+      setTxs(r.transactions);
+      setTotal(r.total);
+    } catch {
+      // Leave the previous page on screen rather than blanking the table: a
+      // transient failure should not look like "there are no records".
+    } finally {
+      setBusy(false);
+    }
   }, []);
+
+  // Debounced, matching the gallery's 300ms. The empty case fires immediately
+  // so clearing the box feels instant.
+  //
+  // page is deliberately not in the dependency list — paging calls load()
+  // directly. Having both would fire two requests for one click.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(0);
+      load(0, query, perPage);
+    }, query ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [query, perPage, load]);
+
+  const cols = ["用户", "文件", "类型", "变化", "配额后", "已用后", "说明", "时间"];
 
   return (
     <Card>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[14rem]">
+          <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-neutral-600" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="搜索邮箱、昵称、文件名或说明"
+            maxLength={128}
+            className="h-8 w-full rounded-lg border border-neutral-800 bg-neutral-950 pl-8 pr-8 text-xs text-neutral-200 outline-none placeholder:text-neutral-600 focus:border-neutral-700"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              title="清空"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-neutral-600 hover:text-neutral-300"
+            >
+              <i className="fa-solid fa-xmark" />
+            </button>
+          )}
+        </div>
+        <span className="text-[10px] text-neutral-600 tabular-nums">共 {total} 条</span>
+        <PageSizeMenu value={perPage} onChange={setPerPage} />
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="text-[10px] text-neutral-600">
             <tr>
-              {["用户", "类型", "变化", "配额后", "已用后", "说明", "时间"].map((h) => (
+              {cols.map((h) => (
                 <th key={h} className="pb-2 font-normal whitespace-nowrap pr-3">
                   {h}
                 </th>
@@ -845,7 +899,12 @@ function LedgerTab() {
           <tbody className="divide-y divide-neutral-800/50">
             {txs.map((t) => (
               <tr key={t.id} className="text-neutral-400">
-                <td className="py-2 pr-3 whitespace-nowrap">{t.user_email}</td>
+                <td className="py-2 pr-3 whitespace-nowrap" title={t.user_name || undefined}>
+                  {t.user_email}
+                </td>
+                <td className="py-2 pr-3 max-w-[12rem] truncate" title={t.image_name ?? undefined}>
+                  {t.image_name ?? <span className="text-neutral-700">—</span>}
+                </td>
                 <td className="py-2 pr-3 whitespace-nowrap">{t.type}</td>
                 <td
                   className={`py-2 pr-3 whitespace-nowrap ${
@@ -867,8 +926,25 @@ function LedgerTab() {
             ))}
           </tbody>
         </table>
-        {txs.length === 0 && <div className="py-10 text-center text-xs text-neutral-600">暂无记录</div>}
+        {txs.length === 0 && !busy && (
+          <div className="py-10 text-center text-xs text-neutral-600">
+            {query ? "没有匹配的记录" : "暂无记录"}
+          </div>
+        )}
       </div>
+
+      {total > perPage && (
+        <Pager
+          page={page}
+          perPage={perPage}
+          total={total}
+          busy={busy}
+          onPage={(p) => {
+            setPage(p);
+            load(p, query, perPage);
+          }}
+        />
+      )}
     </Card>
   );
 }

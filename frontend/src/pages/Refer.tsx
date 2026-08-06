@@ -4,8 +4,10 @@ import { useAuth } from "../AuthContext";
 import { formatBytes, referralApi } from "../api";
 import Footer from "../Footer";
 import Nav from "../components/Nav";
+import { useLang } from "../LangContext";
 
 export default function ReferPage() {
+  const { t } = useLang();
   const { user } = useAuth();
   const [s, setS] = useState<{
     code: string;
@@ -25,7 +27,7 @@ export default function ReferPage() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center text-neutral-500">
-        请先 <Link to="/login" className="text-brand-400 hover:underline mx-1">登录</Link>
+        请先 <Link to="/login" className="text-brand-400 hover:underline mx-1">{t.common.signIn}</Link>
       </div>
     );
   }
@@ -48,7 +50,7 @@ export default function ReferPage() {
     <div className="min-h-screen flex flex-col bg-neutral-950">
       <Nav />
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
-        <h1 className="text-lg font-brand text-neutral-100 mb-5">邀请有奖</h1>
+        <h1 className="text-lg font-brand text-neutral-100 mb-5">{t.refer.title}</h1>
 
         {/* Hero */}
         <div className="rounded-2xl bg-gradient-to-br from-brand-900/40 via-brand-800/20 to-fuchsia-900/30 border border-brand-900/40 p-6 sm:p-8 mb-8 flex flex-col sm:flex-row sm:items-center gap-6">
@@ -56,7 +58,7 @@ export default function ReferPage() {
             <h2 className="text-2xl sm:text-3xl font-brand leading-tight mb-2">
               邀请好友，双方各得 <span className="text-brand-300">{bonus} 空间</span>
             </h2>
-            <p className="text-sm text-neutral-300/80 mb-5">把链接分享给朋友，他们注册成功后，你和他都立即到账存储空间。</p>
+            <p className="text-sm text-neutral-300/80 mb-5">{t.refer.heroSub}</p>
             <div className="flex items-stretch gap-2 max-w-xl">
               <input
                 readOnly
@@ -69,12 +71,12 @@ export default function ReferPage() {
                 className="rounded-lg bg-brand-600 hover:bg-brand-500 px-4 py-2 text-sm font-medium text-brand-ink inline-flex items-center gap-1.5"
               >
                 <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"}`} />
-                {copied ? "已复制" : "复制"}
+                {copied ? t.common.copied : t.common.copy}
               </button>
             </div>
             {s?.code && (
               <div className="mt-3 text-xs text-neutral-500">
-                你的推荐码 <span className="font-mono text-brand-300">{s.code}</span>
+                {t.refer.yourCode} <span className="font-mono text-brand-300">{s.code}</span>
               </div>
             )}
           </div>
@@ -85,44 +87,44 @@ export default function ReferPage() {
 
         {/* Two-column "they get / you get" */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <Card title="他们获得">
+          <Card title={t.refer.theyGet}>
             <Bullet>
               一次性 <b className="text-brand-200">{bonus}</b> — 通过你的链接注册即到账
             </Bullet>
-            <Bullet>立即解锁所有免费用户额度</Bullet>
+            <Bullet>{t.refer.theyGetTier}</Bullet>
           </Card>
-          <Card title="你获得">
+          <Card title={t.refer.youGet}>
             <Bullet>
               一次性 <b className="text-brand-200">{bonus}</b> — 每位有效注册的好友
             </Bullet>
-            <Bullet>邀请越多，空间越多（受用户组上限约束）</Bullet>
+            <Bullet>{t.refer.youGetMore}</Bullet>
           </Card>
         </div>
 
         {/* Summary */}
-        <h3 className="text-sm uppercase tracking-wide text-neutral-500 mb-3">数据</h3>
+        <h3 className="text-sm uppercase tracking-wide text-neutral-500 mb-3">{t.refer.statsHeading}</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
-          <Stat icon="fa-user-plus" iconBg="bg-teal-900/40 text-teal-300" label="已邀请用户" value={s?.count ?? 0} />
-          <Stat icon="fa-database" iconBg="bg-brand-900/40 text-brand-300" label="累计获得空间" value={formatBytes(s?.total_bytes ?? 0, 0)} />
-          <Stat icon="fa-gift" iconBg="bg-amber-900/40 text-amber-300" label="单次奖励" value={`${bonus} × 2`} />
+          <Stat icon="fa-user-plus" iconBg="bg-teal-900/40 text-teal-300" label={t.refer.stat.invited} value={s?.count ?? 0} />
+          <Stat icon="fa-database" iconBg="bg-brand-900/40 text-brand-300" label={t.refer.stat.totalEarned} value={formatBytes(s?.total_bytes ?? 0, 0)} />
+          <Stat icon="fa-gift" iconBg="bg-amber-900/40 text-amber-300" label={t.refer.stat.perReferral} value={`${bonus} × 2`} />
         </div>
 
         {/* Invitees table */}
-        <h3 className="text-sm uppercase tracking-wide text-neutral-500 mb-3">邀请记录</h3>
+        <h3 className="text-sm uppercase tracking-wide text-neutral-500 mb-3">{t.refer.historyHeading}</h3>
         <div className="overflow-x-auto rounded-xl border border-neutral-800">
           <table className="w-full text-sm">
             <thead className="bg-neutral-900/60 text-xs uppercase text-neutral-500">
               <tr>
-                <th className="text-left px-3 py-2 font-normal">用户</th>
-                <th className="text-left px-3 py-2 font-normal">邮箱</th>
-                <th className="text-left px-3 py-2 font-normal">注册时间</th>
+                <th className="text-left px-3 py-2 font-normal">{t.refer.table.user}</th>
+                <th className="text-left px-3 py-2 font-normal">{t.common.email}</th>
+                <th className="text-left px-3 py-2 font-normal">{t.refer.table.signedUp}</th>
               </tr>
             </thead>
             <tbody>
               {invitees.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="text-center text-neutral-500 py-8 text-xs">
-                    还没有人通过你的链接注册，去复制链接分享给朋友吧
+                    {t.refer.table.empty}
                   </td>
                 </tr>
               ) : (

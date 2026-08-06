@@ -9,6 +9,7 @@ import type { Image } from "../types";
 import { RingSpinner } from "../components/Spinner";
 import OtpConfirm from "../components/OtpConfirm";
 import { useToast } from "../ToastContext";
+import { useLang } from "../LangContext";
 
 // Every size is a multiple of the 5-column grid, so a full page never ends in
 // a short row with holes where the missing cards would be.
@@ -16,6 +17,7 @@ const PAGE_SIZES = [25, 50, 100, 200];
 const DEFAULT_PAGE = 25;
 
 export default function GalleryPage() {
+  const { t } = useLang();
   const { user, loading, refresh } = useAuth();
   const [images, setImages] = useState<Image[]>([]);
   const [total, setTotal] = useState(0);
@@ -54,11 +56,11 @@ export default function GalleryPage() {
   // a row you can no longer see is a good way to delete the wrong thing.
   useEffect(() => {
     if (!user) return;
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       setSelected(new Set());
       load(0, query, sort, false, pageSize);
     }, query ? 300 : 0);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [query, sort, pageSize, user, load]);
 
   function toggle(id: string) {
@@ -83,13 +85,13 @@ export default function GalleryPage() {
       const ids = [...selected];
       const res = await imageApi.bulkRemove({ ids });
       setImages((prev) => prev.filter((i) => !selected.has(i.id)));
-      setTotal((t) => Math.max(0, t - ids.length));
+      setTotal((n) => Math.max(0, n - ids.length));
       setSelected(new Set());
       setErr(null);
-      toast.success(`已删除 ${res.deleted} 张图片`, "对应空间已释放");
+      toast.success(`已删除 ${res.deleted} 张图片`, t.gallery.deletedToastDetail);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
-      toast.error("删除失败", e instanceof Error ? e.message : undefined);
+      toast.error(t.common.deleteFailed, e instanceof Error ? e.message : undefined);
     } finally {
       setBusy(false);
       refresh();
@@ -118,18 +120,18 @@ export default function GalleryPage() {
       setSelected(new Set());
       await load(0, query, sort, false, pageSize);
       setErr(null);
-      toast.success(`图库已清空，共删除 ${done} 张`, "空间已全部释放");
+      toast.success(`图库已清空，共删除 ${done} 张`, t.gallery.wipeDoneToastDetail);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
       await load(0, query, sort, false, pageSize);
-      toast.error("清空未完成", `已删除 ${done} 张后中断`);
+      toast.error(t.gallery.wipeFailed, `已删除 ${done} 张后中断`);
     } finally {
       setWiping(null);
       refresh();
     }
   }
 
-  if (loading) return <Center>加载中…</Center>;
+  if (loading) return <Center>{t.common.loading}</Center>;
   if (!user) return <Navigate to="/login" replace />;
 
   return (
@@ -138,7 +140,7 @@ export default function GalleryPage() {
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <h1 className="text-lg font-brand text-neutral-100">
-            我的图库
+            {t.gallery.title}
             <span className="ml-2 text-xs text-neutral-600 font-normal">{total} 张</span>
           </h1>
           <div className="flex-1" />
@@ -152,7 +154,7 @@ export default function GalleryPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="搜索文件名"
+              placeholder={t.gallery.searchPlaceholder}
               className="rounded-lg bg-neutral-900 border border-neutral-800 pl-8 pr-3 py-1.5 text-xs outline-none focus:border-brand-500 transition w-44"
             />
           </div>
@@ -162,7 +164,7 @@ export default function GalleryPage() {
             className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-brand-ink hover:bg-brand-500 transition"
           >
             <i className="fa-solid fa-plus mr-1.5" />
-            上传
+            {t.common.upload}
           </Link>
         </div>
 
@@ -185,7 +187,7 @@ export default function GalleryPage() {
               >
                 <i className={`fa-solid ${allLoadedSelected ? "fa-check" : "fa-minus"}`} />
               </span>
-              {allLoadedSelected ? "取消全选" : "全选本页"}
+              {allLoadedSelected ? t.gallery.clearSelection : t.gallery.selectAllOnPage}
             </button>
 
             <span className="text-[11px] text-neutral-600">
@@ -208,7 +210,7 @@ export default function GalleryPage() {
             <button
               onClick={() => setWipeOpen(true)}
               disabled={busy || wiping !== null || total === 0}
-              title={query ? "删除所有匹配当前搜索的图片" : "删除图库中的全部图片"}
+              title={query ? t.gallery.wipeSearchTitle : t.gallery.wipeAllTitle}
               className="rounded-lg border border-red-900/60 px-3 py-1.5 text-xs text-red-400 hover:bg-red-950/40 hover:border-red-800 disabled:opacity-40 transition"
             >
               {wiping !== null ? (
@@ -219,7 +221,7 @@ export default function GalleryPage() {
               ) : (
                 <>
                   <i className="fa-solid fa-fire mr-1.5" />
-                  {query ? "删除全部搜索结果" : "清空图库"}
+                  {query ? t.gallery.wipeSearch : t.gallery.wipeAll}
                 </>
               )}
             </button>
@@ -233,10 +235,10 @@ export default function GalleryPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-neutral-900 mb-4">
               <i className="fa-solid fa-images text-2xl text-brand-500" />
             </div>
-            <div className="text-sm text-neutral-400">{query ? "没有匹配的图片" : "还没有上传过图片"}</div>
+            <div className="text-sm text-neutral-400">{query ? t.gallery.emptySearch : t.common.noUploadsYet}</div>
             {!query && (
               <Link to="/upload" className="mt-3 inline-block text-xs text-brand-400 hover:underline">
-                去上传第一张 →
+                {t.common.uploadFirst}
               </Link>
             )}
           </div>
@@ -262,7 +264,7 @@ export default function GalleryPage() {
                   disabled={busy}
                   className="rounded-xl bg-neutral-900 border border-neutral-800 px-5 py-2 text-xs text-neutral-300 hover:border-neutral-700 disabled:opacity-50 transition"
                 >
-                  {busy ? <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" /> : "加载更多"}
+                  {busy ? <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" /> : t.gallery.loadMore}
                 </button>
               </div>
             )}
@@ -294,7 +296,7 @@ export default function GalleryPage() {
           onClose={() => setDetail(null)}
           onDeleted={() => {
             setImages((prev) => prev.filter((i) => i.id !== detail.id));
-            setTotal((t) => Math.max(0, t - 1));
+            setTotal((n) => Math.max(0, n - 1));
             setDetail(null);
             refresh();
           }}
@@ -330,7 +332,7 @@ function PageSizeMenu({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        title="每页显示数量"
+        title={t.gallery.pageSizeTitle}
         className="flex items-center gap-1.5 rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:border-neutral-700 transition"
       >
         <i className="fa-solid fa-table-cells text-[10px] text-neutral-500" />
@@ -352,7 +354,7 @@ function PageSizeMenu({
               }`}
             >
               <span className="tabular-nums">{n}</span>
-              <span className="text-neutral-600">张</span>
+              <span className="text-neutral-600">{t.gallery.pageSizeUnit}</span>
               {n === value && <i className="fa-solid fa-check ml-auto text-[9px]" />}
             </button>
           ))}
@@ -438,7 +440,7 @@ function Card({
           hover target is a bad way to build a multi-select. */}
       <button
         onClick={onToggle}
-        title={selected ? "取消选择" : "选择"}
+        title={selected ? t.gallery.deselect : t.gallery.select}
         className={`absolute top-2 left-2 w-5 h-5 rounded-md border flex items-center justify-center text-[9px] transition ${
           selected
             ? "bg-brand-600 border-brand-600 text-brand-ink"
@@ -452,7 +454,7 @@ function Card({
 
       {img.status === "blocked" && (
         <span className="absolute top-2 right-2 rounded-full bg-red-900/80 px-1.5 py-0.5 text-[9px] text-red-200">
-          已屏蔽
+          {t.gallery.blocked}
         </span>
       )}
 
@@ -467,6 +469,7 @@ function Card({
     </div>
   );
 }
+  const { t } = useLang();
 
 function Center({ children }: { children: React.ReactNode }) {
   return <div className="min-h-screen flex items-center justify-center text-neutral-500">{children}</div>;

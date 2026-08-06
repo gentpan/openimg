@@ -9,6 +9,7 @@ import ActivityCalendar from "../components/ActivityCalendar";
 import ArcGauge, { CategoryBars } from "../components/ArcGauge";
 import type { Image, QuotaInfo, QuotaTransaction } from "../types";
 import { useChartTheme } from "../chartTheme";
+import { useLang } from "../LangContext";
 
 
 
@@ -18,6 +19,7 @@ import { useChartTheme } from "../chartTheme";
  * a link to the page that owns it.
  */
 export default function DashboardPage() {
+  const { t } = useLang();
   const { SERIES, FORMATS, SAVED } = useChartTheme();
   const { user, loading } = useAuth();
   const [quota, setQuota] = useState<QuotaInfo | null>(null);
@@ -61,7 +63,7 @@ export default function DashboardPage() {
   // Hooks must run before the early returns below.
   const usedAnimated = useCountUp(quota?.used_bytes ?? 0, 1000);
 
-  if (loading) return <Center>加载中…</Center>;
+  if (loading) return <Center>{t.common.loading}</Center>;
   if (!user) return <Navigate to="/login" replace />;
 
   const usedPct = quota && quota.quota_bytes > 0 ? (quota.used_bytes / quota.quota_bytes) * 100 : 0;
@@ -79,7 +81,7 @@ export default function DashboardPage() {
               你好，{user.name || user.email.split("@")[0]}
             </h1>
             <p className="text-xs text-neutral-600 mt-0.5">
-              {quota?.tier.description || "欢迎回来"}
+              {quota?.tier.description || t.dashboard.welcomeBack}
               {user.checked_in_today && ` · 已连续签到 ${user.checkin_streak} 天`}
             </p>
           </div>
@@ -89,14 +91,14 @@ export default function DashboardPage() {
             className="rounded-lg bg-brand-600 px-3.5 py-1.5 text-xs font-medium text-brand-ink hover:bg-brand-500 transition"
           >
             <i className="fa-solid fa-cloud-arrow-up mr-1.5" />
-            上传图片
+            {t.dashboard.uploadCta}
           </Link>
         </div>
 
         {/* KPI row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
           <Kpi
-            label="可用空间"
+            label={t.common.availableStorage}
             value={formatBytes(quota?.available_bytes ?? user.available_bytes, 0)}
             sub={`已用 ${formatBytes(usedAnimated, 1)} · ${usedPct.toFixed(0)}% · 共 ${formatBytes(quota?.quota_bytes ?? user.quota_bytes, 0)}`}
             icon="fa-database"
@@ -104,24 +106,24 @@ export default function DashboardPage() {
             href="/space"
           />
           <Kpi
-            label="图片总数"
+            label={t.dashboard.kpi.totalImages}
             value={String(quota?.image_count ?? 0)}
             sub={`今日上传 ${quota?.uploads_today ?? 0} / ${quota?.tier.daily_upload_count ?? 0}`}
             icon="fa-images"
           />
           <Kpi
-            label="连续签到"
+            label={t.dashboard.kpi.checkinStreak}
             value={`${user.checkin_streak} 天`}
-            sub={user.checked_in_today ? "今日已签到" : "今天还没签到"}
+            sub={user.checked_in_today ? t.dashboard.kpi.checkedInToday : t.dashboard.kpi.notCheckedInToday}
             icon="fa-calendar-check"
           />
           <Kpi
-            label="压缩省下"
+            label={t.dashboard.kpi.savedByOptimizing}
             value={formatBytes(Math.max(0, (summary?.size_orig ?? 0) - (summary?.size_stored ?? 0)), 0)}
             sub={
               summary && summary.size_orig > 0
                 ? `原始 ${formatBytes(summary.size_orig, 0)} → 存储 ${formatBytes(summary.size_stored, 0)}`
-                : "全部图片累计"
+                : t.dashboard.kpi.acrossAllImages
             }
             icon="fa-compress"
           />
@@ -133,8 +135,8 @@ export default function DashboardPage() {
         <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
           <div className="flex items-baseline justify-between mb-3">
             <div>
-              <div className="text-[10px] uppercase tracking-wider text-neutral-600">空间获得趋势</div>
-              <div className="text-xs text-neutral-500 mt-1">最近 30 天 · 签到 / 邀请 / 赠送</div>
+              <div className="text-[10px] uppercase tracking-wider text-neutral-600">{t.dashboard.earnTrend.title}</div>
+              <div className="text-xs text-neutral-500 mt-1">{t.dashboard.earnTrend.subtitle}</div>
             </div>
             <div className="text-lg font-brand text-brand-400 tabular-nums">
               +{formatBytes(earnedTotal, 0)}
@@ -150,15 +152,15 @@ export default function DashboardPage() {
 
         <div className="grid lg:grid-cols-2 gap-3 mb-4">
           <Panel
-            title="压缩效果"
-            subtitle={summary ? `全部 ${summary.images} 张图片` : "统计中…"}
+            title={t.dashboard.optimization.title}
+            subtitle={summary ? `全部 ${summary.images} 张图片` : t.dashboard.optimization.calculating}
           >
             {summary && summary.size_orig > 0 ? (
               <>
                 <ArcGauge
                   segments={[
-                    { label: "实际占用", value: summary.size_stored, color: SERIES[1] },
-                    { label: "已省下", value: Math.max(0, summary.size_orig - summary.size_stored), color: SAVED },
+                    { label: t.dashboard.optimization.actuallyStored, value: summary.size_stored, color: SERIES[1] },
+                    { label: t.dashboard.optimization.saved, value: Math.max(0, summary.size_orig - summary.size_stored), color: SAVED },
                   ]}
                   formatValue={(v) => formatBytes(v, 1)}
                   className="py-2"
@@ -178,7 +180,7 @@ export default function DashboardPage() {
             )}
           </Panel>
 
-          <Panel title="存储分布" subtitle="平台空间与你自己绑定的存储">
+          <Panel title={t.dashboard.storageSplit.title} subtitle={t.dashboard.storageSplit.subtitle}>
             {summary && summary.by_profile.length > 0 ? (
               <>
                 <CategoryBars
@@ -195,7 +197,7 @@ export default function DashboardPage() {
                     it still earns its space until a second store is bound. */}
                 {summary.by_profile.length === 1 && summary.by_format.length > 0 && (
                   <div className="mt-3 border-t border-neutral-800/60 pt-3">
-                    <div className="text-[10px] text-neutral-600 mb-2">按格式</div>
+                    <div className="text-[10px] text-neutral-600 mb-2">{t.dashboard.storageSplit.byFormat}</div>
                     <CategoryBars
                       rows={summary.by_format.map((f, i) => ({
                         label: f.ext.toUpperCase(),
@@ -213,7 +215,7 @@ export default function DashboardPage() {
           </Panel>
         </div>
 
-        <Panel title="上传活动" subtitle="最近 30 天 · 悬停查看当天上传张数与占用" className="mb-4">
+        <Panel title={t.dashboard.activity.title} subtitle={t.dashboard.activity.subtitle} className="mb-4">
           <ActivityCalendar transactions={txs} days={30} columns={30} />
         </Panel>
 
@@ -221,19 +223,19 @@ export default function DashboardPage() {
         <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
           <div className="flex items-center gap-3 mb-3">
             <div>
-              <div className="text-xs text-neutral-300">最近上传</div>
-              <div className="text-[10px] text-neutral-600 mt-0.5">点击进入图库管理</div>
+              <div className="text-xs text-neutral-300">{t.common.recentUploads}</div>
+              <div className="text-[10px] text-neutral-600 mt-0.5">{t.dashboard.recent.subtitle}</div>
             </div>
             <div className="flex-1" />
             <Link to="/gallery" className="text-[11px] text-brand-400 hover:underline">
-              查看全部 →
+              {t.dashboard.recent.viewAll}
             </Link>
           </div>
           {recent.length === 0 ? (
             <div className="py-10 text-center">
-              <div className="text-xs text-neutral-600 mb-2">还没有上传过图片</div>
+              <div className="text-xs text-neutral-600 mb-2">{t.common.noUploadsYet}</div>
               <Link to="/upload" className="text-xs text-brand-400 hover:underline">
-                去上传第一张 →
+                {t.common.uploadFirst}
               </Link>
             </div>
           ) : (
@@ -327,7 +329,8 @@ function Panel({
 }
 
 function Empty() {
-  return <div className="h-full flex items-center justify-center text-xs text-neutral-600">暂无数据</div>;
+  const { t } = useLang();
+  return <div className="h-full flex items-center justify-center text-xs text-neutral-600">{t.common.noData}</div>;
 }
 
 function Center({ children }: { children: React.ReactNode }) {

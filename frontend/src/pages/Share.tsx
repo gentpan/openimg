@@ -5,6 +5,7 @@ import Logo from "../Logo";
 import { useToast } from "../ToastContext";
 import { RingSpinner } from "../components/Spinner";
 import { useLang } from "../LangContext";
+import type { Dict } from "../i18n";
 
 /**
  * The page behind a short link.
@@ -15,15 +16,18 @@ import { useLang } from "../LangContext";
  * whatever format they need, and give them a way to report it.
  */
 
-const REACTIONS: { kind: string; emoji: string; label: string }[] = [
-  { kind: "like", emoji: "👍", label: "赞" },
-  { kind: "clap", emoji: "👏", label: "鼓掌" },
-  { kind: "party", emoji: "🎉", label: "庆祝" },
-  { kind: "sparkle", emoji: "✨", label: "惊艳" },
-  { kind: "smile", emoji: "🙂", label: "微笑" },
+// Keys resolved at render: a module constant is evaluated once at import,
+// and the language can change at any point after.
+const reactions = (t: Dict): { kind: string; emoji: string; label: string }[] => [
+  { kind: "like", emoji: "👍", label: t.share.reaction.like },
+  { kind: "clap", emoji: "👏", label: t.share.reaction.clap },
+  { kind: "party", emoji: "🎉", label: t.share.reaction.party },
+  { kind: "sparkle", emoji: "✨", label: t.share.reaction.sparkle },
+  { kind: "smile", emoji: "🙂", label: t.share.reaction.smile },
 ];
 
 export default function SharePage() {
+  const { t } = useLang();
   const { locale } = useLang();
   const { code = "" } = useParams();
   
@@ -47,7 +51,7 @@ export default function SharePage() {
           </div>
           <div className="text-sm text-neutral-300">{err}</div>
           <Link to="/" className="mt-3 inline-block text-xs text-brand-400 hover:underline">
-            前往 Openimg 首页 →
+            {t.share.goHome}
           </Link>
         </div>
       </Shell>
@@ -71,9 +75,9 @@ export default function SharePage() {
     { label: "HTML w/ Link", value: data.html_link },
     { label: "HTML w/ Direct", value: data.html_direct },
     { label: "Markdown", value: data.markdown },
-    { label: "直链", value: data.url },
-    { label: "短链", value: data.short_url },
-    { label: "缩略图", value: data.thumb_url },
+    { label: t.share.formatDirectLink, value: data.url },
+    { label: t.common.shortLink, value: data.short_url },
+    { label: t.share.formatThumbnail, value: data.thumb_url },
   ];
 
   return (
@@ -123,7 +127,7 @@ export default function SharePage() {
             className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink transition hover:bg-brand-500"
           >
             <i className="fa-solid fa-download mr-1.5" />
-            下载
+            {t.common.download}
           </a>
         </div>
       </div>
@@ -156,6 +160,7 @@ function Shell({
   footer?: React.ReactNode;
   onReport?: () => void;
 }) {
+  const { t } = useLang();
   return (
     <div className="flex min-h-screen flex-col bg-neutral-950">
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-5">
@@ -170,7 +175,7 @@ function Shell({
           {onReport && (
             <button
               onClick={onReport}
-              title="举报这张图片"
+              title={t.report.imageTitle}
               className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-900/30 text-xs text-red-300 transition hover:bg-red-900/50"
             >
               <i className="fa-solid fa-flag" />
@@ -216,6 +221,7 @@ function Reactions({
   data: SharePayload;
   onChange: (d: SharePayload) => void;
 }) {
+  const { t } = useLang();
   const [busy, setBusy] = useState(false);
   const toast = useToast();
 
@@ -225,7 +231,7 @@ function Reactions({
     try {
       onChange(await shareApi.react(code, kind));
     } catch (e) {
-      toast.error("操作失败", e instanceof Error ? e.message : undefined);
+      toast.error(t.share.reaction.failed, e instanceof Error ? e.message : undefined);
     } finally {
       setBusy(false);
     }
@@ -233,7 +239,7 @@ function Reactions({
 
   return (
     <div className="flex items-center gap-0.5 rounded-full border border-neutral-800 bg-neutral-950/60 p-0.5">
-      {REACTIONS.map((r) => {
+      {reactions(t).map((r) => {
         const n = data.reactions[r.kind] || 0;
         const mine = data.mine === r.kind;
         return (
@@ -260,6 +266,7 @@ function Reactions({
 }
 
 function FormatRow({ label, value, first }: { label: string; value: string; first: boolean }) {
+  const { t } = useLang();
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -283,7 +290,7 @@ function FormatRow({ label, value, first }: { label: string; value: string; firs
       />
       <button
         onClick={copy}
-        title="复制"
+        title={t.common.copy}
         className={`flex w-11 shrink-0 items-center justify-center text-xs transition ${
           copied ? "bg-brand-600 text-brand-ink" : "bg-neutral-900/40 text-neutral-500 hover:text-brand-300"
         }`}
@@ -298,17 +305,18 @@ function FormatRow({ label, value, first }: { label: string; value: string; firs
  *  prefilled — no SDKs, no third-party scripts, nothing that would let another
  *  site watch who views an image here. */
 function ShareRow({ url, title }: { url: string; title: string }) {
+  const { t } = useLang();
   const toast = useToast();
   const u = encodeURIComponent(url);
-  const t = encodeURIComponent(title);
+  const encodedTitle = encodeURIComponent(title);
 
   const targets = [
-    { icon: "fa-brands fa-x-twitter", label: "X", href: `https://x.com/intent/tweet?url=${u}&text=${t}` },
-    { icon: "fa-brands fa-telegram", label: "Telegram", href: `https://t.me/share/url?url=${u}&text=${t}` },
+    { icon: "fa-brands fa-x-twitter", label: "X", href: `https://x.com/intent/tweet?url=${u}&text=${encodedTitle}` },
+    { icon: "fa-brands fa-telegram", label: "Telegram", href: `https://t.me/share/url?url=${u}&text=${encodedTitle}` },
     { icon: "fa-brands fa-facebook", label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
-    { icon: "fa-brands fa-reddit-alien", label: "Reddit", href: `https://www.reddit.com/submit?url=${u}&title=${t}` },
-    { icon: "fa-brands fa-weibo", label: "微博", href: `https://service.weibo.com/share/share.php?url=${u}&title=${t}` },
-    { icon: "fa-solid fa-envelope", label: "邮件", href: `mailto:?subject=${t}&body=${u}` },
+    { icon: "fa-brands fa-reddit-alien", label: "Reddit", href: `https://www.reddit.com/submit?url=${u}&title=${encodedTitle}` },
+    { icon: "fa-brands fa-weibo", label: t.share.targetWeibo, href: `https://service.weibo.com/share/share.php?url=${u}&title=${encodedTitle}` },
+    { icon: "fa-solid fa-envelope", label: t.share.targetEmail, href: `mailto:?subject=${encodedTitle}&body=${u}` },
   ];
 
   return (
@@ -329,10 +337,10 @@ function ShareRow({ url, title }: { url: string; title: string }) {
         onClick={async () => {
           try {
             await navigator.clipboard.writeText(url);
-            toast.success("短链已复制");
+            toast.success(t.share.shortLinkCopied);
           } catch {}
         }}
-        title="复制短链"
+        title={t.share.copyShortLink}
         className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition hover:border-brand-500 hover:text-brand-300"
       >
         <i className="fa-solid fa-link text-sm" />
@@ -342,6 +350,7 @@ function ShareRow({ url, title }: { url: string; title: string }) {
 }
 
 function ReportDialog({ code, onClose }: { code: string; onClose: () => void }) {
+  const { t } = useLang();
   const toast = useToast();
   const [category, setCategory] = useState<string | null>(null);
   const [reason, setReason] = useState("");
@@ -361,7 +370,7 @@ function ReportDialog({ code, onClose }: { code: string; onClose: () => void }) 
     try {
       await shareApi.report(code, category!, reason.trim(), contact.trim());
       onClose();
-      toast.success("举报已提交", "管理员会收到通知并尽快核实");
+      toast.success(t.report.submitted, t.report.submittedDetail);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -374,12 +383,12 @@ function ReportDialog({ code, onClose }: { code: string; onClose: () => void }) 
       <div className="absolute inset-0 bg-black/50" onClick={() => !busy && onClose()} />
       <div className="shadow-panel relative flex max-h-[88vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900">
         <div className="flex items-center gap-2 border-b border-neutral-800/60 px-5 py-3.5">
-          <span className="text-sm text-neutral-100">举报图片</span>
+          <span className="text-sm text-neutral-100">{t.report.dialogTitle}</span>
           <div className="flex-1" />
           <button
             onClick={onClose}
             disabled={busy}
-            aria-label="关闭"
+            aria-label={t.common.close}
             className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-800 hover:text-neutral-200"
           >
             <i className="fa-solid fa-xmark" />
@@ -387,7 +396,7 @@ function ReportDialog({ code, onClose }: { code: string; onClose: () => void }) 
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-          <div className="mb-2 text-xs text-neutral-300">举报类型</div>
+          <div className="mb-2 text-xs text-neutral-300">{t.report.categoryLabel}</div>
           <div className="space-y-2">
             {REPORT_CATEGORIES.map((c) => {
               const on = category === c.key;
@@ -415,21 +424,21 @@ function ReportDialog({ code, onClose }: { code: string; onClose: () => void }) 
           </div>
 
           <div className="mb-1.5 mt-4 text-xs text-neutral-300">
-            补充说明 <span className="text-neutral-600">（可选）</span>
+            {t.report.detailsLabel} <span className="text-neutral-600">{t.common.optional}</span>
           </div>
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
             maxLength={500}
-            placeholder="请描述具体问题…"
+            placeholder={t.report.detailsPlaceholder}
             className="placeholder-faint w-full resize-none rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-xs outline-none focus:border-brand-500"
           />
 
           <input
             value={contact}
             onChange={(e) => setContact(e.target.value)}
-            placeholder="联系方式（可选，便于回复处理结果）"
+            placeholder={t.report.contactPlaceholder}
             className="placeholder-faint mt-2 h-8 w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 text-xs outline-none focus:border-brand-500"
           />
 
@@ -442,17 +451,17 @@ function ReportDialog({ code, onClose }: { code: string; onClose: () => void }) 
             disabled={busy}
             className="inline-flex h-8 items-center justify-center rounded-lg border border-neutral-800 px-4 text-xs text-neutral-300 transition hover:border-neutral-700"
           >
-            取消
+            {t.common.cancel}
           </button>
           <button
             onClick={submit}
             disabled={!ready || busy}
             className="inline-flex h-8 items-center justify-center rounded-lg bg-red-600 px-4 text-xs font-medium text-white transition hover:bg-red-700 disabled:bg-neutral-800 disabled:text-neutral-500"
           >
-            {busy ? <RingSpinner className="h-3.5 w-3.5" /> : "提交举报"}
+            {busy ? <RingSpinner className="h-3.5 w-3.5" /> : t.report.submit}
           </button>
           <div className="flex-1" />
-          <span className="text-[10px] text-faint">无需登录</span>
+          <span className="text-[10px] text-faint">{t.report.noLogin}</span>
         </div>
       </div>
     </div>

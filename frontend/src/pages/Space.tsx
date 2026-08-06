@@ -10,25 +10,28 @@ import CheckinWeek, { MilestoneBar } from "../components/CheckinWeek";
 import type { CheckinRecord, QuotaInfo, QuotaTransaction } from "../types";
 import { RingSpinner } from "../components/Spinner";
 import { useLang } from "../LangContext";
+import type { Dict } from "../i18n";
 
-const TX_LABELS: Record<string, { label: string; icon: string; tone: string }> = {
-  signup_grant: { label: "注册赠送", icon: "fa-gift", tone: "text-brand-300" },
-  checkin: { label: "每日签到", icon: "fa-calendar-check", tone: "text-brand-300" },
-  referral: { label: "邀请奖励", icon: "fa-user-plus", tone: "text-brand-300" },
-  admin_grant: { label: "管理员调整", icon: "fa-user-shield", tone: "text-amber-300" },
-  upload: { label: "上传占用", icon: "fa-cloud-arrow-up", tone: "text-neutral-400" },
-  delete_refund: { label: "删除释放", icon: "fa-trash-can", tone: "text-brand-300" },
-};
+// Keys resolved at render: a module constant is evaluated once at import,
+// and the language can change after.
+const txLabels = (t: Dict): Record<string, { label: string; icon: string; tone: string }> => ({
+  signup_grant: { label: t.space.tx.signupGrant, icon: "fa-gift", tone: "text-brand-300" },
+  checkin: { label: t.space.tx.checkin, icon: "fa-calendar-check", tone: "text-brand-300" },
+  referral: { label: t.space.tx.referral, icon: "fa-user-plus", tone: "text-brand-300" },
+  admin_grant: { label: t.space.tx.adminGrant, icon: "fa-user-shield", tone: "text-amber-300" },
+  upload: { label: t.space.tx.upload, icon: "fa-cloud-arrow-up", tone: "text-neutral-400" },
+  delete_refund: { label: t.space.tx.deleteRefund, icon: "fa-trash-can", tone: "text-brand-300" },
+});
 
 /** Days into the current month-long milestone. */
 function monthDone(streak: number, total: number) {
-  const t = total || 30;
+  const days = total || 30;
   if (streak <= 0) return 0;
-  return streak % t === 0 ? t : streak % t;
+  return streak % days === 0 ? days : streak % days;
 }
 
 export default function SpacePage() {
-  const { locale } = useLang();
+  const { t, locale } = useLang();
   const { user, loading, refresh } = useAuth();
   const [quota, setQuota] = useState<QuotaInfo | null>(null);
   const [txs, setTxs] = useState<QuotaTransaction[]>([]);
@@ -76,7 +79,7 @@ export default function SpacePage() {
       setMsg({
         kind: "ok",
         text: res.capped
-          ? "签到成功，但空间已达上限，本次未发放"
+          ? t.space.checkin.cappedMsg
           : `签到成功，+${formatBytes(res.granted_bytes)}，已连续 ${res.streak} 天`,
       });
       await Promise.all([load(), refresh()]);
@@ -90,7 +93,7 @@ export default function SpacePage() {
   const usedAnimated = useCountUp(quota?.used_bytes ?? 0, 1000);
   const usedPct = quota && quota.quota_bytes > 0 ? (quota.used_bytes / quota.quota_bytes) * 100 : 0;
 
-  if (loading) return <Center>加载中…</Center>;
+  if (loading) return <Center>{t.common.loading}</Center>;
   if (!user) return <Navigate to="/login" replace />;
 
 
@@ -98,7 +101,7 @@ export default function SpacePage() {
     <div className="min-h-screen flex flex-col bg-neutral-950">
       <Nav />
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
-        <h1 className="text-lg font-brand text-neutral-100 mb-5">我的空间</h1>
+        <h1 className="text-lg font-brand text-neutral-100 mb-5">{t.space.title}</h1>
 
         {msg && (
           <div
@@ -115,7 +118,7 @@ export default function SpacePage() {
         <div className="grid lg:grid-cols-3 gap-3 mb-8">
           {/* Quota meter */}
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
-            <div className="text-[10px] uppercase tracking-wider text-neutral-600 mb-3">空间使用</div>
+            <div className="text-[10px] uppercase tracking-wider text-neutral-600 mb-3">{t.space.quota.title}</div>
             {quota && (
               <>
                 <div className="text-3xl font-brand text-neutral-100 tabular-nums">
@@ -126,9 +129,9 @@ export default function SpacePage() {
                 </div>
                 <BarMeter percent={usedPct} bars={50} tone={usedPct >= 90 ? "amber" : "brand"} className="h-10" />
                 <dl className="mt-4 space-y-1 text-[11px]">
-                  <Row label="总容量" value={formatBytes(quota.quota_bytes)} />
-                  <Row label="剩余可用" value={formatBytes(quota.available_bytes)} />
-                  <Row label="图片数" value={`${quota.image_count} 张`} />
+                  <Row label={t.space.quota.total} value={formatBytes(quota.quota_bytes)} />
+                  <Row label={t.space.quota.available} value={formatBytes(quota.available_bytes)} />
+                  <Row label={t.space.quota.images} value={`${quota.image_count} 张`} />
                 </dl>
               </>
             )}
@@ -138,7 +141,7 @@ export default function SpacePage() {
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 lg:col-span-2">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <div className="text-xs text-neutral-400">每日签到</div>
+                <div className="text-xs text-neutral-400">{t.space.tx.checkin}</div>
                 <div className="mt-1.5 text-2xl font-brand text-neutral-100">
                   {quota?.checkin.streak ?? 0}
                   <span className="text-xs text-neutral-500 ml-1.5">天连续</span>
@@ -159,7 +162,7 @@ export default function SpacePage() {
                 {busy ? (
                   <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" />
                 ) : quota?.checkin.checked_in_today ? (
-                  "今日已签"
+                  t.space.checkin.doneToday
                 ) : (
                   <>
                     签到领 {formatBytes(quota?.checkin.next_min_bytes ?? 0, 0)}–
@@ -173,7 +176,7 @@ export default function SpacePage() {
               <div className="mb-4 space-y-4">
                 <CheckinWeek records={history} />
                 <MilestoneBar
-                  title="本月进度"
+                  title={t.space.checkin.monthProgress}
                   current={monthDone(quota.checkin.streak, quota.checkin.days_per_month)}
                   total={quota.checkin.days_per_month || 30}
                   reward={quota.checkin.month_bonus}
@@ -188,12 +191,12 @@ export default function SpacePage() {
         {/* Ledger */}
         <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 overflow-hidden">
           <div className="flex items-center gap-2 px-5 py-3 border-b border-neutral-800/60">
-            <span className="text-xs text-neutral-300">空间流水</span>
+            <span className="text-xs text-neutral-300">{t.space.ledger.title}</span>
             {txTotal > 0 && <span className="text-[10px] text-neutral-600">共 {txTotal} 条</span>}
             {txBusy && <RingSpinner className="h-3 w-3 text-brand-400" />}
             <div className="flex-1" />
             <label className="flex items-center gap-1.5 text-[10px] text-neutral-600">
-              每页
+              {t.space.ledger.perPage}
               <select
                 value={perPage}
                 onChange={(e) => {
@@ -208,15 +211,15 @@ export default function SpacePage() {
                   </option>
                 ))}
               </select>
-              条
+              {t.space.ledger.perPageSuffix}
             </label>
           </div>
           {txs.length === 0 ? (
-            <div className="px-5 py-10 text-center text-xs text-neutral-600">还没有记录</div>
+            <div className="px-5 py-10 text-center text-xs text-neutral-600">{t.space.ledger.empty}</div>
           ) : (
             <div className="divide-y divide-neutral-800/50">
               {txs.map((tx) => {
-                const meta = TX_LABELS[tx.type] || {
+                const meta = txLabels(t)[tx.type] || {
                   label: tx.type,
                   icon: "fa-circle",
                   tone: "text-neutral-400",
@@ -286,6 +289,7 @@ function Pager({
   busy: boolean;
   onPage: (p: number) => void;
 }) {
+  const { t } = useLang();
   const pages = Math.ceil(total / perPage);
   const from = page * perPage + 1;
   const to = Math.min(total, (page + 1) * perPage);
@@ -307,7 +311,7 @@ function Pager({
         onClick={() => onPage(page - 1)}
         disabled={page === 0 || busy}
         className={`${btn} text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100`}
-        title="上一页"
+        title={t.common.pager.prev}
       >
         <i className="fa-solid fa-chevron-left text-[9px]" />
       </button>
@@ -353,7 +357,7 @@ function Pager({
         onClick={() => onPage(page + 1)}
         disabled={page >= pages - 1 || busy}
         className={`${btn} text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100`}
-        title="下一页"
+        title={t.common.pager.next}
       >
         <i className="fa-solid fa-chevron-right text-[9px]" />
       </button>

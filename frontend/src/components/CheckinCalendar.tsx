@@ -31,7 +31,7 @@ export default function CheckinCalendar({
             <span className="text-brand-300">
               {r.bytes > 0 ? `+${formatBytes(r.bytes)}` : t.checkinCalendar.cappedNoGrant}
             </span>
-            <span className="text-neutral-600 ml-1.5">连续 {r.streak} 天</span>
+            <span className="text-neutral-600 ml-1.5">{t.checkinCalendar.streak(r.streak)}</span>
           </>
         ),
       });
@@ -47,7 +47,7 @@ export default function CheckinCalendar({
       emptyLabel={t.checkinCalendar.empty}
       summary={
         <>
-          {records.length} 天签到 · 累计 <span className="text-brand-400">+{formatBytes(total)}</span>
+            {t.checkinCalendar.summary(records.length, formatBytes(total))}
         </>
       }
     />

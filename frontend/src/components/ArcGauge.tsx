@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLang } from "../LangContext";
 
 export interface Segment {
   label: string;
@@ -112,6 +113,7 @@ export interface CategoryRow {
  * bar but the first as an invisible stub.
  */
 export function CategoryBars({ rows, className = "" }: { rows: CategoryRow[]; className?: string }) {
+  const { t } = useLang();
   const [drawn, setDrawn] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setDrawn(true), 60);
@@ -121,7 +123,7 @@ export function CategoryBars({ rows, className = "" }: { rows: CategoryRow[]; cl
   const max = Math.max(1, ...rows.map((r) => r.value));
 
   if (rows.length === 0) {
-    return <div className={`py-8 text-center text-xs text-neutral-600 ${className}`}>暂无数据</div>;
+    return <div className={`py-8 text-center text-xs text-neutral-600 ${className}`}>{t.common.noData}</div>;
   }
 
   return (

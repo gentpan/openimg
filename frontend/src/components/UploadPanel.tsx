@@ -86,9 +86,9 @@ export default function UploadPanel() {
             <div className="text-xs text-neutral-200">
               {finished
                 ? errorCount > 0
-                  ? `完成 ${doneCount} 张，${errorCount} 张失败`
-                  : `已上传 ${doneCount} 张`
-                : `上传中 ${doneCount}/${items.length}`}
+                  ? t.uploadPanel.finishedWithErrors(doneCount, errorCount)
+                  : t.uploadPanel.finished(doneCount)
+                : t.uploadPanel.uploading(doneCount, items.length)}
             </div>
             {!finished && (
               <div className="mt-1 h-0.5 rounded-full bg-neutral-800 overflow-hidden">
@@ -145,7 +145,7 @@ export default function UploadPanel() {
                     className="rounded-lg bg-brand-600 px-2.5 py-1 text-[10px] font-medium text-brand-ink hover:bg-brand-500 transition whitespace-nowrap"
                   >
                     <i className={`fa-solid ${copied === "all" ? "fa-check" : "fa-copy"} mr-1`} />
-                    {copied === "all" ? t.common.copied : `复制 ${done.length} 条`}
+                    {copied === "all" ? t.common.copied : t.uploadPanel.copyAll(done.length)}
                   </button>
                 </>
               )}
@@ -235,7 +235,7 @@ function Row({
         {item.state === "done" ? (
           <div className="text-[10px] text-neutral-600 truncate">
             {formatBytes(item.file.size, 0)}
-            {saved > 0 && <span className="text-brand-400"> · 省 {formatBytes(saved, 0)}</span>}
+            {saved > 0 && <span className="text-brand-400"> · {t.uploadPanel.saved(formatBytes(saved, 0))}</span>}
           </div>
         ) : item.state === "error" ? (
           <div className="text-[10px] text-red-400 truncate" title={item.error}>

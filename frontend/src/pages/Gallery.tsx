@@ -358,6 +358,7 @@ function PageSizeMenu({
 }
 
 function SortMenu({ value, onChange }: { value: SortKey; onChange: (v: SortKey) => void }) {
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const current = SORTS.find((s) => s.key === value) ?? SORTS[0];
@@ -378,7 +379,7 @@ function SortMenu({ value, onChange }: { value: SortKey; onChange: (v: SortKey) 
         className="flex items-center gap-1.5 rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:border-neutral-700 transition"
       >
         <i className={`fa-solid ${current.icon} text-[10px] text-neutral-500`} />
-        {current.label}
+        {t.gallery.sort[current.key]}
         <i className="fa-solid fa-chevron-down text-[8px] text-neutral-600" />
       </button>
 
@@ -396,7 +397,7 @@ function SortMenu({ value, onChange }: { value: SortKey; onChange: (v: SortKey) 
               }`}
             >
               <i className={`fa-solid ${s.icon} text-[10px] w-3`} />
-              {s.label}
+              {t.gallery.sort[s.key]}
               {s.key === value && <i className="fa-solid fa-check ml-auto text-[9px]" />}
             </button>
           ))}

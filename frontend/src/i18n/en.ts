@@ -635,6 +635,8 @@ export const en: Dict = {
   },
 
   convertSettings: {
+    thumbnailNote:
+      "Only the 200px grid thumbnail is generated at upload time, in both modes — the gallery grid uses it, and rendering originals there would make the page unusable. The 600px and 1200px sizes are generated when you ask for them on an image's page, and cost nothing until you do. Links you copy out always point at the main image.",
     savedDetail: "Applies to future uploads; images already uploaded are unaffected",
     mode: {
       title: "Upload mode",
@@ -651,6 +653,8 @@ export const en: Dict = {
     original: {
       warning:
         "Originals are published with their EXIF and GPS location — anyone with the link can read where and when the photo was taken and on what device. Make sure that's what you want before sharing photos from your phone.",
+      warningSecurity:
+        "Uploads are still checked against the real file format (SVG and non-images are refused) and always served with an image content type.",
       warningEmphasis: "EXIF and GPS location",
       formatNote:
         "For safety, uploads are still checked for their real format (SVG and non-images are rejected) and always served with an image content type.",
@@ -669,8 +673,6 @@ export const en: Dict = {
       noneLabel: "None",
       noneDesc: "Keep the main image only, uses the least storage",
     },
-    thumbnailNote:
-      "Only the 200px grid thumbnail is generated at upload time, in both modes — the gallery list uses it, and rendering originals directly would make the page unusable. The 600px and 1200px sizes are generated only when you pick that size on an image's detail page, so they take no storage until you do. Links you copy elsewhere always point at the main image.",
   },
 
   passwordField: {

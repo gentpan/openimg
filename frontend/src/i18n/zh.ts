@@ -632,6 +632,8 @@ export const zh = {
   },
 
   convertSettings: {
+    thumbnailNote:
+      "上传时只生成 200px 网格缩略图，两种模式下都会生成——图库列表用的就是它，直接渲染原图会让页面变得无法使用。600px 与 1200px 改为在图片详情里点击对应尺寸时才生成，不点就不占空间。你复制到外部的链接始终指向主图。",
     savedDetail: "对之后上传的图片生效，已上传的不受影响",
     mode: {
       title: "上传模式",
@@ -648,6 +650,7 @@ export const zh = {
     original: {
       warning:
         "原图会连同 EXIF 与 GPS 定位一起公开 —— 任何拿到链接的人都能读出拍摄地点、时间和设备。分享手机拍摄的照片前请确认这是你想要的。",
+      warningSecurity: "为安全起见，上传仍会校验真实格式（拒绝 SVG 与非图片），并强制以图片类型返回。",
       warningEmphasis: "EXIF 与 GPS 定位",
       formatNote:
         "为安全起见，上传仍会校验真实格式（拒绝 SVG 与非图片），并强制以图片类型返回。",
@@ -666,8 +669,6 @@ export const zh = {
       noneLabel: "不生成",
       noneDesc: "只保留主图，最省空间",
     },
-    thumbnailNote:
-      "上传时只生成 200px 网格缩略图，两种模式下都会生成 —— 图库列表用的就是它，直接渲染原图会让页面变得无法使用。600px 与 1200px 改为在图片详情里点击对应尺寸时才生成，不点就不占空间。你复制到外部的链接始终指向主图。",
   },
 
   passwordField: {

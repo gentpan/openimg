@@ -19,6 +19,7 @@ import type {
   UserGroup,
 } from "./types";
 import { currentLang } from "./LangContext";
+import { dicts } from "./i18n";
 
 const BASE = "";
 
@@ -157,8 +158,8 @@ export const imageApi = {
         if (xhr.status >= 200 && xhr.status < 300) resolve(body);
         else reject(new Error(body?.error || `${xhr.status} ${xhr.statusText}`));
       };
-      xhr.onerror = () => reject(new Error("网络错误，上传失败"));
-      xhr.onabort = () => reject(new Error("已取消"));
+      xhr.onerror = () => reject(new Error(dicts[currentLang()].upload.networkError));
+      xhr.onabort = () => reject(new Error(dicts[currentLang()].common.cancelled));
       opts.signal?.addEventListener("abort", () => xhr.abort());
 
       xhr.send(form);
@@ -436,12 +437,14 @@ export const nativeAuth = {
 };
 
 export const SORTS = [
-  { key: "newest", label: "最新上传", icon: "fa-arrow-down-wide-short" },
-  { key: "oldest", label: "最早上传", icon: "fa-arrow-up-wide-short" },
-  { key: "largest", label: "占用最大", icon: "fa-weight-hanging" },
-  { key: "smallest", label: "占用最小", icon: "fa-feather" },
-  { key: "widest", label: "分辨率最高", icon: "fa-expand" },
-  { key: "name", label: "文件名", icon: "fa-arrow-down-a-z" },
+  // Keys and icons only. The labels live in the dictionary: they change with
+  // the language, and this module is the API client, not the view.
+  { key: "newest", icon: "fa-arrow-down-wide-short" },
+  { key: "oldest", icon: "fa-arrow-up-wide-short" },
+  { key: "largest", icon: "fa-weight-hanging" },
+  { key: "smallest", icon: "fa-feather" },
+  { key: "widest", icon: "fa-expand" },
+  { key: "name", icon: "fa-arrow-down-a-z" },
 ] as const;
 
 export type SortKey = (typeof SORTS)[number]["key"];

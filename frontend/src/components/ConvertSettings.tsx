@@ -78,10 +78,9 @@ export default function ConvertSettings() {
         {original && (
           <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-950/20 px-3 py-2 text-[10px] text-amber-200/90 leading-relaxed">
             <i className="fa-solid fa-triangle-exclamation mr-1" />
-            原图会连同 <b>{t.convertSettings.original.warningEmphasis}</b>一起公开 —— 任何拿到链接的人都能读出拍摄地点、时间和设备。
-            分享手机拍摄的照片前请确认这是你想要的。
-            <br />
-            为安全起见，上传仍会校验真实格式（拒绝 SVG 与非图片），并强制以图片类型返回。
+              {t.convertSettings.original.warning}
+              <br />
+              {t.convertSettings.original.warningSecurity}
           </div>
         )}
       </div>
@@ -146,9 +145,7 @@ export default function ConvertSettings() {
 
       <div className="mt-3 rounded-lg bg-neutral-950/60 border border-neutral-800 px-3 py-2 text-[10px] text-neutral-500 leading-relaxed">
         <i className="fa-solid fa-circle-info mr-1 text-neutral-600" />
-        上传时只生成 200px 网格缩略图，两种模式下都会生成 —— 图库列表用的就是它，
-        直接渲染原图会让页面变得无法使用。600px 与 1200px 改为在图片详情里点击对应尺寸时才生成，
-        不点就不占空间。你复制到外部的链接始终指向主图。
+          {t.convertSettings.thumbnailNote}
       </div>
 
     </div>

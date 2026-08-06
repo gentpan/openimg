@@ -416,7 +416,7 @@ function ReportDialog({ code, onClose }: { code: string; onClose: () => void }) 
                   >
                     {on && <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />}
                   </span>
-                  {c.label}
+                  {t.report.category[c.key]}
                 </button>
               );
             })}

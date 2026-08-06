@@ -40,8 +40,8 @@ export default function ActivityCalendar({
         value: v.bytes,
         tooltip: (
           <>
-            <span className="text-brand-300">上传 {v.uploads} 张</span>
-            <span className="text-neutral-500 ml-1.5">占用 {formatBytes(v.bytes)}</span>
+            <span className="text-brand-300">{t.activityCalendar.tooltipUploads(v.uploads)}</span>
+            <span className="text-neutral-500 ml-1.5">{t.activityCalendar.tooltipBytes(formatBytes(v.bytes))}</span>
           </>
         ),
       });
@@ -57,7 +57,8 @@ export default function ActivityCalendar({
       emptyLabel={t.activityCalendar.empty}
       summary={
         <>
-          {totals.days} 天有上传 · 共 <span className="text-brand-400">{totals.uploads} 张</span>
+            {t.activityCalendar.summaryDays(totals.days)} ·{" "}
+            <span className="text-brand-400">{t.activityCalendar.summaryCount(totals.uploads)}</span>
           <span className="text-neutral-600"> · {formatBytes(totals.bytes)}</span>
         </>
       }

@@ -8,8 +8,10 @@ import { useUpload } from "../UploadContext";
 import { formatBytes, imageApi, quotaApi } from "../api";
 import ImageDetail from "../components/ImageDetail";
 import type { Image, QuotaInfo } from "../types";
+import { useLang } from "../LangContext";
 
 export default function UploadPage() {
+  const { t } = useLang();
   const { user, loading } = useAuth();
   const [quota, setQuota] = useState<QuotaInfo | null>(null);
   const [recent, setRecent] = useState<Image[]>([]);
@@ -29,7 +31,7 @@ export default function UploadPage() {
       .catch(() => {});
   }, [user, doneCount]);
 
-  if (loading) return <Center>加载中…</Center>;
+  if (loading) return <Center>{t.common.loading}</Center>;
   if (!user) return <Navigate to="/login" replace />;
 
   const pct = quota && quota.quota_bytes > 0 ? (quota.used_bytes / quota.quota_bytes) * 100 : 0;
@@ -41,9 +43,9 @@ export default function UploadPage() {
         {!user.email_verified && (
           <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-950/20 px-4 py-3 text-xs text-amber-200">
             <i className="fa-solid fa-triangle-exclamation mr-1.5" />
-            你的邮箱还没有验证，验证后才能上传图片。
+            {t.upload.emailUnverified}
             <Link to="/settings" className="ml-1.5 underline hover:text-amber-100">
-              去验证 →
+              {t.upload.goVerify}
             </Link>
           </div>
         )}
@@ -54,9 +56,9 @@ export default function UploadPage() {
           <div className="mt-6 grid sm:grid-cols-2 gap-3">
             <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
               <div className="flex items-center justify-between text-xs mb-2">
-                <span className="text-neutral-400">剩余空间</span>
+                <span className="text-neutral-400">{t.common.availableStorage}</span>
                 <Link to="/space" className="text-brand-400 hover:underline text-[11px]">
-                  {quota.checkin.checked_in_today ? "空间明细 →" : "去签到领空间 →"}
+                  {quota.checkin.checked_in_today ? t.upload.storageDetails : t.upload.checkInForStorage}
                 </Link>
               </div>
               <div className="text-xl font-brand text-neutral-100">
@@ -72,14 +74,14 @@ export default function UploadPage() {
             </div>
 
             <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
-              <div className="text-xs text-neutral-400 mb-2">当前限制（{quota.tier.name}）</div>
+              <div className="text-xs text-neutral-400 mb-2">{t.upload.currentLimits(quota.tier.name)}</div>
               <dl className="space-y-1 text-[11px]">
-                <Row label="单文件上限" value={formatBytes(quota.tier.max_file_size, 0)} />
+                <Row label={t.upload.maxFileSize} value={formatBytes(quota.tier.max_file_size, 0)} />
                 <Row
-                  label="今日已传"
-                  value={`${quota.uploads_today} / ${quota.tier.daily_upload_count} 张`}
+                  label={t.upload.uploadedToday}
+                  value={t.upload.uploadedTodayValue(quota.uploads_today, quota.tier.daily_upload_count)}
                 />
-                <Row label="支持格式" value={quota.tier.allowed_formats.join(" · ")} />
+                <Row label={t.upload.supportedFormats} value={quota.tier.allowed_formats.join(" · ")} />
               </dl>
             </div>
           </div>
@@ -89,12 +91,12 @@ export default function UploadPage() {
           <div className="mt-6 rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
             <div className="flex items-center gap-3 mb-3">
               <div>
-                <div className="text-xs text-neutral-300">最近上传</div>
-                <div className="text-[10px] text-neutral-600 mt-0.5">点击查看详情与各格式链接</div>
+                <div className="text-xs text-neutral-300">{t.common.recentUploads}</div>
+                <div className="text-[10px] text-neutral-600 mt-0.5">{t.upload.recentHint}</div>
               </div>
               <div className="flex-1" />
               <Link to="/gallery" className="text-[11px] text-brand-400 hover:underline">
-                全部图库 →
+                {t.upload.viewGallery}
               </Link>
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-2">

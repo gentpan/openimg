@@ -169,6 +169,8 @@ export const zh = {
     signingIn: "登录中…",
     noAccountPrompt: "没账号？",
     haveAccountPrompt: "已有账号？",
+    resetCodeSentNeutral:
+      "如果这个邮箱已注册，验证码已经发出。为避免泄露账号是否存在，我们不区分两种情况。",
     nativeHandoffFailed: "无法把登录结果交回应用，请重试",
 
     register: {

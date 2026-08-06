@@ -6,10 +6,12 @@ import PasswordField from "../components/PasswordField";
 import { authApi, resetApi, nativeAuth } from "../api";
 import PasskeyLoginForm from "./PasskeyLoginForm";
 import OAuthButtons from "./OAuthButtons";
+import { useLang } from "../LangContext";
 
 
 
 export default function LoginPage() {
+  const { t } = useLang();
   const { login, user } = useAuth();
   const nav = useNavigate();
   const loc = useLocation();
@@ -42,7 +44,7 @@ const [mode, setMode] = useState<Mode>("password");
       .then(({ code }) => {
         window.location.href = `openimg://auth?code=${encodeURIComponent(code)}`;
       })
-      .catch(() => setErr("无法把登录结果交回应用，请重试"));
+      .catch(() => setErr(t.auth.nativeHandoffFailed));
   }, [native, user]);
   const passkeyAvailable = providers.includes("passkey");
 
@@ -63,11 +65,11 @@ const [mode, setMode] = useState<Mode>("password");
   if (reset) return <ResetPassword onDone={() => setReset(false)} />;
 
   return (
-    <AuthShell title="登录">
+    <AuthShell title={t.auth.shell.signIn}>
       {passkeyAvailable && (
         <div className="mb-5 flex gap-1 rounded-lg bg-neutral-950 p-1 text-xs">
           <ModeBtn active={mode === "password"} onClick={() => setMode("password")}>
-            邮箱 + 密码
+            {t.common.emailPassword}
           </ModeBtn>
           <ModeBtn active={mode === "passkey"} onClick={() => setMode("passkey")}>
             Passkey
@@ -79,7 +81,7 @@ const [mode, setMode] = useState<Mode>("password");
         <PasskeyLoginForm />
       ) : (
         <form onSubmit={onSubmit} className="space-y-4">
-          <Field label="邮箱">
+          <Field label={t.common.email}>
             <input
               type="email"
               required
@@ -89,7 +91,7 @@ const [mode, setMode] = useState<Mode>("password");
               className={inputCls}
             />
           </Field>
-          <Field label="密码">
+          <Field label={t.auth.password}>
             <input
               type="password"
               required
@@ -106,7 +108,7 @@ const [mode, setMode] = useState<Mode>("password");
               onClick={() => setReset(true)}
               className="text-xs text-neutral-500 hover:text-brand-300 transition"
             >
-              忘记密码？
+              {t.auth.forgotPassword}
             </button>
           </div>
           <button
@@ -114,7 +116,7 @@ const [mode, setMode] = useState<Mode>("password");
             disabled={busy}
             className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-700 disabled:text-neutral-500"
           >
-            {busy ? "登录中…" : "登录"}
+            {busy ? t.auth.signingIn : t.common.signIn}
           </button>
         </form>
       )}
@@ -124,9 +126,9 @@ const [mode, setMode] = useState<Mode>("password");
       </div>
 
       <div className="mt-5 text-sm text-neutral-500 text-center">
-        没账号？{" "}
+        {t.auth.noAccountPrompt}{" "}
         <Link to="/register" className="text-brand-400 hover:underline">
-          注册
+          {t.common.signUp}
         </Link>
       </div>
     </AuthShell>
@@ -148,6 +150,7 @@ function ModeBtn({ active, onClick, children }: { active: boolean; onClick: () =
 }
 
 export function AuthShell({ title, children }: { title: string; children: React.ReactNode }) {
+  const { t } = useLang();
   // These pages don't render <Nav>, so without this the theme is unreachable
   // for anyone who hasn't signed in yet.
   
@@ -168,7 +171,7 @@ export function AuthShell({ title, children }: { title: string; children: React.
         to="/"
         className="mt-4 inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 transition"
       >
-        <span aria-hidden>←</span> 返回首页
+        <span aria-hidden>←</span> {t.common.backToHome}
       </Link>
     </div>
   );
@@ -195,6 +198,7 @@ export const inputCls =
  * this they would be locked out for good.
  */
 function ResetPassword({ onDone }: { onDone: () => void }) {
+  const { t } = useLang();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -213,7 +217,7 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
 
   async function send() {
     if (!email.includes("@")) {
-      setErr("请输入邮箱");
+      setErr(t.auth.reset.emailRequired);
       return;
     }
     setSending(true);
@@ -244,9 +248,9 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <AuthShell title="重置">
+    <AuthShell title={t.auth.shell.reset}>
       <form onSubmit={submit} className="space-y-4">
-        <Field label="邮箱">
+        <Field label={t.common.email}>
           <input
             type="email"
             required
@@ -257,14 +261,14 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
           />
         </Field>
 
-        <Field label="邮箱验证码">
+        <Field label={t.common.emailCode}>
           <div className="flex gap-1.5">
             <input
               value={code}
               inputMode="numeric"
               maxLength={6}
               autoComplete="one-time-code"
-              placeholder="6 位数字"
+              placeholder={t.common.otpPlaceholder}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               className={`${inputCls} flex-1 min-w-0 tabular-nums`}
             />
@@ -274,18 +278,18 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
               disabled={sending || cooldown > 0}
               className="shrink-0 rounded-lg bg-neutral-800 px-3 text-xs text-neutral-300 hover:bg-neutral-700 disabled:text-neutral-500 disabled:hover:bg-neutral-800 transition"
             >
-              {sending ? "发送中…" : cooldown > 0 ? `${cooldown}s` : sent ? "重新发送" : "发送验证码"}
+              {sending ? t.common.sendingCode : cooldown > 0 ? `${cooldown}s` : sent ? t.common.resend : t.common.sendCode}
             </button>
           </div>
         </Field>
 
-        <Field label="新密码">
+        <Field label={t.common.newPassword}>
           <PasswordField value={pw} onChange={setPw} />
         </Field>
 
         {sent && (
           <div className="text-xs text-neutral-500">
-            如果这个邮箱已注册，验证码已经发出。为避免泄露账号是否存在，我们不区分两种情况。
+            {t.auth.resetCodeSentNeutral}
           </div>
         )}
         {err && <div className="text-sm text-red-400">{err}</div>}
@@ -295,13 +299,13 @@ function ResetPassword({ onDone }: { onDone: () => void }) {
           disabled={busy || code.length !== 6 || pw.length < 8}
           className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500"
         >
-          {busy ? "设置中…" : "设置新密码并登录"}
+          {busy ? t.auth.reset.submitBusy : t.auth.reset.submit}
         </button>
       </form>
 
       <div className="mt-5 text-center">
         <button onClick={onDone} className="text-sm text-neutral-500 hover:text-neutral-300 transition">
-          ← 返回登录
+          {t.auth.reset.backToSignIn}
         </button>
       </div>
     </AuthShell>

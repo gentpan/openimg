@@ -165,6 +165,8 @@ export const en: Dict = {
     signingIn: "Signing in…",
     noAccountPrompt: "No account?",
     haveAccountPrompt: "Already have an account?",
+    resetCodeSentNeutral:
+      "If that email is registered, a code has been sent. We answer the same either way, so this page cannot be used to find out whether an account exists.",
     nativeHandoffFailed: "Could not hand the sign-in back to the app. Try again.",
 
     register: {

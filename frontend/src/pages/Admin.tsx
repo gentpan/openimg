@@ -834,6 +834,19 @@ function LedgerTab() {
     setBusy(true);
     try {
       const r = await adminApi.listTransactions({ limit: n, offset: p * n, q: q || undefined });
+      // Landing past the end returns nothing while the total says otherwise —
+      // it happens when the row count shrinks under a page you are already on.
+      // Step back to the last real page instead of showing an empty table.
+      if (p > 0 && r.transactions.length === 0 && r.total > 0) {
+        const last = Math.max(0, Math.ceil(r.total / n) - 1);
+        if (last !== p) {
+          setPage(last);
+          const back = await adminApi.listTransactions({ limit: n, offset: last * n, q: q || undefined });
+          setTxs(back.transactions);
+          setTotal(back.total);
+          return;
+        }
+      }
       setTxs(r.transactions);
       setTotal(r.total);
     } catch {
@@ -860,15 +873,15 @@ function LedgerTab() {
   const cols = ["用户", "文件", "类型", "变化", "配额后", "已用后", "说明", "时间"];
 
   return (
-    <Card>
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+    <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 overflow-hidden">
+      <div className="flex flex-wrap items-center gap-2 px-5 pt-4 pb-3">
         <div className="relative flex-1 min-w-[14rem]">
           <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-neutral-600" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="搜索邮箱、昵称、文件名或说明"
-            maxLength={128}
+            maxLength={64}
             className="h-8 w-full rounded-lg border border-neutral-800 bg-neutral-950 pl-8 pr-8 text-xs text-neutral-200 outline-none placeholder:text-neutral-600 focus:border-neutral-700"
           />
           {query && (
@@ -885,7 +898,7 @@ function LedgerTab() {
         <PageSizeMenu value={perPage} onChange={setPerPage} />
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto px-5 pb-1">
         <table className="w-full text-left text-xs">
           <thead className="text-[10px] text-neutral-600">
             <tr>
@@ -945,7 +958,7 @@ function LedgerTab() {
           }}
         />
       )}
-    </Card>
+    </div>
   );
 }
 

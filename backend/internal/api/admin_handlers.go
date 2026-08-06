@@ -295,6 +295,12 @@ func (s *Server) adminReconcileQuota(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true, "delta": delta})
 }
 
+// maxLedgerQueryRunes bounds the search term. Runes rather than bytes so the
+// limit means the same thing whichever language the admin types in; 64 is well
+// past any real filename or address and keeps the pattern from bloating the
+// query plan.
+const maxLedgerQueryRunes = 64
+
 // likePattern turns a search term into a LIKE pattern with the wildcards
 // escaped.
 //
@@ -322,8 +328,12 @@ func (s *Server) adminListTransactions(c *gin.Context) {
 		}
 	}
 	q := strings.TrimSpace(c.Query("q"))
-	if len(q) > 128 {
-		q = q[:128]
+	// Truncate by runes, not bytes. A Chinese character is three bytes, so a
+	// byte-slice at a fixed offset lands mid-character two times out of three
+	// and hands Postgres invalid UTF-8, which fails the whole query (22021)
+	// rather than searching for something slightly shorter.
+	if r := []rune(q); len(r) > maxLedgerQueryRunes {
+		q = string(r[:maxLedgerQueryRunes])
 	}
 
 	// LEFT JOIN, not INNER: most ledger rows carry an image_id (upload, delete,
@@ -353,8 +363,25 @@ func (s *Server) adminListTransactions(c *gin.Context) {
 	// Counted over the same FROM and WHERE, so the total always agrees with the
 	// rows: a total taken from the unfiltered table would tell the pager to
 	// render pages that come back empty.
+	//
+	// Errors are surfaced rather than swallowed. A discarded Scan error renders
+	// as "no records", which is how the placeholder-binding bug below very
+	// nearly shipped — a broken query and an empty ledger look identical.
 	var total int64
-	s.DB.Raw(`SELECT COUNT(*) `+from+where, args...).Scan(&total)
+	if err := s.DB.Raw(`SELECT COUNT(*) `+from+where, args...).Scan(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Every placeholder below is named, including the paging ones.
+	//
+	// Not a style choice. gorm's Raw switches to NamedExpr as soon as the SQL
+	// contains an '@', and NamedExpr still resolves '?' positionally against
+	// the same Vars slice — without letting the named substitutions advance the
+	// index. Mixing the two forms therefore binds the search pattern to LIMIT
+	// and the limit to OFFSET. See TestLedgerQueryBindsNamedAndPositional.
+	pageArgs := append(append([]any{}, args...),
+		sql.Named("lim", limit), sql.Named("off", offset))
 
 	type row struct {
 		ID         string  `json:"id"`
@@ -369,13 +396,19 @@ func (s *Server) adminListTransactions(c *gin.Context) {
 		CreatedAt  string  `json:"created_at"`
 	}
 	rows := []row{}
-	s.DB.Raw(`
+	// created_at alone is not a total order — a bulk delete writes several rows
+	// in the same instant — and an unstable sort makes deep paging drop and
+	// repeat rows. id breaks the tie.
+	if err := s.DB.Raw(`
 		SELECT t.id, u.email AS user_email, u.name AS user_name, t.type, t.bytes,
 		       t.quota_after, t.used_after, t.reason,
 		       i.orig_name AS image_name, t.created_at`+from+where+`
 		ORDER BY t.created_at DESC, t.id DESC
-		LIMIT ? OFFSET ?
-	`, append(append([]any{}, args...), limit, offset)...).Scan(&rows)
+		LIMIT @lim OFFSET @off
+	`, pageArgs...).Scan(&rows).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"transactions": rows, "total": total, "limit": limit, "offset": offset,

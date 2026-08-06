@@ -56,7 +56,7 @@ export default function ReferPage() {
         <div className="rounded-2xl bg-gradient-to-br from-brand-900/40 via-brand-800/20 to-fuchsia-900/30 border border-brand-900/40 p-6 sm:p-8 mb-8 flex flex-col sm:flex-row sm:items-center gap-6">
           <div className="flex-1">
             <h2 className="text-2xl sm:text-3xl font-brand leading-tight mb-2">
-              邀请好友，双方各得 <span className="text-brand-300">{bonus} 空间</span>
+              {t.refer.heroHeadline(bonus)}
             </h2>
             <p className="text-sm text-neutral-300/80 mb-5">{t.refer.heroSub}</p>
             <div className="flex items-stretch gap-2 max-w-xl">
@@ -89,13 +89,13 @@ export default function ReferPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <Card title={t.refer.theyGet}>
             <Bullet>
-              一次性 <b className="text-brand-200">{bonus}</b> — 通过你的链接注册即到账
+              {t.refer.theyGetBonus(bonus)}
             </Bullet>
             <Bullet>{t.refer.theyGetTier}</Bullet>
           </Card>
           <Card title={t.refer.youGet}>
             <Bullet>
-              一次性 <b className="text-brand-200">{bonus}</b> — 每位有效注册的好友
+              {t.refer.youGetBonus(bonus)}
             </Bullet>
             <Bullet>{t.refer.youGetMore}</Bullet>
           </Card>

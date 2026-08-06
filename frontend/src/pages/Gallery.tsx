@@ -26,7 +26,7 @@ export default function GalleryPage() {
   const [sort, setSort] = useState<SortKey>("newest");
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE);
   const [busy, setBusy] = useState(false);
-  const [wiping, setWiping] = useState<string | null>(null);
+  const [wiping, setWiping] = useState<number | null>(null);
   const [wipeOpen, setWipeOpen] = useState(false);
   const toast = useToast();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -79,7 +79,7 @@ export default function GalleryPage() {
 
   async function removeSelected() {
     if (selected.size === 0) return;
-    if (!confirm(`确定删除选中的 ${selected.size} 张图片？删除后会释放对应空间，且无法恢复。`)) return;
+    if (!confirm(t.gallery.deleteSelectedConfirm(selected.size))) return;
     setBusy(true);
     try {
       const ids = [...selected];
@@ -88,7 +88,7 @@ export default function GalleryPage() {
       setTotal((n) => Math.max(0, n - ids.length));
       setSelected(new Set());
       setErr(null);
-      toast.success(`已删除 ${res.deleted} 张图片`, t.gallery.deletedToastDetail);
+      toast.success(t.gallery.deletedToast(res.deleted), t.gallery.deletedToastDetail);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
       toast.error(t.common.deleteFailed, e instanceof Error ? e.message : undefined);
@@ -102,7 +102,7 @@ export default function GalleryPage() {
   // 5000-image library would silently stop at the first batch.
   async function wipeAll(code: string) {
     setWipeOpen(false);
-    setWiping("0");
+    setWiping(0);
     let done = 0;
     try {
       for (;;) {
@@ -114,17 +114,17 @@ export default function GalleryPage() {
           ...(done === 0 ? { code } : {}),
         });
         done += res.deleted;
-        setWiping(String(done));
+        setWiping(done);
         if (res.remaining === 0 || res.deleted === 0) break;
       }
       setSelected(new Set());
       await load(0, query, sort, false, pageSize);
       setErr(null);
-      toast.success(`图库已清空，共删除 ${done} 张`, t.gallery.wipeDoneToastDetail);
+      toast.success(t.gallery.wipeDoneToast(done), t.gallery.wipeDoneToastDetail);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
       await load(0, query, sort, false, pageSize);
-      toast.error(t.gallery.wipeFailed, `已删除 ${done} 张后中断`);
+      toast.error(t.gallery.wipeFailed, t.gallery.wipeFailedDetail(done));
     } finally {
       setWiping(null);
       refresh();
@@ -141,7 +141,7 @@ export default function GalleryPage() {
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <h1 className="text-lg font-brand text-neutral-100">
             {t.gallery.title}
-            <span className="ml-2 text-xs text-neutral-600 font-normal">{total} 张</span>
+            <span className="ml-2 text-xs text-neutral-600 font-normal">{t.common.imageCount(total)}</span>
           </h1>
           <div className="flex-1" />
 
@@ -191,7 +191,7 @@ export default function GalleryPage() {
             </button>
 
             <span className="text-[11px] text-neutral-600">
-              {selected.size > 0 ? `已选 ${selected.size} 张` : `已加载 ${images.length} / ${total}`}
+              {selected.size > 0 ? t.gallery.selectedCount(selected.size) : t.gallery.loadedCount(images.length, total)}
             </span>
 
             <div className="flex-1" />
@@ -203,7 +203,7 @@ export default function GalleryPage() {
                 className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50 transition"
               >
                 <i className="fa-solid fa-trash-can mr-1.5" />
-                删除选中 {selected.size} 张
+                {t.gallery.deleteSelected(selected.size)}
               </button>
             )}
 
@@ -216,7 +216,7 @@ export default function GalleryPage() {
               {wiping !== null ? (
                 <>
                   <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px] mr-1.5" />
-                  已删除 {wiping} 张…
+                  {t.gallery.wipeProgress(wiping)}
                 </>
               ) : (
                 <>
@@ -276,15 +276,7 @@ export default function GalleryPage() {
         <OtpConfirm
           purpose="purge"
           danger
-          detail={
-            <>
-              将删除
-              <span className="text-red-300">
-                {query ? `匹配「${query}」的 ${total} 张图片` : `全部 ${total} 张图片`}
-              </span>
-              ，并释放对应空间。此操作不可恢复。
-            </>
-          }
+            detail={query ? t.gallery.wipeConfirmSearch(total, query) : t.gallery.wipeConfirmAll(total)}
           onCancel={() => setWipeOpen(false)}
           onVerified={wipeAll}
         />

@@ -195,7 +195,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
                   className="inline-flex items-center gap-1 rounded-md bg-amber-600/15 border border-amber-500/30 px-2 py-1 text-[10px] text-amber-300 hover:bg-amber-600/25 transition"
                 >
                   <i className="fa-solid fa-file-arrow-down text-[8px]" />
-                  原图 {originalKey.slice(5).toUpperCase()}
+                  {t.imageDetail.originalLink(originalKey.slice(5).toUpperCase())}
                 </a>
               )}
               {img.variants.includes("webp") && variants.webp && (
@@ -247,7 +247,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
               className="text-[11px] text-neutral-600 hover:text-red-400 transition"
             >
               <i className="fa-solid fa-flag mr-1 text-[9px]" />
-              投诉这张图片
+              {t.report.imageTitle}
             </button>
           </div>
         </div>
@@ -276,13 +276,17 @@ function ReportDialog({ img, onClose }: { img: Image; onClose: () => void }) {
   const { t } = useLang();
   const toast = useToast();
   const [reason, setReason] = useState("");
-  const [preset, setPreset] = useState<string | null>(null);
+  const [preset, setPreset] = useState<(typeof CATEGORIES)[number] | null>(null);
   const [contact, setContact] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const PRESETS = ["色情或血腥内容", t.report.category.copyright, "个人隐私信息", t.report.category.fraud, "其他"];
-  const full = preset && preset !== "其他" ? `${preset}${reason ? " — " + reason : ""}` : reason;
+  // Category keys, not labels. The old code compared `preset !== "其他"`
+  // against the displayed text, which stops matching the moment the text is
+  // translated — the picker would keep behaving as if a category were chosen.
+  const CATEGORIES = ["porn", "copyright", "violence", "privacy", "fraud", "other"] as const;
+  const label = (k: (typeof CATEGORIES)[number]) => t.report.category[k];
+  const full = preset && preset !== "other" ? `${label(preset)}${reason ? " — " + reason : ""}` : reason;
   const ready = (full || "").trim().length >= 4;
 
   async function submit() {
@@ -292,7 +296,7 @@ function ReportDialog({ img, onClose }: { img: Image; onClose: () => void }) {
     try {
       await reportApi.submit(img.id, full!.trim(), contact.trim());
       onClose();
-      toast.success("投诉已提交", "我们会尽快核实处理，感谢你的反馈");
+      toast.success(t.report.submitted, t.report.submittedDetail);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -308,24 +312,24 @@ function ReportDialog({ img, onClose }: { img: Image; onClose: () => void }) {
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-900/40 text-xs text-red-300">
             <i className="fa-solid fa-flag" />
           </span>
-          <span className="text-sm text-neutral-100">投诉这张图片</span>
+          <span className="text-sm text-neutral-100">{t.report.dialogTitle}</span>
         </div>
         <p className="text-[11px] leading-relaxed text-neutral-500 mb-3">
-          管理员会收到通知并核实。滥用投诉功能可能导致你的账号被限制。
+          {t.report.notice}
         </p>
 
         <div className="flex flex-wrap gap-1.5 mb-3">
-          {PRESETS.map((p) => (
+          {CATEGORIES.map((k) => (
             <button
-              key={p}
-              onClick={() => setPreset(preset === p ? null : p)}
+              key={k}
+              onClick={() => setPreset(preset === k ? null : k)}
               className={`inline-flex h-8 items-center justify-center rounded-lg px-3 text-xs transition ${
-                preset === p
+                preset === k
                   ? "bg-red-600/20 text-red-300 border border-red-500/40"
                   : "bg-neutral-800 text-neutral-400 hover:text-neutral-100 border border-transparent"
               }`}
             >
-              {p}
+              {label(k)}
             </button>
           ))}
         </div>
@@ -335,7 +339,7 @@ function ReportDialog({ img, onClose }: { img: Image; onClose: () => void }) {
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           maxLength={500}
-          placeholder={preset && preset !== "其他" ? t.report.detailsOptionalPlaceholder : t.report.reasonPlaceholder}
+          placeholder={preset && preset !== "other" ? t.report.detailsOptionalPlaceholder : t.report.reasonPlaceholder}
           className="w-full rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 py-2 text-xs outline-none focus:border-red-500 placeholder-faint resize-none"
         />
 
@@ -362,7 +366,7 @@ function ReportDialog({ img, onClose }: { img: Image; onClose: () => void }) {
             disabled={!ready || busy}
             className="inline-flex h-8 items-center justify-center rounded-lg bg-red-600 px-3 text-xs font-medium text-white hover:bg-red-700 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
           >
-            {busy ? <RingSpinner className="h-3.5 w-3.5" /> : "提交投诉"}
+            {busy ? <RingSpinner className="h-3.5 w-3.5" /> : t.report.submit}
           </button>
         </div>
       </div>

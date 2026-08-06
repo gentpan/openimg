@@ -80,7 +80,7 @@ export default function SpacePage() {
         kind: "ok",
         text: res.capped
           ? t.space.checkin.cappedMsg
-          : `签到成功，+${formatBytes(res.granted_bytes)}，已连续 ${res.streak} 天`,
+          : t.space.checkin.successMsg(formatBytes(res.granted_bytes), res.streak),
       });
       await Promise.all([load(), refresh()]);
     } catch (e) {
@@ -125,13 +125,13 @@ export default function SpacePage() {
                   {formatBytes(usedAnimated, 1)}
                 </div>
                 <div className="text-xs text-neutral-600 mt-1 mb-4">
-                  共 {formatBytes(quota.quota_bytes)} · 已用 {usedPct.toFixed(1)}%
+                  {t.space.quota.totalAndPercent(formatBytes(quota.quota_bytes), Number(usedPct.toFixed(1)))}
                 </div>
                 <BarMeter percent={usedPct} bars={50} tone={usedPct >= 90 ? "amber" : "brand"} className="h-10" />
                 <dl className="mt-4 space-y-1 text-[11px]">
                   <Row label={t.space.quota.total} value={formatBytes(quota.quota_bytes)} />
                   <Row label={t.space.quota.available} value={formatBytes(quota.available_bytes)} />
-                  <Row label={t.space.quota.images} value={`${quota.image_count} 张`} />
+                  <Row label={t.space.quota.images} value={t.common.imageCount(quota.image_count)} />
                 </dl>
               </>
             )}
@@ -144,13 +144,15 @@ export default function SpacePage() {
                 <div className="text-xs text-neutral-400">{t.space.tx.checkin}</div>
                 <div className="mt-1.5 text-2xl font-brand text-neutral-100">
                   {quota?.checkin.streak ?? 0}
-                  <span className="text-xs text-neutral-500 ml-1.5">天连续</span>
+                  <span className="text-xs text-neutral-500 ml-1.5">{t.space.checkin.streakUnit(quota?.checkin.streak ?? 0)}</span>
                 </div>
                 {quota && (
                   <div className="mt-1 text-[11px] text-neutral-600">
-                    每天随机 {formatBytes(quota.checkin.min_bytes, 0)} –{" "}
-                    {formatBytes(quota.checkin.max_bytes, 0)}
-                    <span className="ml-1 text-faint">· 永久累加，不会过期</span>
+                    {t.space.checkin.randomRange(
+                      formatBytes(quota.checkin.min_bytes, 0),
+                      formatBytes(quota.checkin.max_bytes, 0),
+                    )}
+                    <span className="ml-1 text-faint">· {t.space.checkin.neverExpires}</span>
                   </div>
                 )}
               </div>
@@ -165,8 +167,10 @@ export default function SpacePage() {
                   t.space.checkin.doneToday
                 ) : (
                   <>
-                    签到领 {formatBytes(quota?.checkin.next_min_bytes ?? 0, 0)}–
-                    {formatBytes(quota?.checkin.next_max_bytes ?? 0, 0)}
+                    {t.space.checkin.button(
+                      formatBytes(quota?.checkin.next_min_bytes ?? 0, 0),
+                      formatBytes(quota?.checkin.next_max_bytes ?? 0, 0),
+                    )}
                   </>
                 )}
               </button>
@@ -192,7 +196,7 @@ export default function SpacePage() {
         <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 overflow-hidden">
           <div className="flex items-center gap-2 px-5 py-3 border-b border-neutral-800/60">
             <span className="text-xs text-neutral-300">{t.space.ledger.title}</span>
-            {txTotal > 0 && <span className="text-[10px] text-neutral-600">共 {txTotal} 条</span>}
+            {txTotal > 0 && <span className="text-[10px] text-neutral-600">{t.space.ledger.total(txTotal)}</span>}
             {txBusy && <RingSpinner className="h-3 w-3 text-brand-400" />}
             <div className="flex-1" />
             <label className="flex items-center gap-1.5 text-[10px] text-neutral-600">

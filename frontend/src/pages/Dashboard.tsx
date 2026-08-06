@@ -78,11 +78,11 @@ export default function DashboardPage() {
         <div className="flex flex-wrap items-center gap-3 mb-5">
           <div>
             <h1 className="text-lg font-brand text-neutral-100">
-              你好，{user.name || user.email.split("@")[0]}
+              {t.dashboard.greeting(user.name || user.email.split("@")[0])}
             </h1>
             <p className="text-xs text-neutral-600 mt-0.5">
               {quota?.tier.description || t.dashboard.welcomeBack}
-              {user.checked_in_today && ` · 已连续签到 ${user.checkin_streak} 天`}
+              {user.checked_in_today && ` · ${t.dashboard.streakBadge(user.checkin_streak)}`}
             </p>
           </div>
           <div className="flex-1" />
@@ -108,12 +108,12 @@ export default function DashboardPage() {
           <Kpi
             label={t.dashboard.kpi.totalImages}
             value={String(quota?.image_count ?? 0)}
-            sub={`今日上传 ${quota?.uploads_today ?? 0} / ${quota?.tier.daily_upload_count ?? 0}`}
+            sub={t.dashboard.kpi.uploadsTodaySub(quota?.uploads_today ?? 0, quota?.tier.daily_upload_count ?? 0)}
             icon="fa-images"
           />
           <Kpi
             label={t.dashboard.kpi.checkinStreak}
-            value={`${user.checkin_streak} 天`}
+            value={t.common.days(user.checkin_streak)}
             sub={user.checked_in_today ? t.dashboard.kpi.checkedInToday : t.dashboard.kpi.notCheckedInToday}
             icon="fa-calendar-check"
           />
@@ -122,7 +122,7 @@ export default function DashboardPage() {
             value={formatBytes(Math.max(0, (summary?.size_orig ?? 0) - (summary?.size_stored ?? 0)), 0)}
             sub={
               summary && summary.size_orig > 0
-                ? `原始 ${formatBytes(summary.size_orig, 0)} → 存储 ${formatBytes(summary.size_stored, 0)}`
+                ? t.dashboard.kpi.origToStored(formatBytes(summary.size_orig, 0), formatBytes(summary.size_stored, 0))
                 : t.dashboard.kpi.acrossAllImages
             }
             icon="fa-compress"
@@ -153,7 +153,7 @@ export default function DashboardPage() {
         <div className="grid lg:grid-cols-2 gap-3 mb-4">
           <Panel
             title={t.dashboard.optimization.title}
-            subtitle={summary ? `全部 ${summary.images} 张图片` : t.dashboard.optimization.calculating}
+            subtitle={summary ? t.dashboard.optimization.subtitle(summary.images) : t.dashboard.optimization.calculating}
           >
             {summary && summary.size_orig > 0 ? (
               <>
@@ -168,10 +168,13 @@ export default function DashboardPage() {
                 {/* The old three-way split, demoted: it describes how we store
                     a picture, which is our business, not the user's. */}
                 <div className="mt-3 border-t border-neutral-800/60 pt-2 text-[10px] text-neutral-600 leading-relaxed">
-                  占用明细 · 主图 {formatBytes(summary.size_primary, 0)} · 全尺寸变体{" "}
-                  {formatBytes(summary.size_variants, 0)} · 缩略图 {formatBytes(summary.size_thumbs, 0)}
+                  {t.dashboard.optimization.breakdown(
+                    formatBytes(summary.size_primary, 0),
+                    formatBytes(summary.size_variants, 0),
+                    formatBytes(summary.size_thumbs, 0),
+                  )}
                   {summary.size_unclassified > 0 && (
-                    <> · 早期未拆分 {formatBytes(summary.size_unclassified, 0)}</>
+                    <> · {t.dashboard.optimization.unclassified(formatBytes(summary.size_unclassified, 0))}</>
                   )}
                 </div>
               </>
@@ -187,7 +190,7 @@ export default function DashboardPage() {
                   rows={summary.by_profile.map((p, i) => ({
                     label: p.name,
                     value: p.bytes,
-                    note: `${p.images} 张 · ${formatBytes(p.bytes, 0)}`,
+                    note: t.common.countAndSize(p.images, formatBytes(p.bytes, 0)),
                     color: FORMATS[i % FORMATS.length],
                   }))}
                   className="py-1"
@@ -202,7 +205,7 @@ export default function DashboardPage() {
                       rows={summary.by_format.map((f, i) => ({
                         label: f.ext.toUpperCase(),
                         value: f.bytes,
-                        note: `${f.images} 张 · ${formatBytes(f.bytes, 0)}`,
+                        note: t.common.countAndSize(f.images, formatBytes(f.bytes, 0)),
                         color: FORMATS[i % FORMATS.length],
                       }))}
                     />

@@ -88,7 +88,7 @@ export default function SharePage() {
             © {new Date().getFullYear()} Open<span className="text-brand-400">img</span>
           </Link>
           <div className="flex-1" />
-          {data.uploader && <span>由 {data.uploader} 上传</span>}
+          {data.uploader && <span>{t.share.uploadedBy(data.uploader)}</span>}
           <span className="text-neutral-700">·</span>
           <span>{new Date(data.created_at).toLocaleString(locale)}</span>
         </>
@@ -115,7 +115,7 @@ export default function SharePage() {
           <span className="rounded-md bg-brand-900/40 px-2 py-0.5 text-[10px] font-medium text-brand-300">
             {data.ext.toUpperCase()}
           </span>
-          {data.views > 0 && <Meta icon="fa-eye" text={`${data.views} 次访问`} />}
+          {data.views > 0 && <Meta icon="fa-eye" text={t.share.views(data.views)} />}
 
           <div className="flex-1" />
 
@@ -142,8 +142,7 @@ export default function SharePage() {
 
       <div className="mt-6 rounded-xl border-l-2 border-brand-500 bg-neutral-900/40 px-4 py-3 text-[11px] leading-relaxed text-neutral-500">
         <i className="fa-solid fa-circle-info mr-1.5 text-brand-400" />
-        本站仅提供图片存储与分发服务，不拥有所展示内容的任何版权。所有图片版权归原作者或上传者所有。
-        如发现内容侵犯您的合法权益，请点击右上角举报按钮提交投诉，我们将在收到通知后尽快核实并删除相关内容。
+        {t.share.copyrightNotice}
       </div>
 
       {reporting && <ReportDialog code={code} onClose={() => setReporting(false)} />}
@@ -247,7 +246,7 @@ function Reactions({
             key={r.kind}
             onClick={() => react(r.kind)}
             disabled={busy}
-            title={mine ? `取消${r.label}` : r.label}
+            title={mine ? t.share.reaction.undo(r.label) : r.label}
             className={`inline-flex h-7 items-center gap-1 rounded-full px-2 text-sm transition disabled:opacity-60 ${
               mine ? "bg-brand-600/25 ring-1 ring-brand-500/40" : "hover:bg-neutral-800"
             }`}

@@ -127,7 +127,7 @@ func (s *Server) handleListImages(c *gin.Context) {
 
 	q := s.DB.Where("user_id = ? AND deleted_at IS NULL", u.ID)
 	if kw := strings.TrimSpace(c.Query("q")); kw != "" {
-		q = q.Where("orig_name ILIKE ?", "%"+kw+"%")
+		q = q.Where(`orig_name ILIKE ? ESCAPE '\'`, likePattern(kw))
 	}
 
 	var total int64

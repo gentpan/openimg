@@ -65,7 +65,7 @@ func (s *Server) handleBulkDelete(c *gin.Context) {
 	switch {
 	case req.All:
 		if t := strings.TrimSpace(req.Query); t != "" {
-			q = q.Where("orig_name ILIKE ?", "%"+t+"%")
+			q = q.Where(`orig_name ILIKE ? ESCAPE '\'`, likePattern(t))
 		}
 	case len(req.IDs) > 0:
 		ids := make([]uuid.UUID, 0, len(req.IDs))
@@ -147,7 +147,7 @@ func (s *Server) handleBulkDelete(c *gin.Context) {
 	if req.All {
 		rq := s.DB.Model(&models.Image{}).Where("user_id = ? AND deleted_at IS NULL", u.ID)
 		if t := strings.TrimSpace(req.Query); t != "" {
-			rq = rq.Where("orig_name ILIKE ?", "%"+t+"%")
+			rq = rq.Where(`orig_name ILIKE ? ESCAPE '\'`, likePattern(t))
 		}
 		rq.Count(&remaining)
 	}

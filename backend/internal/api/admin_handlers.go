@@ -301,18 +301,6 @@ func (s *Server) adminReconcileQuota(c *gin.Context) {
 // query plan.
 const maxLedgerQueryRunes = 64
 
-// likePattern turns a search term into a LIKE pattern with the wildcards
-// escaped.
-//
-// Without this, a filename containing _ or % silently becomes a wildcard:
-// searching "draft_v2.png" would also match "draftXv2.png", and a lone "%"
-// would match every row while looking like it found something. Backslash is
-// escaped first, or it would corrupt the escapes added after it.
-func likePattern(term string) string {
-	r := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
-	return "%" + r.Replace(term) + "%"
-}
-
 // GET /admin/api/quota/transactions — the ledger, paged and searchable.
 func (s *Server) adminListTransactions(c *gin.Context) {
 	limit := 100

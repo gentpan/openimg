@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"log"
 	"math/big"
 	"net/http"
@@ -55,13 +56,13 @@ func otpHash(emailAddr, purpose, code string) string {
 
 func (s *Server) issueOTP(c *gin.Context, emailAddr, purpose string) (int, string) {
 	if !s.Email.Configured() {
-		return http.StatusServiceUnavailable, "邮件服务未配置，无法发送验证码"
+		return http.StatusServiceUnavailable, "otp.not_configured"
 	}
 	var recent models.EmailOTP
 	if err := s.DB.Where("email = ? AND purpose = ? AND created_at > ?",
 		emailAddr, purpose, time.Now().Add(-otpRateLimitWin)).
 		Order("created_at DESC").First(&recent).Error; err == nil {
-		return http.StatusTooManyRequests, "请稍后再试，距上次发送不到 1 分钟"
+		return http.StatusTooManyRequests, "otp.rate_limited"
 	}
 
 	code := generateOTP(otpLength)
@@ -83,12 +84,13 @@ func (s *Server) issueOTP(c *gin.Context, emailAddr, purpose string) (int, strin
 	// 202 is written, which killed every send mid-flight. WithoutCancel keeps
 	// any request-scoped values while detaching the cancellation, and the
 	// explicit timeout stops a hung provider from leaking the goroutine.
-	label := models.OTPPurposeLabel(purpose)
+	labelKey := models.OTPPurposeLabel(purpose)
 	sendCtx, cancel := context.WithTimeout(context.WithoutCancel(c.Request.Context()), 30*time.Second)
 	body := email.OTPEmailHTML(code, int(otpTTL.Minutes()))
 	go func() {
 		defer cancel()
-		if err := s.Email.Send(sendCtx, emailAddr, "Openimg "+label+"验证码: "+code, body); err != nil {
+		if err := s.Email.Send(sendCtx, emailAddr,
+			i18n.TCtx(sendCtx, "email.otp.subject", i18n.TCtx(sendCtx, labelKey), code), body); err != nil {
 			// The OTP row is intentionally kept: the user can retry the send,
 			// and rolling it back would invalidate a code that may have gone
 			// out anyway.
@@ -99,7 +101,11 @@ func (s *Server) issueOTP(c *gin.Context, emailAddr, purpose string) (int, strin
 }
 
 // consumeOTP checks a code against one purpose and burns it. Returns a
-// client-safe message, or "" when the code was valid.
+// catalogue key, or "" when the code was valid.
+//
+// A key rather than a message because this runs without a *gin.Context, so it
+// has no language to render into; the six callers all have one and translate
+// at the point they answer.
 func (s *Server) consumeOTP(emailAddr, code, purpose string) (int, string) {
 	emailAddr = strings.ToLower(strings.TrimSpace(emailAddr))
 	code = strings.TrimSpace(code)
@@ -109,17 +115,17 @@ func (s *Server) consumeOTP(emailAddr, code, purpose string) (int, string) {
 		emailAddr, purpose, time.Now()).
 		Order("created_at DESC").First(&otp).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return http.StatusUnauthorized, "验证码无效或已过期"
+		return http.StatusUnauthorized, "otp.invalid_or_expired"
 	} else if err != nil {
 		return http.StatusInternalServerError, err.Error()
 	}
 	if otp.Attempts >= otpMaxAttempts {
 		s.DB.Model(&otp).Update("used_at", time.Now())
-		return http.StatusUnauthorized, "尝试次数过多，请重新申请验证码"
+		return http.StatusUnauthorized, "otp.too_many_attempts"
 	}
 	if otpHash(emailAddr, purpose, code) != otp.CodeHash {
 		s.DB.Model(&otp).Update("attempts", otp.Attempts+1)
-		return http.StatusUnauthorized, "验证码错误"
+		return http.StatusUnauthorized, "otp.incorrect"
 	}
 	s.DB.Model(&otp).Update("used_at", time.Now())
 	return 0, ""
@@ -153,8 +159,8 @@ func (s *Server) handleVerifyOTP(c *gin.Context) {
 	emailAddr := strings.ToLower(strings.TrimSpace(req.Email))
 	code := strings.TrimSpace(req.Code)
 
-	if status, msg := s.consumeOTP(emailAddr, code, models.OTPPurposeLogin); msg != "" {
-		c.JSON(status, gin.H{"error": msg})
+	if status, key := s.consumeOTP(emailAddr, code, models.OTPPurposeLogin); key != "" {
+		c.JSON(status, gin.H{"error": i18n.T(c, key)})
 		return
 	}
 

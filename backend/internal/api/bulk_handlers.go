@@ -55,8 +55,8 @@ func (s *Server) handleBulkDelete(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "gallery.purge_otp_required")})
 			return
 		}
-		if status, msg := s.consumeOTP(u.Email, req.Code, models.OTPPurposePurge); msg != "" {
-			c.JSON(status, gin.H{"error": msg})
+		if status, key := s.consumeOTP(u.Email, req.Code, models.OTPPurposePurge); key != "" {
+			c.JSON(status, gin.H{"error": i18n.T(c, key)})
 			return
 		}
 	}

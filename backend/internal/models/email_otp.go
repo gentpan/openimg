@@ -37,21 +37,24 @@ const (
 	OTPPurposeRegister = "register"
 )
 
-// OTPPurposeLabel is the human name used in the subject line and the UI.
+// OTPPurposeLabel maps a purpose to its catalogue key.
+//
+// A key, not a sentence: this package has no request and no language, and the
+// label ends up in an email subject that has to match the reader's UI.
 func OTPPurposeLabel(p string) string {
 	switch p {
 	case OTPPurposePassword:
-		return "修改密码"
+		return "otp.purpose.password"
 	case OTPPurposePasskey:
-		return "添加 Passkey"
+		return "otp.purpose.passkey"
 	case OTPPurposePurge:
-		return "清空图库"
+		return "otp.purpose.purge"
 	case OTPPurposeReset:
-		return "重置密码"
+		return "otp.purpose.reset"
 	case OTPPurposeRegister:
-		return "注册"
+		return "otp.purpose.register"
 	default:
-		return "登录"
+		return "otp.purpose.login"
 	}
 }
 

@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"strings"
@@ -164,7 +164,7 @@ func (s *Server) handleCreateProfile(c *gin.Context) {
 	}
 	if !s.Cipher.Enabled() {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error": "服务端未配置存储主密钥（STORAGE_MASTER_KEY），无法安全保存凭据",
+			"error": i18n.T(c, "profile.no_master_key"),
 		})
 		return
 	}
@@ -179,12 +179,12 @@ func (s *Server) handleCreateProfile(c *gin.Context) {
 	s.DB.Model(&models.StorageProfile{}).Where("user_id = ?", u.ID).Count(&count)
 	if g.MaxProfiles > 0 && count >= int64(g.MaxProfiles) {
 		c.JSON(http.StatusForbidden, gin.H{
-			"error": "已达到存储配置数量上限", "max": g.MaxProfiles,
+			"error": i18n.T(c, "profile.limit_reached"), "max": g.MaxProfiles,
 		})
 		return
 	}
 
-	cfg, kind, err := s.buildProfileConfig(req, nil)
+	cfg, kind, err := s.buildProfileConfig(c.Request.Context(), req, nil)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -249,7 +249,7 @@ func (s *Server) handleUpdateProfile(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	cfg, kind, err := s.buildProfileConfig(req, p)
+	cfg, kind, err := s.buildProfileConfig(c.Request.Context(), req, p)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -432,7 +432,7 @@ func (s *Server) handleDeleteProfile(c *gin.Context) {
 	s.DB.Model(&models.Image{}).Where("profile_id = ? AND deleted_at IS NULL", p.ID).Count(&n)
 	if n > 0 {
 		c.JSON(http.StatusConflict, gin.H{
-			"error": "该存储下还有图片，删除配置会导致这些图片无法访问",
+			"error": i18n.T(c, "profile.has_images"),
 			"count": n,
 		})
 		return
@@ -459,7 +459,7 @@ func (s *Server) ownedProfile(c *gin.Context, u *models.User) (*models.StoragePr
 	}
 	var p models.StorageProfile
 	if err := s.DB.First(&p, "id = ?", id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "存储配置不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "profile.not_found")})
 		return nil, err
 	}
 	// Admins may touch platform profiles; nobody may touch another user's.
@@ -469,7 +469,7 @@ func (s *Server) ownedProfile(c *gin.Context, u *models.User) (*models.StoragePr
 			return nil, gorm.ErrRecordNotFound
 		}
 	} else if *p.UserID != u.ID {
-		c.JSON(http.StatusNotFound, gin.H{"error": "存储配置不存在"})
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "profile.not_found")})
 		return nil, gorm.ErrRecordNotFound
 	}
 	return &p, nil
@@ -479,7 +479,7 @@ func (s *Server) ownedProfile(c *gin.Context, u *models.User) (*models.StoragePr
 // is non-nil on edit, which is what lets an empty secret mean "keep the one
 // on file" — we never send secrets to the client, so requiring a retype on
 // every edit would be hostile.
-func (s *Server) buildProfileConfig(req profileReq, existing *models.StorageProfile) (storage.S3Config, models.ProfileKind, error) {
+func (s *Server) buildProfileConfig(ctx context.Context, req profileReq, existing *models.StorageProfile) (storage.S3Config, models.ProfileKind, error) {
 	endpoint := strings.TrimSpace(req.Endpoint)
 	kind := inferKind(endpoint)
 	pathStyle := inferPathStyle(endpoint)
@@ -499,7 +499,7 @@ func (s *Server) buildProfileConfig(req profileReq, existing *models.StorageProf
 		Kind:          string(kind),
 	}
 	if cfg.Bucket == "" {
-		return cfg, kind, fmt.Errorf("bucket 不能为空")
+		return cfg, kind, errors.New(i18n.TCtx(ctx, "profile.bucket_required"))
 	}
 	if err := storage.ValidateUserEndpoint(cfg.Endpoint); err != nil {
 		return cfg, kind, err
@@ -528,7 +528,7 @@ func (s *Server) buildProfileConfig(req profileReq, existing *models.StorageProf
 		}
 	}
 	if cfg.AccessKey == "" || cfg.SecretKey == "" {
-		return cfg, kind, fmt.Errorf("access key 与 secret key 不能为空")
+		return cfg, kind, errors.New(i18n.TCtx(ctx, "profile.keys_required"))
 	}
 	return cfg, kind, nil
 }

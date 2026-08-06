@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"sort"
 
@@ -105,17 +106,17 @@ func (s *Server) handleStorageSummary(c *gin.Context) {
 		}
 		for _, r := range perProfile {
 			p, ok := byID[r.ProfileID]
-			name, kind := "已移除的存储", "unknown"
+			name, kind := i18n.T(c, "profile.removed_location"), "unknown"
 			switch {
 			case ok:
 				name, kind = p.Name, string(p.Kind)
 				if p.IsPlatform() {
-					name = "平台空间"
+					name = i18n.T(c, "profile.platform")
 				}
 			case r.ProfileID == uuid.Nil:
 				// No platform profile row yet — local disk in development, and
 				// the first uploads on a fresh install. Still the platform.
-				name, kind = "平台空间", string(models.ProfilePlatform)
+				name, kind = i18n.T(c, "profile.platform"), string(models.ProfilePlatform)
 			}
 			out.ByProfile = append(out.ByProfile, profileUsage{
 				ID: r.ProfileID, Name: name, Kind: kind, Bytes: r.Bytes, Images: r.Images,

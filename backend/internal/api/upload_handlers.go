@@ -183,7 +183,7 @@ func (s *Server) storeUpload(ctx context.Context, p storeParams) (*models.Image,
 	dupErr := s.DB.Where("profile_id = ? AND sha256 = ? AND deleted_at IS NULL", profileID, p.SHA).
 		Order("created_at ASC").First(&twin).Error
 	if dupErr == nil {
-		img, err := s.cloneImage(twin, p)
+		img, err := s.cloneImage(ctx, twin, p)
 		return img, true, err
 	}
 	if !errors.Is(dupErr, gorm.ErrRecordNotFound) {
@@ -212,8 +212,9 @@ func (s *Server) storeUpload(ctx context.Context, p storeParams) (*models.Image,
 	if p.OnPlatform {
 		if err := quota.Consume(s.DB, p.User.ID, total, fmt.Sprintf("上传 %s", p.OrigName), &imageID); err != nil {
 			if errors.Is(err, quota.ErrInsufficient) {
-				return nil, false, fmt.Errorf("%w：需要 %s，剩余 %s",
-					quota.ErrInsufficient, humanBytes(total), humanBytes(quota.Available(p.User)))
+				return nil, false, localize(
+					i18n.TCtx(ctx, "storage.quota", humanBytes(total), humanBytes(quota.Available(p.User))),
+					quota.ErrInsufficient)
 			}
 			return nil, false, err
 		}
@@ -227,7 +228,7 @@ func (s *Server) storeUpload(ctx context.Context, p storeParams) (*models.Image,
 		}
 	}
 
-	primaryKey, err := s.newObjectKey(res.Primary.Ext)
+	primaryKey, err := s.newObjectKey(ctx, res.Primary.Ext)
 	if err != nil {
 		refund()
 		return nil, false, err
@@ -248,7 +249,7 @@ func (s *Server) storeUpload(ctx context.Context, p storeParams) (*models.Image,
 
 	if err := putObject(primaryKey, res.Primary); err != nil {
 		refund()
-		return nil, false, fmt.Errorf("写入存储失败：%w", err)
+		return nil, false, localize(i18n.TCtx(ctx, "storage.write_failed", err.Error()), err)
 	}
 	for name, out := range res.Variants {
 		if err := putObject(models.VariantKey(primaryKey, name), out); err != nil {
@@ -257,7 +258,7 @@ func (s *Server) storeUpload(ctx context.Context, p storeParams) (*models.Image,
 			// with no row would be an orphan, so unwind and fail cleanly.
 			cleanupObjects(ctx, p.Backend, written)
 			refund()
-			return nil, false, fmt.Errorf("写入变体 %s 失败：%w", name, err)
+			return nil, false, localize(i18n.TCtx(ctx, "storage.write_variant_failed", name, err.Error()), err)
 		}
 	}
 
@@ -296,13 +297,14 @@ func (s *Server) storeUpload(ctx context.Context, p storeParams) (*models.Image,
 // Quota is still charged: otherwise re-uploading the same file would be a free
 // way to keep a copy, and every user's "space used" would stop matching the
 // pictures they can see. The saving is ours, not theirs.
-func (s *Server) cloneImage(twin models.Image, p storeParams) (*models.Image, error) {
+func (s *Server) cloneImage(ctx context.Context, twin models.Image, p storeParams) (*models.Image, error) {
 	imageID := uuid.New()
 	if p.OnPlatform {
 		if err := quota.Consume(s.DB, p.User.ID, twin.SizeStored, fmt.Sprintf("上传 %s", p.OrigName), &imageID); err != nil {
 			if errors.Is(err, quota.ErrInsufficient) {
-				return nil, fmt.Errorf("%w：需要 %s，剩余 %s",
-					quota.ErrInsufficient, humanBytes(twin.SizeStored), humanBytes(quota.Available(p.User)))
+				return nil, localize(
+					i18n.TCtx(ctx, "storage.quota", humanBytes(twin.SizeStored), humanBytes(quota.Available(p.User))),
+					quota.ErrInsufficient)
 			}
 			return nil, err
 		}
@@ -419,7 +421,7 @@ func humanBytes(n int64) string {
 // The check cannot be a unique constraint on the column: deduplicated uploads
 // deliberately share one key across many rows, and a unique index would reject
 // exactly the case the dedup path is built for.
-func (s *Server) newObjectKey(ext string) (string, error) {
+func (s *Server) newObjectKey(ctx context.Context, ext string) (string, error) {
 	now := time.Now()
 	for attempt := 0; attempt < 5; attempt++ {
 		key := models.ObjectKeyFor(now, ext)
@@ -432,5 +434,5 @@ func (s *Server) newObjectKey(ext string) (string, error) {
 		}
 		log.Printf("upload: object key %s already taken, re-rolling", key)
 	}
-	return "", fmt.Errorf("生成存储路径失败，请重试")
+	return "", errors.New(i18n.TCtx(ctx, "upload.key_failed"))
 }

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
 	"strconv"
 	"sync"
@@ -73,7 +74,12 @@ func (rl *rateLimiter) reap() {
 
 // middleware returns a gin handler enforcing this limiter. Admins bypass it —
 // they're the ones running bulk cleanups.
-func (rl *rateLimiter) middleware(msg string) gin.HandlerFunc {
+//
+// Takes a catalogue key rather than a message: routes are registered at
+// startup, long before any request, so there is no language to translate into
+// yet. Resolving the key inside the handler is what makes the 429 speak the
+// caller's language.
+func (rl *rateLimiter) middleware(key string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if u, ok := auth.UserFrom(c); ok && u.IsAdmin() {
 			c.Next()
@@ -84,7 +90,7 @@ func (rl *rateLimiter) middleware(msg string) gin.HandlerFunc {
 			secs := int(retry.Seconds()) + 1
 			c.Header("Retry-After", strconv.Itoa(secs))
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
-				"error":       msg,
+				"error":       i18n.T(c, key),
 				"retry_after": secs,
 			})
 			return

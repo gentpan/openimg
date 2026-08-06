@@ -97,7 +97,7 @@ func (s *Server) handleCreateToken(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"token":   toTokenOut(tok),
 		"plain":   plain,
-		"warning": "此 Token 只显示这一次，请立即保存",
+		"warning": i18n.T(c, "token.shown_once"),
 	})
 }
 

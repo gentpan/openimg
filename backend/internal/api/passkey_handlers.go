@@ -35,8 +35,8 @@ func (s *Server) handlePasskeyEnrollBegin(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "passkey.otp_required")})
 		return
 	}
-	if status, msg := s.consumeOTP(user.Email, req.Code, models.OTPPurposePasskey); msg != "" {
-		c.JSON(status, gin.H{"error": msg})
+	if status, key := s.consumeOTP(user.Email, req.Code, models.OTPPurposePasskey); key != "" {
+		c.JSON(status, gin.H{"error": i18n.T(c, key)})
 		return
 	}
 	options, flowID, err := s.Passkey.BeginEnroll(user)

@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gentpan/openimg/backend/internal/i18n"
 	"io"
@@ -175,7 +176,7 @@ func (s *Server) handleOAuthCallback(provider string) gin.HandlerFunc {
 				c.Redirect(http.StatusFound, "/login?error=link_requires_login")
 				return
 			}
-			if err := s.linkProviderToUser(currentUser, provider, profile); err != nil {
+			if err := s.linkProviderToUser(c.Request.Context(), currentUser, provider, profile); err != nil {
 				c.Redirect(http.StatusFound, "/settings?error="+url.QueryEscape(err.Error()))
 				return
 			}
@@ -215,15 +216,15 @@ func (s *Server) handleOAuthCallback(provider string) gin.HandlerFunc {
 // authenticated user. Refuses if the OAuth identity is already linked to a
 // different account (avoids account takeover by signing in with a hijacked
 // google account whose email matches an existing user).
-func (s *Server) linkProviderToUser(user *models.User, provider string, p *oauthProfile) error {
+func (s *Server) linkProviderToUser(ctx context.Context, user *models.User, provider string, p *oauthProfile) error {
 	subjectCol := map[string]string{"google": "google_sub", "github": "github_id"}[provider]
 	if subjectCol == "" || p.Subject == "" {
-		return fmt.Errorf("provider %s 不支持 / 没拿到 user id", provider)
+		return errors.New(i18n.TCtx(ctx, "oauth.no_user_id", provider))
 	}
 	// 1) check this OAuth subject isn't already linked to a different account
 	var other models.User
 	if err := s.DB.Where(subjectCol+" = ? AND id <> ?", p.Subject, user.ID).First(&other).Error; err == nil {
-		return fmt.Errorf("此 %s 账号已绑定到其他用户 (%s)", provider, other.Email)
+		return errors.New(i18n.TCtx(ctx, "oauth.linked_elsewhere", provider, other.Email))
 	}
 	// 2) link
 	updates := map[string]any{subjectCol: p.Subject}

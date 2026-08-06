@@ -68,9 +68,9 @@ type resetConfirmReq struct {
 func (s *Server) handleResetConfirm(c *gin.Context) {
 	var req resetConfirmReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		msg := "新密码至少 8 位"
+		msg := i18n.T(c, "auth.password_short")
 		if len(strings.TrimSpace(req.Code)) != 6 {
-			msg = "需要 6 位邮箱验证码"
+			msg = i18n.T(c, "auth.otp_needed")
 		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": msg})
 		return
@@ -79,8 +79,8 @@ func (s *Server) handleResetConfirm(c *gin.Context) {
 
 	// Consume the code first. Doing the user lookup first would let the
 	// response time distinguish a real address from a made-up one.
-	if status, msg := s.consumeOTP(emailAddr, req.Code, models.OTPPurposeReset); msg != "" {
-		c.JSON(status, gin.H{"error": msg})
+	if status, key := s.consumeOTP(emailAddr, req.Code, models.OTPPurposeReset); key != "" {
+		c.JSON(status, gin.H{"error": i18n.T(c, key)})
 		return
 	}
 

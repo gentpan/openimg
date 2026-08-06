@@ -136,8 +136,8 @@ type UserGroup struct {
 	// bonus daily, forever.
 	WeekBonusSpace  int64 `gorm:"not null;default:52428800" json:"week_bonus_space"`   // 50 MiB
 	MonthBonusSpace int64 `gorm:"not null;default:314572800" json:"month_bonus_space"` // 300 MiB
-	ReferralSpace    int64 `gorm:"not null;default:209715200" json:"referral_space"`    // per successful referral
-	MaxTotalSpace    int64 `gorm:"not null;default:10737418240" json:"max_total_space"` // 0 = uncapped
+	ReferralSpace   int64 `gorm:"not null;default:209715200" json:"referral_space"`    // per successful referral
+	MaxTotalSpace   int64 `gorm:"not null;default:10737418240" json:"max_total_space"` // 0 = uncapped
 
 	// Bring-your-own-storage.
 	AllowBYOS   bool `gorm:"not null;default:true" json:"allow_byos"`

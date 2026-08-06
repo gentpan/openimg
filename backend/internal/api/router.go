@@ -93,11 +93,11 @@ func (s *Server) Router() *gin.Engine {
 	// signed in without requiring it.
 	shareGroup := r.Group("", s.Auth.Middleware(false))
 	shareGroup.GET("/api/s/:code", s.handleShareInfo)
-	shareGroup.POST("/api/s/:code/react", s.reportLimiter.middleware("操作过于频繁"), s.handleReact)
-	shareGroup.POST("/api/s/:code/report", s.reportLimiter.middleware("举报过于频繁，请稍后再试"), s.handleShareReport)
+	shareGroup.POST("/api/s/:code/react", s.reportLimiter.middleware("ratelimit.too_frequent"), s.handleReact)
+	shareGroup.POST("/api/s/:code/report", s.reportLimiter.middleware("report.rate_limited"), s.handleShareReport)
 
 	r.POST("/api/report", s.Auth.Middleware(false),
-		s.reportLimiter.middleware("举报过于频繁，请稍后再试"), s.handleReport)
+		s.reportLimiter.middleware("report.rate_limited"), s.handleReport)
 
 	// Auth (public + protected)
 	r.POST("/auth/register/code", s.handleRegisterCode)
@@ -131,7 +131,7 @@ func (s *Server) Router() *gin.Engine {
 	// a session cookie, so PicGo / Typora / curl can post here. Account
 	// management routes above deliberately do not.
 	machine := r.Group("", s.Auth.TokenOrSession())
-	machine.POST("/api/upload", s.uploadLimiter.middleware("上传过于频繁，请稍后再试"), s.handleUpload)
+	machine.POST("/api/upload", s.uploadLimiter.middleware("upload.rate_limited"), s.handleUpload)
 	machine.GET("/api/images", s.handleListImages)
 	machine.GET("/api/images/:id", s.handleGetImage)
 	machine.DELETE("/api/images/:id", s.handleDeleteImage)

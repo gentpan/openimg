@@ -13,6 +13,7 @@
 package i18n
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -37,11 +38,43 @@ const Default = ZH
 const ctxKey = "openimg.lang"
 
 // Middleware records the caller's language for the rest of the request.
+//
+// It goes into two places. c.Set covers handlers, which is most of them. The
+// request's context.Context covers the layer below: storeUpload and its kind
+// take a ctx and no *gin.Context, and their errors are handed straight to the
+// client as err.Error() — without this they would answer in Chinese no matter
+// what the caller asked for.
 func Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Set(ctxKey, parse(c.GetHeader("Accept-Language")))
+		lang := parse(c.GetHeader("Accept-Language"))
+		c.Set(ctxKey, lang)
+		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), langCtxKey{}, lang))
 		c.Next()
 	}
+}
+
+// langCtxKey is a private type so nothing else can collide with it, which is
+// the documented way to key a context value.
+type langCtxKey struct{}
+
+// TCtx is T for code that has a context.Context but no *gin.Context.
+//
+// Falls back to Default when the context carries no language, so a background
+// job or a test that never went through the middleware still gets a sentence.
+func TCtx(ctx context.Context, key string, args ...any) string {
+	lang := Default
+	if v, ok := ctx.Value(langCtxKey{}).(Lang); ok {
+		lang = v
+	}
+	return translate(lang, key, args...)
+}
+
+// LangOfCtx reports the language recorded on a context.
+func LangOfCtx(ctx context.Context) Lang {
+	if v, ok := ctx.Value(langCtxKey{}).(Lang); ok {
+		return v
+	}
+	return Default
 }
 
 // parse reads the first tag it recognises.

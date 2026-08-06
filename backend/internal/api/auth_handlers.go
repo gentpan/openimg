@@ -81,14 +81,14 @@ func toPublic(u *models.User, group *models.UserGroup) publicUser {
 func (s *Server) handleRegister(c *gin.Context) {
 	var req registerReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		msg := "请填写邮箱和至少 8 位的密码"
+		msg := i18n.T(c, "auth.credentials_short")
 		switch {
 		case strings.TrimSpace(req.Name) == "":
-			msg = "请填写昵称"
+			msg = i18n.T(c, "auth.name_required")
 		case len([]rune(strings.TrimSpace(req.Name))) > 32:
-			msg = "昵称最多 32 个字符"
+			msg = i18n.T(c, "auth.name_too_long")
 		case len(strings.TrimSpace(req.Code)) != 6:
-			msg = "请输入 6 位邮箱验证码"
+			msg = i18n.T(c, "auth.otp_required")
 		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": msg})
 		return
@@ -106,8 +106,8 @@ func (s *Server) handleRegister(c *gin.Context) {
 	// Without it the site accepts accounts on addresses their owner has never
 	// seen — which is how a free host ends up sending mail nobody asked for and
 	// gets its domain listed for it.
-	if status, msg := s.consumeOTP(email, req.Code, models.OTPPurposeRegister); msg != "" {
-		c.JSON(status, gin.H{"error": msg})
+	if status, key := s.consumeOTP(email, req.Code, models.OTPPurposeRegister); key != "" {
+		c.JSON(status, gin.H{"error": i18n.T(c, key)})
 		return
 	}
 

@@ -11,7 +11,7 @@ type SiteSetting struct {
 }
 
 const (
-	SiteSettingUpload  = "upload"  // value is JSON of UploadSettings
+	SiteSettingUpload = "upload" // value is JSON of UploadSettings
 )
 
 // UploadSettings are the upload-pipeline knobs an admin can change at runtime.

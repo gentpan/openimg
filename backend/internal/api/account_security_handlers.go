@@ -81,15 +81,15 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 	u := auth.MustUser(c)
 	var req changePasswordReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		msg := "新密码至少 8 位"
+		msg := i18n.T(c, "auth.password_short")
 		if len(strings.TrimSpace(req.Code)) != 6 {
-			msg = "需要 6 位邮箱验证码"
+			msg = i18n.T(c, "auth.otp_needed")
 		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": msg})
 		return
 	}
-	if status, msg := s.consumeOTP(u.Email, req.Code, models.OTPPurposePassword); msg != "" {
-		c.JSON(status, gin.H{"error": msg})
+	if status, key := s.consumeOTP(u.Email, req.Code, models.OTPPurposePassword); key != "" {
+		c.JSON(status, gin.H{"error": i18n.T(c, key)})
 		return
 	}
 	hash, err := auth.HashPassword(req.NewPassword)

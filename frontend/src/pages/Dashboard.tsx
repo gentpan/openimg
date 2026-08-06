@@ -100,7 +100,7 @@ export default function DashboardPage() {
           <Kpi
             label={t.common.availableStorage}
             value={formatBytes(quota?.available_bytes ?? user.available_bytes, 0)}
-            sub={`已用 ${formatBytes(usedAnimated, 1)} · ${usedPct.toFixed(0)}% · 共 ${formatBytes(quota?.quota_bytes ?? user.quota_bytes, 0)}`}
+            sub={t.dashboard.kpi.availableStorageSub(formatBytes(usedAnimated, 1), Number(usedPct.toFixed(0)), formatBytes(quota?.quota_bytes ?? user.quota_bytes, 0))}
             icon="fa-database"
             alert={usedPct >= 90}
             href="/space"

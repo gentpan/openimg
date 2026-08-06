@@ -179,7 +179,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
                     disabled={making !== null}
                     className="inline-flex items-center justify-center gap-1 rounded-md bg-neutral-800 px-2 py-1 text-[10px] text-neutral-300 hover:bg-neutral-700 disabled:opacity-50 transition min-w-[3.5rem]"
                   >
-                    {making === w ? <Spinner className="h-3 w-3 text-brand-400" /> : <>生成 {w}px</>}
+                    {making === w ? <Spinner className="h-3 w-3 text-brand-400" /> : <>{t.imageDetail.generateSize(w)}</>}
                   </button>
                 );
               })}

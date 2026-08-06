@@ -27,7 +27,19 @@ export default function ReferPage() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center text-neutral-500">
-        请先 <Link to="/login" className="text-brand-400 hover:underline mx-1">{t.common.signIn}</Link>
+          {t.common
+            .authRequired("\u0000")
+            .split("\u0000")
+            .flatMap((part, i) =>
+              i === 0
+                ? [part]
+                : [
+                    <Link key={i} to="/login" className="text-brand-400 hover:underline mx-1">
+                      {t.common.authRequiredLink}
+                    </Link>,
+                    part,
+                  ],
+            )}
       </div>
     );
   }
@@ -42,7 +54,7 @@ export default function ReferPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (e) {
-      alert("复制失败：" + e);
+      alert(t.refer.copyFailed(String(e)));
     }
   }
 

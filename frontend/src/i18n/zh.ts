@@ -31,6 +31,7 @@ export const zh = {
     download: "下载",
     optional: "（可选）",
     verified: "已验证",
+    documentTitle: "Openimg — 永久免费的公益图床 | 图片压缩转换 · CDN 加速",
     adminRequired: "需要管理员权限",
     backToHome: "返回首页",
 

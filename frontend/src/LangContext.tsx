@@ -50,6 +50,11 @@ export function LangProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    // The tab title lives in index.html and would otherwise stay Chinese in an
+    // English session. The og:/twitter: meta tags are deliberately left alone:
+    // they are read from the served HTML by crawlers that get one document for
+    // both languages, so a runtime rewrite would not reach them anyway.
+    document.title = dicts[lang].common.documentTitle;
   }, [lang]);
 
   function setLang(l: Lang) {

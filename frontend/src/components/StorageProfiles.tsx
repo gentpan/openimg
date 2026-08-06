@@ -277,7 +277,7 @@ export default function StorageProfiles() {
 
           <div className="mt-3 rounded-lg bg-amber-950/20 border border-amber-500/20 px-3 py-2 text-[10px] text-amber-200/90">
             <i className="fa-solid fa-shield-halved mr-1" />
-            建议创建<b>{t.storageProfiles.securityNoteEmphasis}</b>的令牌。密钥会以 AES-256-GCM 加密存储，页面上永不回显。
+            {t.storageProfiles.securityNote}
           </div>
 
           <div className="mt-3 flex items-center gap-2">

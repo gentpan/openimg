@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
+import { useLang } from "./LangContext";
 
 export type ToastKind = "success" | "error" | "info";
 
@@ -97,16 +98,17 @@ const STYLES: Record<ToastKind, { icon: string; chip: string }> = {
  * the page behind it, and back on for each toast so they stay dismissable.
  */
 function ToastStack({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
+  const { t } = useLang();
   if (toasts.length === 0) return null;
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[60] flex flex-col items-center gap-2 px-4">
-      {toasts.map((t) => {
-        const st = STYLES[t.kind];
+      {toasts.map((item) => {
+        const st = STYLES[item.kind];
         return (
           <button
-            key={t.id}
-            onClick={() => onDismiss(t.id)}
-            title="点击关闭"
+            key={item.id}
+            onClick={() => onDismiss(item.id)}
+            title={t.common.close}
             className="toast-in pointer-events-auto flex w-full max-w-sm items-start gap-2.5 rounded-xl border border-neutral-800 bg-neutral-900 px-3.5 py-2.5 text-left shadow-panel"
           >
             <span
@@ -115,9 +117,9 @@ function ToastStack({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: nu
               <i className={`fa-solid ${st.icon}`} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-xs text-neutral-100">{t.text}</span>
-              {t.detail && (
-                <span className="mt-0.5 block text-[10px] leading-relaxed text-neutral-500">{t.detail}</span>
+              <span className="block text-xs text-neutral-100">{item.text}</span>
+              {item.detail && (
+                <span className="mt-0.5 block text-[10px] leading-relaxed text-neutral-500">{item.detail}</span>
               )}
             </span>
           </button>

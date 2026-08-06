@@ -32,6 +32,7 @@ export const en: Dict = {
     download: "Download",
     optional: "(optional)",
     verified: "Verified",
+    documentTitle: "Openimg — A free image host, forever | Optimize, convert, deliver",
     adminRequired: "Admin access required",
     backToHome: "Back to home",
 

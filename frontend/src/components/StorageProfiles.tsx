@@ -3,6 +3,7 @@ import { formatBytes, storageApi } from "../api";
 import type { ProfileInput, StorageProfile } from "../types";
 import { RingSpinner } from "./Spinner";
 import { useLang } from "../LangContext";
+import type { Dict } from "../i18n";
 import { useDialog } from "../DialogContext";
 
 const EMPTY: ProfileInput = {
@@ -17,8 +18,9 @@ const EMPTY: ProfileInput = {
 };
 
 // Shown under the endpoint field so the user can sanity-check what we guessed.
-function describeEndpoint(endpoint: string): string {
-  const { t } = useLang();
+// t comes in as a parameter: this is a module helper, not a component, and a
+// hook inside it would silently depend on being called mid-render.
+function describeEndpoint(t: Dict, endpoint: string): string {
   const e = endpoint.toLowerCase();
   if (!e) return "";
   if (e.includes("r2.cloudflarestorage.com")) return t.storageProfiles.endpoint.r2;
@@ -247,7 +249,7 @@ export default function StorageProfiles() {
               {form.endpoint && (
                 <div className="mt-1 text-[10px] text-brand-400/80">
                   <i className="fa-solid fa-wand-magic-sparkles mr-1" />
-                  {describeEndpoint(form.endpoint)}
+                  {describeEndpoint(t, form.endpoint)}
                 </div>
               )}
             </div>

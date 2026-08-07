@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import Footer from "../Footer";
+import GroupBadge from "../components/GroupBadge";
 import Nav from "../components/Nav";
 import { formatBytes, imageApi, quotaApi } from "../api";
 import { AreaSpark, useCountUp } from "../components/Meters";
@@ -77,8 +78,9 @@ export default function DashboardPage() {
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-wrap items-center gap-3 mb-5">
           <div>
-            <h1 className="text-lg font-brand text-neutral-100">
+            <h1 className="flex items-center gap-2 text-lg font-brand text-neutral-100">
               {t.dashboard.greeting(user.name || user.email.split("@")[0])}
+              {quota && <GroupBadge name={quota.tier.name} />}
             </h1>
             <p className="text-xs text-neutral-600 mt-0.5">
               {quota?.tier.description || t.dashboard.welcomeBack}

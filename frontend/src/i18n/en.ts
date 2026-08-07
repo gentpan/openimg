@@ -351,6 +351,7 @@ export const en: Dict = {
     goVerify: "Verify now →",
     storageDetails: "Storage details →",
     checkInForStorage: "Check in for storage →",
+    currentLimitsTitle: "Current limits",
     currentLimits: (tier: string) => `Current limits (${tier})`,
     maxFileSize: "Max file size",
     uploadedToday: "Uploaded today",
@@ -760,6 +761,11 @@ export const en: Dict = {
 
   toast: {
     dismiss: "Click to dismiss",
+  },
+  groupBadge: {
+    admin: "Admin",
+    trusted: "Trusted",
+    free: "Free",
   },
   docs: {
     title: "Using Openimg",

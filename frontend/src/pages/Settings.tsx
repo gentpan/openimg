@@ -648,7 +648,7 @@ function PasskeySection() {
       const name =
         (await dialog.prompt({
           title: t.settings.passkey.namePrompt,
-          initial: defaultPasskeyName(),
+          initial: defaultPasskeyName() || t.settings.passkey.defaultDeviceName,
         })) || "Passkey";
       await authApi.passkeyEnrollFinish(flow, name, credential);
       setInfo(null);
@@ -730,15 +730,17 @@ function PasskeySection() {
   );
 }
 
+// A plain function on purpose: it is called from an event handler, where a
+// hook call corrupts React's dispatcher. The t-dependent fallback is the
+// caller's job.
 function defaultPasskeyName(): string {
-  const { t } = useLang();
   const ua = navigator.userAgent;
   if (/iPhone/.test(ua)) return "iPhone";
   if (/iPad/.test(ua)) return "iPad";
   if (/Mac/.test(ua)) return "Mac";
   if (/Android/.test(ua)) return "Android";
   if (/Windows/.test(ua)) return "Windows";
-  return t.settings.passkey.defaultDeviceName;
+  return "";
 }
 
 function MailIcon() {

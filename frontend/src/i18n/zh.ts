@@ -354,6 +354,7 @@ export const zh = {
     goVerify: "去验证 →",
     storageDetails: "空间明细 →",
     checkInForStorage: "去签到领空间 →",
+    currentLimitsTitle: "当前限制",
     currentLimits: (tier: string) => `当前限制（${tier}）`,
     maxFileSize: "单文件上限",
     uploadedToday: "今日已传",
@@ -753,6 +754,11 @@ export const zh = {
 
   toast: {
     dismiss: "点击关闭",
+  },
+  groupBadge: {
+    admin: "管理员",
+    trusted: "受信任",
+    free: "免费用户",
   },
   docs: {
     title: "接入 Openimg",

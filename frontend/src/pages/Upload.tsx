@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import Footer from "../Footer";
+import GroupBadge from "../components/GroupBadge";
 import Nav from "../components/Nav";
 import Uploader from "../components/Uploader";
 import { useUpload } from "../UploadContext";
@@ -74,7 +75,10 @@ export default function UploadPage() {
             </div>
 
             <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
-              <div className="text-xs text-neutral-400 mb-2">{t.upload.currentLimits(quota.tier.name)}</div>
+              <div className="mb-2 flex items-center gap-1.5 text-xs text-neutral-400">
+                <span>{t.upload.currentLimitsTitle}</span>
+                <GroupBadge name={quota.tier.name} />
+              </div>
               <dl className="space-y-1 text-[11px]">
                 <Row label={t.upload.maxFileSize} value={formatBytes(quota.tier.max_file_size, 0)} />
                 <Row

@@ -8,6 +8,7 @@ import { useBrand } from "../BrandContext";
 import { useLang } from "../LangContext";
 import { useToast } from "../ToastContext";
 import Avatar from "./Avatar";
+import GroupBadge from "./GroupBadge";
 
 /**
  * Shared top navigation. Every page had its own copy before; the space pill is
@@ -142,6 +143,13 @@ export default function Nav() {
                 <Avatar user={user} size={20} />
                 <span className="truncate max-w-[8rem]">{user.name || user.email}</span>
               </Link>
+              {/* Hidden on small screens: the nav is already tight there, and
+                  the tier is visible on the pages themselves. */}
+              {user.group && (
+                <span className="hidden md:inline-flex">
+                  <GroupBadge name={user.group} />
+                </span>
+              )}
               <button onClick={() => logout()} className="text-neutral-600 hover:text-neutral-300">
                 {t.common.signOut}
               </button>

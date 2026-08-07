@@ -15,6 +15,24 @@
 
 openimg.io {
 	encode zstd gzip
+
+	# CF-Connecting-IP is how the Go server learns the visitor's real address —
+	# without it, every per-IP feature keys on Cloudflare's edge IPs and the
+	# upload rate limit becomes one bucket shared by everyone on that edge.
+	#
+	# The header is only trustworthy when the request actually came from
+	# Cloudflare, so it is stripped from every other source: anyone reaching
+	# the origin directly could otherwise impersonate any address. The Go side
+	# (gin's TrustedPlatform) relies on this strip — the two configs are a
+	# pair; do not change one without the other.
+	#
+	# Ranges from https://www.cloudflare.com/ips/ (stable for years; recheck on
+	# upload-limit complaints from users who are clearly not uploading fast).
+	@not_cloudflare {
+		not remote_ip 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+	}
+	request_header @not_cloudflare -CF-Connecting-IP
+
 	reverse_proxy 127.0.0.1:8080
 }
 

@@ -72,8 +72,32 @@ func New(db *gorm.DB, q *scheduler.Queue, a *auth.Service, st *storage.Registry,
 	}
 }
 
+// configureClientIP makes ClientIP() return the visitor's address instead of
+// a Cloudflare edge node's.
+//
+// The chain is Cloudflare → Caddy → this process. Caddy, not trusting anyone
+// by default, overwrites X-Forwarded-For with its own peer — a Cloudflare
+// edge — so every per-IP feature was keying on Cloudflare's addresses: the
+// upload rate limiter collapsed into one shared 60/min bucket per edge node,
+// and the signup/login/upload IPs the admin panel shows were all Cloudflare's.
+//
+// CF-Connecting-IP is Cloudflare's authoritative statement of who connected,
+// immune to X-Forwarded-For prepend games. Trusting it is safe only because
+// the Caddyfile strips that header from any request that did not arrive from
+// Cloudflare's published ranges — without that, anyone hitting the origin
+// directly could impersonate any address. The two configs are a pair; do not
+// change one without the other.
+func configureClientIP(r *gin.Engine) {
+	r.TrustedPlatform = gin.PlatformCloudflare
+	// Requests that bypass Cloudflare (health checks, direct dev access) have
+	// no CF header after Caddy's strip; they fall back to X-Forwarded-For, in
+	// which only the local Caddy is a trusted hop.
+	_ = r.SetTrustedProxies([]string{"127.0.0.1", "::1"})
+}
+
 func (s *Server) Router() *gin.Engine {
 	r := gin.Default()
+	configureClientIP(r)
 	corsCfg := cors.DefaultConfig()
 	corsCfg.AllowAllOrigins = true
 	corsCfg.AllowCredentials = false

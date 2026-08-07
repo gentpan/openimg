@@ -15,8 +15,10 @@ import ConvertSettings from "../components/ConvertSettings";
 import DeleteAccount from "../components/DeleteAccount";
 import StorageProfiles from "../components/StorageProfiles";
 import { useLang } from "../LangContext";
+import { useDialog } from "../DialogContext";
 
 export default function SettingsPage() {
+  const dialog = useDialog();
   const { t } = useLang();
   const [pwOpen, setPwOpen] = useState(false);
   const { user, refresh } = useAuth();
@@ -49,7 +51,11 @@ export default function SettingsPage() {
   }
 
   async function unlink(provider: "google" | "github") {
-    if (!confirm(t.settings.oauth.unlinkConfirm(provider))) return;
+    const ok = await dialog.confirm({
+      title: t.settings.oauth.unlinkConfirm(provider),
+      danger: true,
+    });
+    if (!ok) return;
     setBusy(provider);
     setErr(null);
     setInfo(null);
@@ -143,7 +149,7 @@ export default function SettingsPage() {
             connectedLabel={t.common.verified}
             note={t.settings.loginMethods.emailOtpNote}
             actionLabel={user.email_verified ? "" : t.settings.loginMethods.verifyEmail}
-            onAction={() => alert(t.settings.loginMethods.verifyEmailComingSoon)}
+            onAction={() => void dialog.alert({ title: t.settings.loginMethods.verifyEmailComingSoon })}
           />
           {/* Google */}
           <ConnectionRow
@@ -609,6 +615,7 @@ function KeyIcon() {
 }
 
 function PasskeySection() {
+  const dialog = useDialog();
   const { t, locale } = useLang();
   const [list, setList] = useState<{ id: string; name: string; created_at: string; last_used_at?: string }[]>([]);
   const [busy, setBusy] = useState(false);
@@ -638,7 +645,11 @@ function PasskeySection() {
     try {
       const { flow, options } = await authApi.passkeyEnrollBegin(code);
       const credential = await startRegistration({ optionsJSON: options.publicKey });
-      const name = prompt(t.settings.passkey.namePrompt, defaultPasskeyName()) || "Passkey";
+      const name =
+        (await dialog.prompt({
+          title: t.settings.passkey.namePrompt,
+          initial: defaultPasskeyName(),
+        })) || "Passkey";
       await authApi.passkeyEnrollFinish(flow, name, credential);
       setInfo(null);
       toast.success(t.settings.passkey.added, t.settings.passkey.addedDetail);
@@ -655,7 +666,12 @@ function PasskeySection() {
   }
 
   async function remove(id: string, name: string) {
-    if (!confirm(t.settings.passkey.deleteConfirm(name))) return;
+    const ok = await dialog.confirm({
+      title: t.settings.passkey.deleteConfirm(name),
+      danger: true,
+      confirmLabel: t.common.delete,
+    });
+    if (!ok) return;
     try {
       await authApi.passkeyDelete(id);
       load();

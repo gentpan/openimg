@@ -3,6 +3,7 @@ import { useAuth } from "../AuthContext";
 import { userApi } from "../api";
 import { RingSpinner } from "./Spinner";
 import { useLang } from "../LangContext";
+import { useDialog } from "../DialogContext";
 
 /**
  * Account deletion. Typing the account's own email is the confirmation — a
@@ -10,6 +11,7 @@ import { useLang } from "../LangContext";
  * password prompt would lock out OAuth-only and passkey-only accounts.
  */
 export default function DeleteAccount() {
+  const dialog = useDialog();
   const { t } = useLang();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -25,7 +27,7 @@ export default function DeleteAccount() {
     setErr(null);
     try {
       const res = await userApi.deleteAccount(confirm.trim());
-      alert(res.deleted_images ? t.deleteAccount.doneWithImages(res.deleted_images) : t.deleteAccount.done);
+      await dialog.alert({ title: res.deleted_images ? t.deleteAccount.doneWithImages(res.deleted_images) : t.deleteAccount.done });
       window.location.href = "/";
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));

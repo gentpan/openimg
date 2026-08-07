@@ -3,6 +3,7 @@ import { formatBytes, storageApi } from "../api";
 import type { ProfileInput, StorageProfile } from "../types";
 import { RingSpinner } from "./Spinner";
 import { useLang } from "../LangContext";
+import { useDialog } from "../DialogContext";
 
 const EMPTY: ProfileInput = {
   name: "",
@@ -45,6 +46,7 @@ function hostOf(url: string): string {
 }
 
 export default function StorageProfiles() {
+  const dialog = useDialog();
   const { t } = useLang();
   const [profiles, setProfiles] = useState<StorageProfile[]>([]);
   const [editing, setEditing] = useState<StorageProfile | "new" | null>(null);
@@ -206,9 +208,13 @@ export default function StorageProfiles() {
                       {t.common.edit}
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm(t.storageProfiles.deleteConfirm(p.name)))
-                          act(p.id, () => storageApi.remove(p.id), t.storageProfiles.deleted);
+                      onClick={async () => {
+                        const ok = await dialog.confirm({
+                          title: t.storageProfiles.deleteConfirm(p.name),
+                          danger: true,
+                          confirmLabel: t.common.delete,
+                        });
+                        if (ok) act(p.id, () => storageApi.remove(p.id), t.storageProfiles.deleted);
                       }}
                       disabled={!!busy}
                       className="rounded-md bg-neutral-800 px-2 py-1 text-red-400 hover:bg-neutral-700 transition"

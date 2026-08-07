@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { tokenApi } from "../api";
 import type { ApiToken } from "../types";
 import { useLang } from "../LangContext";
+import { useDialog } from "../DialogContext";
 
 /**
  * Personal access tokens for PicGo / Typora / curl. The plaintext is shown
  * exactly once, on creation — the server only ever stores its SHA-256.
  */
 export default function ApiTokens() {
+  const dialog = useDialog();
   const { t, locale } = useLang();
   const [tokens, setTokens] = useState<ApiToken[]>([]);
   const [name, setName] = useState("");
@@ -41,7 +43,12 @@ export default function ApiTokens() {
   }
 
   async function remove(tok: ApiToken) {
-    if (!confirm(t.apiTokens.deleteConfirm(tok.name))) return;
+    const ok = await dialog.confirm({
+      title: t.apiTokens.deleteConfirm(tok.name),
+      danger: true,
+      confirmLabel: t.common.delete,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await tokenApi.remove(tok.id);

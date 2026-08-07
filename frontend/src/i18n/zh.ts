@@ -18,6 +18,7 @@ export const zh = {
     save: "保存",
     saved: "已保存",
     saveFailed: "保存失败",
+    ok: "确定",
     cancel: "取消",
     cancelled: "已取消",
     close: "关闭",

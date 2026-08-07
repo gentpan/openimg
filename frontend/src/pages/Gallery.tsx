@@ -11,12 +11,14 @@ import OtpConfirm from "../components/OtpConfirm";
 import { useToast } from "../ToastContext";
 import { useLang } from "../LangContext";
 import PageSizeMenu from "../components/PageSizeMenu";
+import { useDialog } from "../DialogContext";
 
 // Every size is a multiple of the 5-column grid, so a full page never ends in
 // a short row with holes where the missing cards would be.
 const DEFAULT_PAGE = 25;
 
 export default function GalleryPage() {
+  const dialog = useDialog();
   const { t } = useLang();
   const { user, loading, refresh } = useAuth();
   const [images, setImages] = useState<Image[]>([]);
@@ -79,7 +81,12 @@ export default function GalleryPage() {
 
   async function removeSelected() {
     if (selected.size === 0) return;
-    if (!confirm(t.gallery.deleteSelectedConfirm(selected.size))) return;
+    const ok = await dialog.confirm({
+      title: t.gallery.deleteSelectedConfirm(selected.size),
+      danger: true,
+      confirmLabel: t.common.delete,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const ids = [...selected];

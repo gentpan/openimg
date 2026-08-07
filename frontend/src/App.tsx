@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { BrandProvider } from "./BrandContext";
+import { DialogProvider } from "./DialogContext";
 import { LangProvider, useLang } from "./LangContext";
 import { ToastProvider } from "./ToastContext";
 import { UploadProvider } from "./UploadContext";
@@ -39,6 +40,7 @@ export default function App() {
     <LangProvider>
     <BrandProvider>
       <ToastProvider>
+      <DialogProvider>
       <AuthProvider>
         <UploadProvider>
         <BrowserRouter>
@@ -73,6 +75,7 @@ export default function App() {
         </BrowserRouter>
         </UploadProvider>
       </AuthProvider>
+      </DialogProvider>
       </ToastProvider>
     </BrandProvider>
     </LangProvider>

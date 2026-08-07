@@ -5,8 +5,10 @@ import { formatBytes, referralApi } from "../api";
 import Footer from "../Footer";
 import Nav from "../components/Nav";
 import { useLang } from "../LangContext";
+import { useDialog } from "../DialogContext";
 
 export default function ReferPage() {
+  const dialog = useDialog();
   const { t } = useLang();
   const { user } = useAuth();
   const [s, setS] = useState<{
@@ -54,7 +56,7 @@ export default function ReferPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (e) {
-      alert(t.refer.copyFailed(String(e)));
+      await dialog.alert({ title: t.refer.copyFailed(String(e)) });
     }
   }
 

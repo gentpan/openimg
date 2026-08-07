@@ -19,6 +19,7 @@ export const en: Dict = {
     save: "Save",
     saved: "Saved",
     saveFailed: "Couldn't save",
+    ok: "OK",
     cancel: "Cancel",
     cancelled: "Cancelled",
     close: "Close",

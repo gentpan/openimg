@@ -4,6 +4,7 @@ import Spinner, { RingSpinner } from "./Spinner";
 import { useToast } from "../ToastContext";
 import type { Image } from "../types";
 import { useLang } from "../LangContext";
+import { useDialog } from "../DialogContext";
 
 /**
  * Slide-over detail panel for one image: preview, metadata, every link format,
@@ -13,6 +14,7 @@ import { useLang } from "../LangContext";
 const SIZES = [200, 600, 1200] as const;
 
 export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; onClose: () => void; onDeleted: () => void }) {
+  const dialog = useDialog();
   const { t, locale } = useLang();
   const [copied, setCopied] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -48,13 +50,18 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
   }
 
   async function remove() {
-    if (!confirm(t.imageDetail.deleteConfirm)) return;
+    const ok = await dialog.confirm({
+      title: t.imageDetail.deleteConfirm,
+      danger: true,
+      confirmLabel: t.common.delete,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await imageApi.remove(img.id);
       onDeleted();
     } catch (e) {
-      alert(e instanceof Error ? e.message : String(e));
+      await dialog.alert({ title: t.common.deleteFailed, body: e instanceof Error ? e.message : String(e) });
       setBusy(false);
     }
   }

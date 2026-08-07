@@ -9,6 +9,7 @@ import { adminApi, formatBytes, imageApi, reportCategoryLabel } from "../api";
 import type { AdminImage, AdminQuotaTx, AdminUser, Report, UserGroup } from "../types";
 import Pager from "../components/Pager";
 import PageSizeMenu from "../components/PageSizeMenu";
+import { useDialog } from "../DialogContext";
 
 type Tab = "dashboard" | "users" | "groups" | "images" | "reports" | "ledger" | "login" | "upload";
 
@@ -90,6 +91,7 @@ export default function AdminLayout() {
 /* ---------- Users ---------- */
 
 function UsersTab() {
+  const dialog = useDialog();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [groups, setGroups] = useState<UserGroup[]>([]);
   const [busy, setBusy] = useState(false);
@@ -115,7 +117,11 @@ function UsersTab() {
   }
 
   async function grant(u: AdminUser) {
-    const mb = prompt(`给 ${u.email} 增加多少 MB 空间？（负数为扣减）`, "100");
+    const mb = await dialog.prompt({
+      title: "调整空间",
+      body: `给 ${u.email} 增加多少 MB？负数为扣减。`,
+      initial: "100",
+    });
     if (!mb) return;
     const n = Number(mb);
     if (!Number.isFinite(n) || n === 0) return;
@@ -132,10 +138,16 @@ function UsersTab() {
   }
 
   async function ban(u: AdminUser) {
-    const purge = confirm(
-      `确定封禁 ${u.email}？\n\n点「确定」= 封禁并删除其全部 ${u.image_count} 张图片\n点「取消」后可选择仅封禁`,
-    );
-    if (!purge && !confirm(`仅封禁 ${u.email}，保留其图片？`)) return;
+    const mode = await dialog.choose({
+      title: `封禁 ${u.email}？`,
+      body: "封禁后该账号无法登录和上传。",
+      options: [
+        { label: "仅封禁，保留图片", value: "ban" },
+        { label: `封禁并删除全部 ${u.image_count} 张图片`, value: "purge", danger: true },
+      ],
+    });
+    if (!mode) return;
+    const purge = mode === "purge";
     setBusy(true);
     try {
       const res = await adminApi.banUser(u.id, purge);
@@ -343,6 +355,7 @@ function GroupsTab() {
 /* ---------- Images ---------- */
 
 function ImagesTab() {
+  const dialog = useDialog();
   const [images, setImages] = useState<AdminImage[]>([]);
   const [status, setStatus] = useState("");
   const [detail, setDetail] = useState<AdminImage | null>(null);
@@ -364,7 +377,13 @@ function ImagesTab() {
   }
 
   async function removeImage(img: AdminImage) {
-    if (!confirm(`确定删除这张图片？\n\n${img.orig_name}\n上传者：${img.owner_email}\n\n对象会被清除，占用的 ${formatBytes(img.size_stored, 0)} 退还给该用户。此操作不可撤销。`)) return;
+    const ok = await dialog.confirm({
+      title: "删除这张图片？",
+      body: `${img.orig_name}\n上传者：${img.owner_email}\n\n对象会被清除，占用的 ${formatBytes(img.size_stored, 0)} 退还给该用户。此操作不可撤销。`,
+      danger: true,
+      confirmLabel: "删除",
+    });
+    if (!ok) return;
     await imageApi.remove(img.id);
     setDetail(null);
     await load();
@@ -531,6 +550,7 @@ function AdminImageDetail({
 /* ---------- Reports ---------- */
 
 function ReportsTab({ onChange }: { onChange: (n: number) => void }) {
+  const dialog = useDialog();
   const [reports, setReports] = useState<Report[]>([]);
   const [status, setStatus] = useState("open");
   const [busy, setBusy] = useState(false);
@@ -547,7 +567,12 @@ function ReportsTab({ onChange }: { onChange: (n: number) => void }) {
 
   async function resolve(r: Report, action: "dismiss" | "block" | "block_and_ban") {
     const labels = { dismiss: "驳回", block: "屏蔽图片", block_and_ban: "屏蔽并封禁上传者" };
-    if (!confirm(`确定${labels[action]}？`)) return;
+    const ok = await dialog.confirm({
+      title: `确定${labels[action]}？`,
+      danger: action !== "dismiss",
+      confirmLabel: labels[action],
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await adminApi.resolveReport(r.id, action);

@@ -150,8 +150,15 @@ export default function Nav() {
                   <GroupBadge name={user.group} />
                 </span>
               )}
-              <button onClick={() => logout()} className="text-neutral-600 hover:text-neutral-300">
-                {t.common.signOut}
+              {/* Icon-only, but never silent: title gives sighted users the
+                  hover hint and aria-label keeps it named for screen readers. */}
+              <button
+                onClick={() => logout()}
+                title={t.common.signOut}
+                aria-label={t.common.signOut}
+                className="text-neutral-600 hover:text-red-400 transition"
+              >
+                <i className="fa-solid fa-right-from-bracket" />
               </button>
             </>
           ) : (

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import Nav from "../components/Nav";
 import Footer from "../Footer";
 import AdminDashboard from "./admin/Dashboard";
@@ -13,19 +13,29 @@ import { useDialog } from "../DialogContext";
 
 type Tab = "dashboard" | "users" | "groups" | "images" | "reports" | "ledger" | "login" | "upload";
 
-const TABS: { key: Tab; label: string; icon: string }[] = [
-  { key: "dashboard", label: "总览", icon: "fa-chart-line" },
-  { key: "users", label: "用户", icon: "fa-users" },
-  { key: "groups", label: "用户组", icon: "fa-layer-group" },
-  { key: "images", label: "图片", icon: "fa-images" },
-  { key: "reports", label: "举报", icon: "fa-flag" },
-  { key: "ledger", label: "空间流水", icon: "fa-receipt" },
-  { key: "login", label: "登录方式", icon: "fa-right-to-bracket" },
-  { key: "upload", label: "上传设置", icon: "fa-sliders" },
+// Every tab is a real URL (/admin, /admin/users, …). The dashboard's slug is
+// empty so the bare /admin stays the overview — links people have already
+// bookmarked keep meaning what they meant.
+const TABS: { key: Tab; slug: string; label: string; icon: string }[] = [
+  { key: "dashboard", slug: "", label: "总览", icon: "fa-chart-line" },
+  { key: "users", slug: "users", label: "用户", icon: "fa-users" },
+  { key: "groups", slug: "groups", label: "用户组", icon: "fa-layer-group" },
+  { key: "images", slug: "images", label: "图片", icon: "fa-images" },
+  { key: "reports", slug: "reports", label: "举报", icon: "fa-flag" },
+  { key: "ledger", slug: "ledger", label: "空间流水", icon: "fa-receipt" },
+  { key: "login", slug: "login", label: "登录方式", icon: "fa-right-to-bracket" },
+  { key: "upload", slug: "upload", label: "上传设置", icon: "fa-sliders" },
 ];
 
 export default function AdminLayout() {
-  const [tab, setTab] = useState<Tab>("dashboard");
+  // The active tab lives in the URL, not in state: /admin/ledger can be
+  // bookmarked, opened in a new tab, and shared — "去流水页查一下" becomes a
+  // link instead of a set of clicking instructions. Unknown slugs fall back
+  // to the overview rather than a 404, so an outdated link still lands
+  // somewhere useful.
+  const { "*": splat = "" } = useParams();
+  const slug = splat.split("/")[0];
+  const tab: Tab = TABS.find((t) => t.slug === slug)?.key ?? "dashboard";
   const [openReports, setOpenReports] = useState(0);
 
   useEffect(() => {
@@ -54,9 +64,9 @@ export default function AdminLayout() {
 
         <div className="flex gap-1 mb-5 overflow-x-auto pb-1">
           {TABS.map((t) => (
-            <button
+            <Link
               key={t.key}
-              onClick={() => setTab(t.key)}
+              to={t.slug ? `/admin/${t.slug}` : "/admin"}
               className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition ${
                 tab === t.key
                   ? "bg-brand-600 text-brand-ink"
@@ -70,7 +80,7 @@ export default function AdminLayout() {
                   {openReports}
                 </span>
               )}
-            </button>
+            </Link>
           ))}
         </div>
 

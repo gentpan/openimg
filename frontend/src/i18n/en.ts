@@ -636,8 +636,17 @@ export const en: Dict = {
   },
 
   convertSettings: {
+    thumb: {
+      title: "Thumbnail policy",
+      hint: "The small image the gallery grid loads is generated to these settings. Smaller widths cost less storage; AVIF is the smallest, JPEG the most compatible.",
+      widthTitle: "Width",
+      formatTitle: "Format",
+      formatWebp: "Balanced — the default for on-site display",
+      formatAvif: "Roughly a third smaller again; very old browsers cannot show it",
+      formatJpg: "Understood by everything, largest files",
+    },
     thumbnailNote:
-      "Only the 200px grid thumbnail is generated at upload time, in both modes — the gallery grid uses it, and rendering originals there would make the page unusable. The 600px and 1200px sizes are generated when you ask for them on an image's page, and cost nothing until you do. Links you copy out always point at the main image.",
+      "The grid thumbnail is generated at upload time to the policy above, in both modes — the gallery grid uses it, and rendering originals there would make the page unusable. The 600px and 1200px sizes are generated when you ask for them on an image's page, and cost nothing until you do. Links you copy out always point at the main image.",
     savedDetail: "Applies to future uploads; images already uploaded are unaffected",
     mode: {
       title: "Upload mode",

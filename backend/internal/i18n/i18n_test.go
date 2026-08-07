@@ -49,14 +49,14 @@ func TestNoChineseLeftInEnglish(t *testing.T) {
 
 func TestParseAcceptLanguage(t *testing.T) {
 	cases := map[string]Lang{
-		"":                          Default,
-		"zh":                        ZH,
-		"zh-CN":                     ZH,
-		"zh-Hans-CN":                ZH,
-		"en":                        EN,
-		"en-GB":                     EN,
-		"en-US,en;q=0.9":            EN,
-		"zh-CN,zh;q=0.9,en;q=0.8":   ZH,
+		"":                           Default,
+		"zh":                         ZH,
+		"zh-CN":                      ZH,
+		"zh-Hans-CN":                 ZH,
+		"en":                         EN,
+		"en-GB":                      EN,
+		"en-US,en;q=0.9":             EN,
+		"zh-CN,zh;q=0.9,en;q=0.8":    ZH,
 		"en-US,en;q=0.9,zh-CN;q=0.8": EN,
 		// Unknown languages fall back rather than erroring — a Japanese browser
 		// gets the default, not a 400.

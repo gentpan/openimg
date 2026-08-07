@@ -143,6 +143,56 @@ export default function ConvertSettings() {
         </div>
       </div>
 
+        {/* Thumbnail policy — applies in both modes, since thumbnails are
+            generated either way. */}
+        <div className="mt-3 pt-3 border-t border-neutral-800/60">
+          <div className="text-xs text-neutral-200">{t.convertSettings.thumb.title}</div>
+          <div className="text-[10px] text-neutral-600 mt-0.5 mb-2 leading-relaxed">
+            {t.convertSettings.thumb.hint}
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] text-neutral-600 mr-1">{t.convertSettings.thumb.widthTitle}</span>
+            {[200, 400, 600, 800, 1000].map((w) => (
+              <button
+                key={w}
+                disabled={busy === "thumbWidth"}
+                onClick={() => save("thumbWidth", { thumb_width: w })}
+                className={`inline-flex h-8 items-center justify-center px-3 rounded-lg text-xs transition disabled:cursor-not-allowed ${
+                  user.thumb_width === w
+                    ? "bg-brand-600/20 text-brand-300 border border-brand-500/30"
+                    : "bg-neutral-800 text-neutral-400 hover:text-neutral-100 border border-transparent"
+                }`}
+              >
+                {w}px
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] text-neutral-600 mr-1">{t.convertSettings.thumb.formatTitle}</span>
+            {(
+              [
+                ["webp", "WebP", t.convertSettings.thumb.formatWebp],
+                ["avif", "AVIF", t.convertSettings.thumb.formatAvif],
+                ["jpg", "JPEG", t.convertSettings.thumb.formatJpg],
+              ] as const
+            ).map(([key, label, desc]) => (
+              <button
+                key={key}
+                disabled={busy === "thumbFormat"}
+                title={desc}
+                onClick={() => save("thumbFormat", { thumb_format: key })}
+                className={`inline-flex h-8 items-center justify-center px-3 rounded-lg text-xs transition disabled:cursor-not-allowed ${
+                  user.thumb_format === key
+                    ? "bg-brand-600/20 text-brand-300 border border-brand-500/30"
+                    : "bg-neutral-800 text-neutral-400 hover:text-neutral-100 border border-transparent"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
       <div className="mt-3 rounded-lg bg-neutral-950/60 border border-neutral-800 px-3 py-2 text-[10px] text-neutral-500 leading-relaxed">
         <i className="fa-solid fa-circle-info mr-1 text-neutral-600" />
           {t.convertSettings.thumbnailNote}

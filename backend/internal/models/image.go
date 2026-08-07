@@ -2,7 +2,9 @@ package models
 
 import (
 	"crypto/rand"
+	"fmt"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -207,14 +209,46 @@ func OriginalVariant(ext string) string { return VariantOriginalPrefix + ext }
 // IsOriginalVariant reports whether a variant name refers to a kept original.
 func IsOriginalVariant(name string) bool { return strings.HasPrefix(name, VariantOriginalPrefix) }
 
-// IsThumbVariant reports whether a variant is one of the display sizes, as
-// opposed to a full-size re-encode or a kept original.
+// IsThumbVariant reports whether a variant is a display size, as opposed to a
+// full-size re-encode or a kept original.
+//
+// Historic names are bare widths ("w600", always WebP). Since thumbnails
+// became configurable the name may carry a format suffix ("w400.avif",
+// "w600.jpg") — the suffix is what lets VariantKey emit the right extension
+// without a schema change or a migration of the Variants CSV.
 func IsThumbVariant(name string) bool {
-	switch name {
-	case VariantW200, VariantW600, VariantW1200:
-		return true
+	w, _ := ParseThumbVariant(name)
+	return w > 0
+}
+
+// ParseThumbVariant splits a thumbnail variant name into width and extension.
+// Returns (0, "") for anything that is not a thumbnail variant.
+func ParseThumbVariant(name string) (width int, ext string) {
+	if !strings.HasPrefix(name, "w") {
+		return 0, ""
 	}
-	return false
+	num, suffix, _ := strings.Cut(name[1:], ".")
+	n, err := strconv.Atoi(num)
+	if err != nil || n <= 0 {
+		return 0, ""
+	}
+	switch suffix {
+	case "":
+		return n, "webp" // the historic default
+	case "webp", "avif", "jpg":
+		return n, suffix
+	}
+	return 0, ""
+}
+
+// ThumbVariantName builds the variant name for a display size. WebP stays
+// bare so that new uploads with default settings produce names identical to
+// every image already in the database.
+func ThumbVariantName(width int, ext string) string {
+	if ext == "" || ext == "webp" {
+		return fmt.Sprintf("w%d", width)
+	}
+	return fmt.Sprintf("w%d.%s", width, ext)
 }
 
 // BaseKey strips the extension off an object key, giving the stem every
@@ -246,8 +280,44 @@ func VariantKey(objectKey, variant string) string {
 		return base + ".avif"
 	default:
 		// w200 → …/aB3dEf7hJ9kL_w200.webp
+		// w400.avif → …/aB3dEf7hJ9kL_w400.avif
+		if w, ext := ParseThumbVariant(variant); w > 0 {
+			return fmt.Sprintf("%s_w%d.%s", base, w, ext)
+		}
 		return base + "_" + variant + ".webp"
 	}
+}
+
+// GridThumbVariant picks the display variant a gallery card should load.
+//
+// Rule: the smallest width that still covers a 2x grid card (>= 400px), else
+// the largest width available, else "". This reproduces the old fixed
+// preference (w600 over legacy w200) while extending to policy-configured
+// tiers — an image whose owner chose 400px AVIF picks "w400.avif", one from
+// before the switch still picks its "w200".
+func GridThumbVariant(variants []string) string {
+	best, bestW := "", 0
+	for _, v := range variants {
+		w, _ := ParseThumbVariant(v)
+		if w == 0 {
+			continue
+		}
+		better := false
+		switch {
+		case best == "":
+			better = true
+		case bestW < 400:
+			// Anything is an upgrade over a sub-2x tier, prefer the larger.
+			better = w > bestW
+		case w >= 400:
+			// Both cover 2x: smaller wins, it is the cheaper download.
+			better = w < bestW
+		}
+		if better {
+			best, bestW = v, w
+		}
+	}
+	return best
 }
 
 func (i Image) VariantList() []string {

@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 	"sync"
 
@@ -144,8 +145,11 @@ func (r *Result) VariantBytes() int64 {
 
 func (r *Result) ThumbBytes() int64 {
 	var n int64
-	for _, t := range ThumbWidths {
-		if v, ok := r.Variants[t.Name]; ok {
+	// By predicate, not the fixed size list: a policy-configured grid tier
+	// ("w400.avif") is still a thumbnail, and missing it here would misfile
+	// its bytes under SizeVariants.
+	for name, v := range r.Variants {
+		if models.IsThumbVariant(name) {
 			n += v.Size()
 		}
 	}
@@ -160,11 +164,14 @@ func (r *Result) VariantNames() string {
 			names = append(names, v)
 		}
 	}
-	for _, t := range ThumbWidths {
-		if _, ok := r.Variants[t.Name]; ok {
-			names = append(names, t.Name)
+	thumbs := make([]string, 0, 2)
+	for name := range r.Variants {
+		if models.IsThumbVariant(name) {
+			thumbs = append(thumbs, name)
 		}
 	}
+	sort.Strings(thumbs) // map order is random; the CSV must not churn
+	names = append(names, thumbs...)
 	for name := range r.Variants {
 		if models.IsOriginalVariant(name) {
 			names = append(names, name)
@@ -199,8 +206,12 @@ type Options struct {
 	// user can still retrieve the untouched file after optimisation. No effect
 	// in Original mode, where the primary already is the original.
 	KeepOriginal bool
+	// Thumbnail policy for the grid tier. Zero values mean the site defaults
+	// (GridThumbWidth, WebP) — which is also what every image uploaded before
+	// the policy existed used, so "unset" and "default" are the same thing.
+	ThumbWidth  int
+	ThumbFormat string
 }
-
 
 // ErrTooLarge means the image's pixel dimensions exceed the caller's limits.
 // Reported before any full decode, so a decompression bomb costs us a header
@@ -326,7 +337,7 @@ func Process(buf []byte, opts Options) (*Result, error) {
 			Variants: map[string]Output{},
 			Animated: animated,
 		}
-		addGridThumb(res, kept, stillParams, width)
+		addGridThumb(res, kept, stillParams, width, opts)
 		return res, nil
 	}
 
@@ -391,7 +402,7 @@ func Process(buf []byte, opts Options) (*Result, error) {
 	// The grid thumbnail is the one derivative always worth producing up front:
 	// without it every gallery view downloads full-size originals. Larger tiers
 	// stay on demand.
-	addGridThumb(res, buf, stillParams, width)
+	addGridThumb(res, buf, stillParams, width, opts)
 
 	// At most one full-size derivative. AVIF is produced by the background
 	// queue, so only WebP is handled inline here.
@@ -475,12 +486,16 @@ const GridThumbMinBytes = 1 << 20 // 1 MB
 // SizeDown never upscales, so a 400px source yields a 400px "thumbnail", and
 // re-encoding an already-tight file at its own dimensions can come out larger
 // — an object that costs quota and makes every gallery view worse.
-func addGridThumb(res *Result, buf []byte, params *vips.ImportParams, width int) {
+func addGridThumb(res *Result, buf []byte, params *vips.ImportParams, width int, opts Options) {
+	thumbWidth := opts.ThumbWidth
+	if thumbWidth <= 0 {
+		thumbWidth = GridThumbWidth
+	}
 	served := res.Primary.Size() // what a missing thumbnail falls back to
-	if width <= GridThumbWidth && served < GridThumbMinBytes {
+	if width <= thumbWidth && served < GridThumbMinBytes {
 		return
 	}
-	out, err := encodeWebP(buf, params, GridThumbWidth, thumbQuality)
+	out, err := encodeThumb(buf, params, thumbWidth, thumbQuality, opts.ThumbFormat)
 	if err != nil {
 		log.Printf("imageproc: grid thumbnail failed: %v", err)
 		return
@@ -488,7 +503,7 @@ func addGridThumb(res *Result, buf []byte, params *vips.ImportParams, width int)
 	if out.Size() >= served {
 		return
 	}
-	res.Variants[models.VariantW600] = out
+	res.Variants[models.ThumbVariantName(thumbWidth, out.Ext)] = out
 }
 
 // MakeThumbnail renders one display size on demand. Called from the API when a
@@ -703,6 +718,52 @@ func encodeWebP(buf []byte, params *vips.ImportParams, width, quality int) (Outp
 		Ext: "webp", MIME: "image/webp", Data: data,
 		Width: meta.Width, Height: meta.Height,
 	}, nil
+}
+
+// encodeThumb renders a display-size derivative in the requested format.
+//
+// All three formats share encodeWebP's shrink-on-load path; only the export
+// step differs. AVIF at thumbnail widths is cheap enough to run inline — the
+// cost that pushed full-size AVIF onto the job queue scales with pixel count,
+// and a 600px frame is two orders of magnitude smaller than a 6000px one.
+func encodeThumb(buf []byte, params *vips.ImportParams, width, quality int, ext string) (Output, error) {
+	if ext == "" || ext == "webp" {
+		return encodeWebP(buf, params, width, quality)
+	}
+	img, err := vips.LoadThumbnailFromBuffer(buf, width, unboundedHeight,
+		vips.InterestingNone, vips.SizeDown, params)
+	if err != nil {
+		return Output{}, err
+	}
+	defer img.Close()
+	if err := img.RemoveMetadata(); err != nil {
+		return Output{}, err
+	}
+	switch ext {
+	case "avif":
+		p := vips.NewAvifExportParams()
+		p.Quality = avifQuality
+		p.Effort = avifEffort
+		p.StripMetadata = true
+		data, meta, err := img.ExportAvif(p)
+		if err != nil {
+			return Output{}, err
+		}
+		return Output{Ext: "avif", MIME: "image/avif", Data: data, Width: meta.Width, Height: meta.Height}, nil
+	case "jpg":
+		p := vips.NewJpegExportParams()
+		p.Quality = quality
+		p.StripMetadata = true
+		// Thumbnails render on pages, where progressive scan order means the
+		// grid fills in blurry-to-sharp instead of top-to-bottom.
+		p.Interlace = true
+		data, meta, err := img.ExportJpeg(p)
+		if err != nil {
+			return Output{}, err
+		}
+		return Output{Ext: "jpg", MIME: "image/jpeg", Data: data, Width: meta.Width, Height: meta.Height}, nil
+	}
+	return Output{}, &ErrUnsupported{Format: ext}
 }
 
 // allowedType is the whitelist. SVG is excluded on purpose: it is XML that can

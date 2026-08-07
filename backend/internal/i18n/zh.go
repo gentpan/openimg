@@ -155,6 +155,8 @@ var zh = map[string]string{
 	"prefs.bad_upload_mode":    "upload_mode 必须是 optimized 或 original",
 	"prefs.bad_variant_format": "variant_format 必须是 none / webp / avif",
 	"prefs.bad_width_preset":   "不支持的宽度预设",
+	"prefs.bad_thumb_width":    "缩略图宽度不在可选范围内",
+	"prefs.bad_thumb_format":   "缩略图格式只支持 WebP、AVIF 或 JPEG",
 	"prefs.serialize_failed":   "序列化失败",
 	"prefs.save_failed":        "保存失败",
 

@@ -77,11 +77,8 @@ func (s *Server) decorate(images []models.Image) []imageOut {
 			item.ShortURL = storage.JoinURL(s.PublicBaseURL, img.ShortCode)
 		}
 		item.Thumb = item.URL
-		for _, v := range []string{models.VariantW600, models.VariantW200} {
-			if u, ok := item.Variants[v]; ok {
-				item.Thumb = u
-				break
-			}
+		if v := models.GridThumbVariant(img.VariantList()); v != "" {
+			item.Thumb = item.Variants[v]
 		}
 		alt := img.OrigName
 		if alt == "" {

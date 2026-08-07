@@ -102,11 +102,8 @@ func (s *Server) buildSharePayload(c *gin.Context, img *models.Image) sharePaylo
 	short := storage.JoinURL(s.PublicBaseURL, img.ShortCode)
 
 	thumb := url
-	for _, v := range []string{models.VariantW600, models.VariantW200} {
-		if img.HasVariant(v) {
-			thumb = storage.ThumbURLFor(profile, models.VariantKey(img.ObjectKey, v), s.PublicBaseURL)
-			break
-		}
+	if v := models.GridThumbVariant(img.VariantList()); v != "" {
+		thumb = storage.ThumbURLFor(profile, models.VariantKey(img.ObjectKey, v), s.PublicBaseURL)
 	}
 
 	// Alt text with a quote in it would break the HTML snippet the page hands

@@ -19,6 +19,8 @@ export interface User {
   upload_mode: "optimized" | "original";
   variant_format: "none" | "webp" | "avif";
   max_image_width: number;
+  thumb_width: number;
+  thumb_format: "webp" | "avif" | "jpg";
 }
 
 export interface Passkey {

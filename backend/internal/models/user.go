@@ -77,6 +77,13 @@ type User struct {
 	// displayed, so this is the single biggest quota saving available.
 	// Downscale only — a narrow image is never blown up.
 	MaxImageWidth int `gorm:"not null;default:0" json:"max_image_width"`
+	// Thumbnail policy: the width and format of the grid tier generated at
+	// upload. Width 600 and WebP are the defaults the site always used; the
+	// choice exists because the trade is genuinely the user's — 200px AVIF
+	// for someone hoarding quota, 1000px JPEG for someone embedding into
+	// software that never learned WebP.
+	ThumbWidth  int    `gorm:"not null;default:600" json:"thumb_width"`
+	ThumbFormat string `gorm:"size:8;not null;default:'webp'" json:"thumb_format"`
 
 	// Referral. ReferralCode is the user's own unique code shareable in links;
 	// ReferredByID is set on signup if they came in through someone's link.

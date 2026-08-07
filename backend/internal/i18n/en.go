@@ -143,6 +143,8 @@ var en = map[string]string{
 	"prefs.bad_upload_mode":    "upload_mode must be optimized or original",
 	"prefs.bad_variant_format": "variant_format must be none, webp, or avif",
 	"prefs.bad_width_preset":   "Unsupported width preset",
+	"prefs.bad_thumb_width":    "That thumbnail width is not one of the presets",
+	"prefs.bad_thumb_format":   "Thumbnail format must be WebP, AVIF or JPEG",
 	"prefs.serialize_failed":   "Could not serialize the settings",
 	"prefs.save_failed":        "Save failed",
 

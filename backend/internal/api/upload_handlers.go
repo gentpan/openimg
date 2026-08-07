@@ -199,6 +199,8 @@ func (s *Server) storeUpload(ctx context.Context, p storeParams) (*models.Image,
 		// Site-wide, not per-user: keeping originals is a storage-budget
 		// decision, and the bytes come out of the platform pool.
 		KeepOriginal: s.uploadSettings().KeepOriginal,
+		ThumbWidth:   p.User.ThumbWidth,
+		ThumbFormat:  p.User.ThumbFormat,
 	})
 	if err != nil {
 		return nil, false, err

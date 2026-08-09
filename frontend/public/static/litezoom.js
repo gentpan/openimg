@@ -156,10 +156,17 @@
         return img.currentSrc || img.getAttribute('src') || img.src || '';
     }
 
-    // 取放大用的高清地址:若图片被包在 <a href="大图.jpg"> 里,优先用链接地址
+    // 取放大用的高清地址,优先级从高到低:
+    //   1. <img data-litezoom="big.url"> —— 直接指定,无需链接包裹
+    //   2. <a data-litezoom href="..."> —— 显式声明 href 就是图片,
+    //      扩展名不再参与判断(现代 CDN 变换地址常无扩展名)
+    //   3. <a href="大图.jpg"> —— 靠扩展名识别的启发式,历史行为
+    //   4. 图片自身的 src
     function fullSrc(img) {
+        var explicit = img.getAttribute('data-litezoom');
+        if (explicit) { return explicit; }
         var link = img.closest ? img.closest('a[href]') : null;
-        if (link && isImageUrl(link.getAttribute('href'))) {
+        if (link && (link.hasAttribute('data-litezoom') || isImageUrl(link.getAttribute('href')))) {
             return link.href;
         }
         return viewerSrc(img);
@@ -586,9 +593,11 @@
         var b = matchBinding(img);
         if (!b) { return; }
 
-        // 若图片被包在指向「另一个页面」的真实链接里,放行导航,不劫持
+        // 若图片被包在指向「另一个页面」的真实链接里,放行导航,不劫持。
+        // data-litezoom(在链接或图片上)是作者的显式声明,跳过这层猜测。
         var link = img.closest('a[href]');
-        if (link) {
+        var explicit = img.hasAttribute('data-litezoom') || (link && link.hasAttribute('data-litezoom'));
+        if (link && !explicit) {
             var href = link.getAttribute('href') || '';
             if (href && href !== '#' && !isImageUrl(href) && href !== viewerSrc(img)) { return; }
         }

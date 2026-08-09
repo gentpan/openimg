@@ -56,6 +56,10 @@ public struct OpenimgClient: Sendable {
         req.httpMethod = method
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.setValue("application/json", forHTTPHeaderField: "Accept")
+        // The server renders OTP emails in the caller's theme. This app has a
+        // single (green) theme, so the value is a constant — if the app ever
+        // grows a violet mode, thread the choice through here.
+        req.setValue("green", forHTTPHeaderField: "X-Openimg-Brand")
         return req
     }
 

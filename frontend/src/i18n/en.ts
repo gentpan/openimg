@@ -33,7 +33,7 @@ export const en: Dict = {
     download: "Download",
     optional: "(optional)",
     verified: "Verified",
-    documentTitle: "Openimg — A free image host, forever | Optimize, convert, deliver",
+    documentTitle: "Openimg — Free image hosting | Direct links, WebP/AVIF, global CDN",
     adminRequired: "Admin access required",
     backToHome: "Back to home",
 
@@ -88,14 +88,15 @@ export const en: Dict = {
       freeForever: "Free forever",
     },
     hero: {
-      badge: "A nonprofit image host, free forever",
-      titleLead: "Image hosting,",
-      titleAccent: "handled for you",
-      subtitle: "Just drag them in. We handle the optimizing, converting and delivery.",
+      badge: "Open source · nonprofit · free forever",
+      titleLead: "Fast, reliable",
+      titleAccent: "image hosting",
+      subtitle:
+        "Automatic optimization and WebP / AVIF conversion, global CDN delivery, permanent direct links. API uploads and bring-your-own R2 / S3 storage.",
     },
     features: {
       sectionTitle: "Why Openimg",
-      sectionSubtitle: "One job, done well: small images, delivered fast",
+      sectionSubtitle: "Smaller files, faster delivery",
       optimize: {
         title: "Automatic optimizing and conversion",
         desc: "Every upload gets WebP / AVIF derivative formats and thumbnails at several sizes. Usually about a third of the original size, with no visible quality loss.",
@@ -150,8 +151,8 @@ export const en: Dict = {
       },
     },
     cta: {
-      title: "Start now, it costs nothing",
-      subtitle: "This is a nonprofit project. No paid tiers, no ads, and we never sell your data.",
+      title: "Start using Openimg",
+      subtitle: "A nonprofit service — no paywall, no ads, and your data is never sold.",
       button: "Sign up free and get 1 GB",
     },
   },

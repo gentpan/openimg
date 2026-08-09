@@ -32,7 +32,7 @@ export const zh = {
     download: "下载",
     optional: "（可选）",
     verified: "已验证",
-    documentTitle: "Openimg — 永久免费的公益图床 | 图片压缩转换 · CDN 加速",
+    documentTitle: "Openimg — 免费图床 | 图片外链 · WebP/AVIF 压缩 · CDN 加速",
     adminRequired: "需要管理员权限",
     backToHome: "返回首页",
 
@@ -88,14 +88,15 @@ export const zh = {
       freeForever: "永久免费",
     },
     hero: {
-      badge: "永久免费的公益图床",
-      titleLead: "图片托管，",
-      titleAccent: "从此不用操心",
-      subtitle: "拖进来就好。剩下的压缩、转码、分发，我们全包了。",
+      badge: "开源公益项目 · 永久免费",
+      titleLead: "稳定快速的",
+      titleAccent: "免费图床",
+      subtitle:
+        "上传自动压缩并转换 WebP / AVIF，全球 CDN 分发，图片外链持久有效。支持 API 上传与自有 R2 / S3 存储。",
     },
     features: {
       sectionTitle: "为什么用 Openimg",
-      sectionSubtitle: "做好一件事：让图片又小又快",
+      sectionSubtitle: "更小的体积，更快的加载",
       optimize: {
         title: "自动压缩转换",
         desc: "上传即生成 WebP / AVIF 与多档缩略图，体积通常只剩三分之一，画质肉眼无差。",
@@ -150,8 +151,8 @@ export const zh = {
       },
     },
     cta: {
-      title: "现在就开始，一分钱都不用花",
-      subtitle: "这是一个公益项目，没有会员，没有广告，也不会卖你的数据。",
+      title: "开始使用 Openimg",
+      subtitle: "公益项目：无付费墙、无广告、不出售数据。",
       button: "免费注册，领 1 GB",
     },
   },

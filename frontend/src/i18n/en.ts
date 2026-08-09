@@ -304,6 +304,7 @@ export const en: Dict = {
         `Checked in, +${granted} · ${days} ${p(days, "day", "days")} streak`,
       streakUnit: (n: number) => p(n, "day streak", "days streak"),
       randomRange: (min: string, max: string) => `${min} – ${max} at random each day`,
+      totalEarned: (amount: string) => `${amount} earned from check-ins so far`,
       neverExpires: "Adds up permanently, never expires",
       doneToday: "Checked in",
       button: (min: string, max: string) => `Check in for ${min}–${max}`,

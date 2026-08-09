@@ -48,6 +48,15 @@ func (s *Server) handleGetQuota(c *gin.Context) {
 		nextMax += g.StreakBonusSpace
 	}
 
+	// Lifetime capacity earned from check-ins, weekly and monthly bonuses
+	// included — they all land in the ledger as type "checkin". Summed from
+	// the ledger rather than counter-cached on the user row: this page is the
+	// only reader, and the ledger is indexed by user_id.
+	var checkinTotal int64
+	s.DB.Model(&models.QuotaTransaction{}).
+		Where("user_id = ? AND type = ?", u.ID, models.QuotaCheckin).
+		Select("COALESCE(SUM(bytes), 0)").Scan(&checkinTotal)
+
 	c.JSON(http.StatusOK, gin.H{
 		"quota_bytes":     u.QuotaBytes,
 		"used_bytes":      u.UsedBytes,
@@ -66,6 +75,7 @@ func (s *Server) handleGetQuota(c *gin.Context) {
 		},
 		"checkin": gin.H{
 			"checked_in_today":  u.LastCheckinDate == today,
+			"total_earned":      checkinTotal,
 			"streak":            u.CheckinStreak,
 			"last_date":         u.LastCheckinDate,
 			"next_min_bytes":    nextMin,

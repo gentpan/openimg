@@ -156,6 +156,12 @@ export default function SpacePage() {
                     <span className="ml-1 text-faint">· {t.space.checkin.neverExpires}</span>
                   </div>
                 )}
+                  {quota && quota.checkin.total_earned > 0 && (
+                    <div className="mt-1 text-[11px] text-brand-400">
+                      <i className="fa-solid fa-gift mr-1 text-[10px]" />
+                      {t.space.checkin.totalEarned(formatBytes(quota.checkin.total_earned))}
+                    </div>
+                  )}
               </div>
               <button
                 onClick={doCheckin}

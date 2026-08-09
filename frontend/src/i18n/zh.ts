@@ -308,6 +308,7 @@ export const zh = {
       /** 数字由组件单独渲染，这条只是紧跟其后的单位。 */
       streakUnit: (_n: number) => "天连续",
       randomRange: (min: string, max: string) => `每天随机 ${min} – ${max}`,
+      totalEarned: (amount: string) => `累计签到已获得 ${amount}`,
       neverExpires: "永久累加，不会过期",
       doneToday: "今日已签",
       button: (min: string, max: string) => `签到领 ${min}–${max}`,

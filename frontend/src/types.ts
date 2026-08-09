@@ -115,6 +115,8 @@ export interface QuotaInfo {
   tier: Tier;
   checkin: {
     checked_in_today: boolean;
+    /** Lifetime bytes earned from check-ins, weekly/monthly bonuses included. */
+    total_earned: number;
     streak: number;
     last_date: string;
     next_min_bytes: number;

@@ -1,19 +1,19 @@
 /*!
- * LiteZoom — 轻量图片灯箱(单文件,CSS 内嵌,零依赖)
+ * LiteZoom — lightweight image lightbox (single file, inline CSS, zero dependencies)
  * https://litezoom.dev
  *
- * 两种模式:
- *   simple —— 点开放大 + 左右切换 + 计数器 + 关闭 + 键盘 + 下拉关闭
- *   full   —— 在 simple 基础上 + 右上角工具按钮(zoomIn/zoomOut/close)
- *             + 底部缩略图条 + caption + 滚轮/双指缩放 + 拖拽平移 pan + 拖拽下拉关闭
+ * Two modes:
+ *   simple — click to open + prev/next + counter + close + keyboard + pull-down close
+ *   full   — everything in simple + toolbar buttons (zoomIn/zoomOut/close)
+ *            + bottom thumbnail strip + captions + wheel/pinch zoom + drag pan + pull-down close
  *
- * 用法:
+ * Usage:
  *   LiteZoom.bind('.talk-images img', { mode: 'simple', group: fn });
  *   LiteZoom.bind('.post-content img, .page-content img', { mode: 'full', group: fn, caption: fn });
- *   // 也可手动打开:LiteZoom.open([{src,thumb,caption}], index, { mode });
+ *   // or open manually: LiteZoom.open([{src,thumb,caption}], index, { mode });
  *
- * 委托式单一 document click 监听,动态插入图片后可调用 refresh/enhance。
- * 最后更新: 2026-08-09
+ * One delegated document click listener; call refresh/enhance after inserting images dynamically.
+ * Last updated: 2026-08-10
  */
 (function (window, document) {
     'use strict';

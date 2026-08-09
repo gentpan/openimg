@@ -399,6 +399,10 @@
             loadToken++;
             el.classList.remove('is-open');
             backdrop.style.opacity = '';
+            // 兜底清空手势状态:pointerup 被系统菜单/弹窗吞掉时,
+            // 幽灵指针不能带进下一次打开
+            pointers = {};
+            gesture = null;
             document.removeEventListener('keydown', onKeydown, false);
             window.removeEventListener('resize', invalidateMeasure);
             if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (err) {} }
@@ -467,6 +471,10 @@
         function pointerCount() { return Object.keys(pointers).length; }
 
         stage.addEventListener('pointerdown', function (e) {
+            // 只认主键(触屏与笔尖也是 0):右键要留给系统菜单,而且它的
+            // pointerup 会被菜单吞掉——一旦入表就成幽灵指针,下一次左键
+            // 拖拽会被误判成双指捏合,图片乱跳
+            if (e.button !== 0) { return; }
             if (e.target.closest('.litezoom__thumbs, .litezoom__toolbar, .litezoom__nav')) { return; }
             pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
             if (stage.setPointerCapture) { try { stage.setPointerCapture(e.pointerId); } catch (err) {} }

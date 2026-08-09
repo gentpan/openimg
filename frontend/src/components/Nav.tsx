@@ -19,7 +19,6 @@ export default function Nav() {
   const { t } = useLang();
   const { user, logout, refresh } = useAuth();
   const { brand, setBrand } = useBrand();
-  const { lang, setLang } = useLang();
   const toast = useToast();
   const { pathname } = useLocation();
   const [busy, setBusy] = useState(false);
@@ -125,17 +124,7 @@ export default function Nav() {
                     would say "theme" without saying which one is on. */}
                 <span className="w-3 h-3 rounded-full bg-brand-600 ring-1 ring-white/25" />
               </button>
-              <button
-                onClick={() => setLang(lang === "zh" ? "en" : "zh")}
-                title={lang === "zh" ? "Switch to English" : "切换到中文"}
-                aria-label={lang === "zh" ? "Switch to English" : "切换到中文"}
-                className="h-6 rounded-full px-1.5 text-[10px] font-medium text-neutral-500 hover:text-brand-300 hover:bg-neutral-900 transition"
-              >
-                {/* The label is the language you get, not the one you are in —
-                    a switch that shows its current state reads as a status
-                    light and gets ignored. */}
-                {lang === "zh" ? "EN" : "中"}
-              </button>
+              <LangFlagButton />
               <Link
                 to="/settings"
                 className="flex items-center gap-1.5 text-neutral-400 hover:text-brand-300 min-w-0"
@@ -173,6 +162,7 @@ export default function Nav() {
                     would say "theme" without saying which one is on. */}
                 <span className="w-3 h-3 rounded-full bg-brand-600 ring-1 ring-white/25" />
               </button>
+              <LangFlagButton />
               <Link to="/login" className="text-brand-400 hover:underline">
                 {t.common.signIn}
               </Link>
@@ -184,6 +174,27 @@ export default function Nav() {
         </div>
       </div>
     </nav>
+  );
+}
+
+function LangFlagButton() {
+  const { lang, setLang } = useLang();
+  return (
+    <button
+      onClick={() => setLang(lang === "zh" ? "en" : "zh")}
+      title={lang === "zh" ? "Switch to English" : "切换到中文"}
+      aria-label={lang === "zh" ? "Switch to English" : "切换到中文"}
+      className="w-6 h-6 rounded-full hover:bg-neutral-900 transition inline-flex items-center justify-center"
+    >
+      {/* The flag is the language you get, not the one you are in —
+          a switch that shows its current state reads as a status
+          light and gets ignored. */}
+      <img
+        src={lang === "zh" ? "/static/flags/us.svg" : "/static/flags/cn.svg"}
+        alt=""
+        className="w-5 h-5 rounded-full"
+      />
+    </button>
   );
 }
 

@@ -86,7 +86,11 @@ func (s *Server) issueOTP(c *gin.Context, emailAddr, purpose string) (int, strin
 	// explicit timeout stops a hung provider from leaking the goroutine.
 	labelKey := models.OTPPurposeLabel(purpose)
 	sendCtx, cancel := context.WithTimeout(context.WithoutCancel(c.Request.Context()), 30*time.Second)
-	body := email.OTPEmailHTML(code, int(otpTTL.Minutes()))
+	// The theme rides in on a header because the server has no other way to
+	// know it: the choice lives in the browser's localStorage, and the flows
+	// that send these mails (login, register, reset) mostly run before any
+	// account is even known. MailBrand clamps the hint — it is client input.
+	body := email.OTPEmailHTML(i18n.Of(c), email.MailBrand(c.GetHeader("X-Openimg-Brand")), code, int(otpTTL.Minutes()))
 	go func() {
 		defer cancel()
 		if err := s.Email.Send(sendCtx, emailAddr,

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gentpan/openimg/backend/internal/i18n"
 	"io"
 	"net/http"
 	"time"
@@ -75,28 +76,62 @@ func truncate(s string, n int) string {
 	return s[:n] + "...(truncated)"
 }
 
-// OTPEmailHTML renders the verification-code email body.
-func OTPEmailHTML(code string, ttlMinutes int) string {
+// Brand palettes for the OTP mail, mirroring the site's two themes.
+//
+// Emails stay light-background regardless: dark mode in email clients is a
+// minefield (Gmail recolors, Outlook inverts), so the brand shows in the
+// accents, not the canvas. Each code color is the darkened shade of its brand
+// that stays readable on the tinted box — the raw brand green is a 1.7:1
+// against white, which is exactly the mistake the old template made in
+// reverse (violet box, green digits, neither matching the site).
+type mailPalette struct {
+	BoxBg, BoxBorder, Code string
+}
+
+var mailPalettes = map[string]mailPalette{
+	"green":  {BoxBg: "#f2fbe9", BoxBorder: "#cfe8bd", Code: "#3a7a12"},
+	"violet": {BoxBg: "#f5f2ff", BoxBorder: "#ded3ff", Code: "#6d3fd4"},
+}
+
+// MailBrand clamps a client-supplied brand hint to a known palette. The header
+// is attacker-controlled like any other; an unknown value falls back to the
+// default rather than reaching the template.
+func MailBrand(hint string) string {
+	if _, ok := mailPalettes[hint]; ok {
+		return hint
+	}
+	return "green"
+}
+
+// OTPEmailHTML renders the verification-code email body in the caller's
+// language and theme.
+func OTPEmailHTML(lang i18n.Lang, brand, code string, ttlMinutes int) string {
+	pal := mailPalettes[MailBrand(brand)]
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html><body style="margin:0;padding:0;background:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
   <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="padding:32px 16px">
     <tr><td align="center">
       <table role="presentation" width="480" style="background:#ffffff;border-radius:12px;padding:40px 32px;max-width:100%%">
         <tr><td>
-          <h1 style="margin:0 0 8px;color:#1a1a1a;font-size:20px">Openimg 验证码</h1>
+          <h1 style="margin:0 0 8px;color:#1a1a1a;font-size:20px">%s</h1>
           <p style="margin:0 0 24px;color:#6b6b6b;font-size:14px;line-height:1.5">
-            请在登录页输入下方验证码完成登录。验证码 %d 分钟内有效。
+            %s
           </p>
-          <div style="background:#f5f0ff;border:1px solid #e0d4ff;border-radius:8px;padding:18px;text-align:center">
-            <div style="font-family:'SF Mono',Monaco,monospace;font-size:32px;letter-spacing:8px;color:#2B7507;font-weight:600">%s</div>
+          <div style="background:%s;border:1px solid %s;border-radius:8px;padding:18px;text-align:center">
+            <div style="font-family:'SF Mono',Monaco,monospace;font-size:32px;letter-spacing:8px;color:%s;font-weight:600">%s</div>
           </div>
           <p style="margin:24px 0 0;color:#9b9b9b;font-size:12px;line-height:1.5">
-            如果不是你本人操作，请忽略此邮件。任何人（包括 Openimg 工作人员）都不会向你索要这个验证码。
+            %s
           </p>
         </td></tr>
       </table>
-      <p style="margin:16px 0 0;color:#a3a3a3;font-size:12px">Openimg · 免费图床</p>
+      <p style="margin:16px 0 0;color:#a3a3a3;font-size:12px">%s</p>
     </td></tr>
   </table>
-</body></html>`, ttlMinutes, code)
+</body></html>`,
+		i18n.TL(lang, "email.otp.heading"),
+		i18n.TL(lang, "email.otp.body", ttlMinutes),
+		pal.BoxBg, pal.BoxBorder, pal.Code, code,
+		i18n.TL(lang, "email.otp.warning"),
+		i18n.TL(lang, "email.footer.tagline"))
 }

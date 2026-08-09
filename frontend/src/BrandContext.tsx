@@ -108,3 +108,18 @@ export function useBrand() {
   if (!c) throw new Error("useBrand 必须在 BrandProvider 内使用");
   return c;
 }
+
+/**
+ * The brand the API should render server-side artifacts (emails) in.
+ *
+ * Read from localStorage rather than the context for the same reason as
+ * currentLang: api.ts is a plain module with no hooks. Kept beside the
+ * provider so the two can never disagree about the storage key.
+ */
+export function currentBrand(): "green" | "violet" {
+  try {
+    return localStorage.getItem(BRAND_KEY) === "violet" ? "violet" : "green";
+  } catch {
+    return "green";
+  }
+}

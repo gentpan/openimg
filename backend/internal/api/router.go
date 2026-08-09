@@ -101,7 +101,7 @@ func (s *Server) Router() *gin.Engine {
 	corsCfg := cors.DefaultConfig()
 	corsCfg.AllowAllOrigins = true
 	corsCfg.AllowCredentials = false
-	corsCfg.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Accept-Language", "Authorization"}
+	corsCfg.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Accept-Language", "Authorization", "X-Openimg-Brand"}
 	r.Use(cors.New(corsCfg))
 	// Records the caller's language for every handler. Before the routes so
 	// even a 404 answers in the right language.

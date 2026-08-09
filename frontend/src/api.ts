@@ -18,6 +18,7 @@ import type {
   User,
   UserGroup,
 } from "./types";
+import { currentBrand } from "./BrandContext";
 import { currentLang } from "./LangContext";
 import { dicts } from "./i18n";
 
@@ -33,11 +34,15 @@ async function jfetch<T>(path: string, opts: RequestInit = {}): Promise<T> {
   // which reads worse than an untranslated interface — the error is exactly
   // the moment the reader needs to understand.
   const lang = currentLang() === "zh" ? "zh-CN" : "en";
+  // The brand hint lets the server render emails (OTP codes) in the theme the
+  // person is actually looking at. It is a hint, not state: the server clamps
+  // unknown values and defaults to green.
+  const brand = currentBrand();
   const r = await fetch(BASE + path, {
     credentials: "include",
     headers: isForm
-      ? { "Accept-Language": lang, ...(opts.headers || {}) }
-      : { "Content-Type": "application/json", "Accept-Language": lang, ...(opts.headers || {}) },
+      ? { "Accept-Language": lang, "X-Openimg-Brand": brand, ...(opts.headers || {}) }
+      : { "Content-Type": "application/json", "Accept-Language": lang, "X-Openimg-Brand": brand, ...(opts.headers || {}) },
     ...opts,
   });
   if (!r.ok) {
@@ -143,6 +148,7 @@ export const imageApi = {
       // for byte-level progress, so the header has to be set again here. This
       // is where "file too large" and "format not allowed" come back.
       xhr.setRequestHeader("Accept-Language", currentLang() === "zh" ? "zh-CN" : "en");
+      xhr.setRequestHeader("X-Openimg-Brand", currentBrand());
       xhr.withCredentials = true;
 
       xhr.upload.onprogress = (e) => {

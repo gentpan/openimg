@@ -92,7 +92,7 @@ export const zh = {
       titleLead: "稳定快速的",
       titleAccent: "免费图床",
       subtitle:
-        "上传自动压缩并转换 WebP / AVIF，全球 CDN 分发，图片外链持久有效。支持 API 上传与自有 R2 / S3 存储。",
+        "上传自动压缩并转换 WebP / AVIF，全球 CDN 分发，图片外链持久有效。\n支持 API 上传与自有 R2 / S3 存储。",
     },
     features: {
       sectionTitle: "为什么用 Openimg",

@@ -49,7 +49,7 @@ export default function Home() {
               </h1>
             </Reveal>
             <Reveal delay={160}>
-              <p className="mt-4 text-sm sm:text-base text-neutral-400 max-w-xl mx-auto leading-relaxed">
+              <p className="mt-4 text-sm sm:text-base text-neutral-400 max-w-xl mx-auto leading-relaxed whitespace-pre-line">
                 {t.home.hero.subtitle}
               </p>
             </Reveal>

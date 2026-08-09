@@ -92,7 +92,7 @@ export const en: Dict = {
       titleLead: "Fast, reliable",
       titleAccent: "image hosting",
       subtitle:
-        "Automatic optimization and WebP / AVIF conversion, global CDN delivery, permanent direct links. API uploads and bring-your-own R2 / S3 storage.",
+        "Automatic optimization and WebP / AVIF conversion, global CDN delivery, permanent direct links.\nAPI uploads and bring-your-own R2 / S3 storage.",
     },
     features: {
       sectionTitle: "Why Openimg",

@@ -1,9 +1,9 @@
 /*!
- * LiteZoom — 轻量图片灯箱(单文件,CSS 内嵌)
- * 骨架参考 tokinx/ViewImage,缩放/平移/工具栏/缩略图参考 Fancybox。
+ * LiteZoom — 轻量图片灯箱(单文件,CSS 内嵌,零依赖)
+ * https://litezoom.dev
  *
  * 两种模式:
- *   simple —— 点开放大 + 左右切换 + 计数器 + 关闭 + 键盘 + 下拉关闭(首页说说)
+ *   simple —— 点开放大 + 左右切换 + 计数器 + 关闭 + 键盘 + 下拉关闭
  *   full   —— 在 simple 基础上 + 右上角工具按钮(zoomIn/zoomOut/close)
  *             + 底部缩略图条 + caption + 滚轮/双指缩放 + 拖拽平移 pan + 拖拽下拉关闭
  *
@@ -13,6 +13,7 @@
  *   // 也可手动打开:LiteZoom.open([{src,thumb,caption}], index, { mode });
  *
  * 委托式单一 document click 监听,动态插入图片后可调用 refresh/enhance。
+ * 最后更新: 2026-08-09
  */
 (function (window, document) {
     'use strict';
@@ -226,6 +227,11 @@
 
         // 指针/手势状态
         var pointers = {};                  // pointerId -> {x,y}
+        // 布局缓存:图片的无缩放基准尺寸与舞台尺寸。二者在一次手势期间
+        // 都是常量,而 clampPan 跑在 pointermove/wheel 的每一帧上——
+        // 不缓存的话每帧两次 getBoundingClientRect 强制布局。
+        // 换图与窗口 resize 时失效,首次用到时惰性测量。
+        var measure = null;
         var gesture = null;                 // 当前手势:'pan' | 'drag' | 'pinch' | null
         var startScale = 1, startDist = 0, pinchMid = { x: 0, y: 0 };
         var dragStart = { x: 0, y: 0 }, dragLast = { x: 0, y: 0 }, dragMoved = 0;
@@ -259,13 +265,23 @@
         }
 
         // 限制平移范围,避免把图片拖出视野太远
-        function clampPan() {
-            if (scale <= 1) { tx = 0; ty = 0; return; }
+        function ensureMeasure() {
+            if (measure) { return measure; }
             var rect = imgEl.getBoundingClientRect();
             var stageRect = stage.getBoundingClientRect();
-            var baseW = rect.width / scale, baseH = rect.height / scale;
-            var maxX = Math.max(0, (baseW * scale - stageRect.width) / 2);
-            var maxY = Math.max(0, (baseH * scale - stageRect.height) / 2);
+            measure = {
+                baseW: rect.width / scale, baseH: rect.height / scale,
+                stageW: stageRect.width, stageH: stageRect.height
+            };
+            return measure;
+        }
+        function invalidateMeasure() { measure = null; }
+
+        function clampPan() {
+            if (scale <= 1) { tx = 0; ty = 0; return; }
+            var m = ensureMeasure();
+            var maxX = Math.max(0, (m.baseW * scale - m.stageW) / 2);
+            var maxY = Math.max(0, (m.baseH * scale - m.stageH) / 2);
             tx = clamp(tx, -maxX, maxX);
             ty = clamp(ty, -maxY, maxY);
         }
@@ -287,6 +303,7 @@
                 imgEl.alt = item.caption || '';
                 imgEl.classList.add('is-ready');
                 spinner.classList.remove('is-active');
+                invalidateMeasure();
             };
             loader.onerror = function () {
                 if (token !== loadToken) { return; }
@@ -369,6 +386,7 @@
             void el.offsetWidth;
             el.classList.add('is-open');
             document.addEventListener('keydown', onKeydown, false);
+            window.addEventListener('resize', invalidateMeasure);
             var closeBtn = el.querySelector('[data-act="close"]');
             if (closeBtn) { closeBtn.focus(); }
         }
@@ -376,9 +394,13 @@
         function close() {
             if (!isOpen) { return; }
             isOpen = false;
+            // 作废在途加载:慢网络下用户等不及就关掉,迟到的 onload 不该
+            // 把大图写回隐藏的 viewer(还会盖掉下面 300ms 后的清理)。
+            loadToken++;
             el.classList.remove('is-open');
             backdrop.style.opacity = '';
             document.removeEventListener('keydown', onKeydown, false);
+            window.removeEventListener('resize', invalidateMeasure);
             if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (err) {} }
             lastFocus = null;
             // 过渡结束后清理大图,释放内存
@@ -389,6 +411,23 @@
 
         /* ---------- 键盘 ---------- */
         function onKeydown(e) {
+            // 焦点陷阱:aria-modal 承诺了模态,Tab 就不能跑到灯箱后面的
+            // 页面上去。在灯箱内部的可见按钮之间循环。
+            if (e.key === 'Tab') {
+                var focusables = el.querySelectorAll('button:not([style*="display: none"])');
+                var list = [];
+                for (var i = 0; i < focusables.length; i++) {
+                    if (focusables[i].offsetParent !== null) { list.push(focusables[i]); }
+                }
+                if (!list.length) { e.preventDefault(); return; }
+                var idx = list.indexOf(document.activeElement);
+                var nextIdx = e.shiftKey
+                    ? (idx <= 0 ? list.length - 1 : idx - 1)
+                    : (idx === list.length - 1 || idx < 0 ? 0 : idx + 1);
+                list[nextIdx].focus();
+                e.preventDefault();
+                return;
+            }
             switch (e.key) {
                 case 'Escape': close(); break;
                 case 'ArrowLeft': prev(); break;
@@ -633,8 +672,14 @@
     var lazyObserver = null;
     var lazyObserverMargin = '';
 
-    function isLoadedImage(img) {
-        return !!(img && img.complete && (img.naturalWidth || img.getAttribute('src')));
+    // 同步判断一张图的最终状态。complete 只说明「结束了」,不说明成败:
+    // 失败的图同样 complete=true,靠 naturalWidth/Height 区分。
+    // (极少数无固有尺寸的 SVG 两者皆 0,会被判成失败——图床场景全是位图,
+    // 接受这个边角以换取失败图不再被标成 is-lz-loaded。)
+    function imageState(img) {
+        if (!img || !img.complete) { return 'pending'; }
+        if (img.naturalWidth > 0 || img.naturalHeight > 0) { return 'loaded'; }
+        return (img.currentSrc || img.getAttribute('src')) ? 'error' : 'pending';
     }
 
     function ensureImageAttrs(img) {
@@ -736,8 +781,9 @@
             else { loadDeferredImage(img); }
             return;
         }
-        if (isLoadedImage(img)) {
-            finishEnhancedImage(img, wrapper, opts, false);
+        var state = imageState(img);
+        if (state !== 'pending') {
+            finishEnhancedImage(img, wrapper, opts, state === 'error');
         }
     }
 

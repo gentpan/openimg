@@ -110,7 +110,14 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
             src={previewSrc}
             alt={img.orig_name}
             loading="lazy"
-            className="w-full rounded-xl mb-4 bg-neutral-950"
+            className="w-full rounded-xl mb-4 bg-neutral-950 cursor-zoom-in"
+            onClick={() =>
+              window.LiteZoom?.open(
+                [{ src: img.url, thumb: previewSrc, caption: img.orig_name }],
+                0,
+                { mode: "full" },
+              )
+            }
           />
 
           <dl className="space-y-1 text-[11px] mb-4">

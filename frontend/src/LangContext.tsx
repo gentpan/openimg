@@ -55,6 +55,13 @@ export function LangProvider({ children }: { children: ReactNode }) {
     // they are read from the served HTML by crawlers that get one document for
     // both languages, so a runtime rewrite would not reach them anyway.
     document.title = dicts[lang].common.documentTitle;
+    // The lightbox is a plain script with Chinese defaults; its aria labels
+    // must follow the interface language like everything else.
+    window.LiteZoom?.labels(
+      lang === "zh"
+        ? { viewer: "图片查看", prev: "上一张", next: "下一张", zoomIn: "放大", zoomOut: "缩小", close: "关闭", thumb: (i) => `第 ${i} 张` }
+        : { viewer: "Image viewer", prev: "Previous", next: "Next", zoomIn: "Zoom in", zoomOut: "Zoom out", close: "Close", thumb: (i) => `Image ${i}` },
+    );
   }, [lang]);
 
   function setLang(l: Lang) {

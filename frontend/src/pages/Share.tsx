@@ -99,7 +99,14 @@ export default function SharePage() {
           <img
             src={data.url}
             alt={data.orig_name}
-            className="max-h-[62vh] w-auto max-w-full object-contain"
+            className="max-h-[62vh] w-auto max-w-full cursor-zoom-in object-contain"
+            onClick={() =>
+              window.LiteZoom?.open(
+                [{ src: data.url, caption: data.orig_name }],
+                0,
+                { mode: "full" },
+              )
+            }
           />
         </div>
 

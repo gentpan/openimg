@@ -81,6 +81,8 @@ cdn.imgla.com {
 	request_body {
 		max_size 0
 	}
+	# 根路径别落到 MinIO——那会返回整个桶的对象列表
+	redir / https://openimg.io 301
 	rewrite * /openimg{uri}
 	import openimg_minio
 	import openimg_object_headers
@@ -94,6 +96,8 @@ cdn.imgla.com {
 # touching originals, and thumbnails are regenerable so that purge is cheap.
 cache.imgla.com {
 	tls /etc/caddy/certs/imgla-origin.crt /etc/caddy/certs/imgla-origin.key
+	# 根路径别落到 MinIO——那会返回整个桶的对象列表
+	redir / https://openimg.io 301
 	rewrite * /openimg{uri}
 	import openimg_minio
 	import openimg_object_headers

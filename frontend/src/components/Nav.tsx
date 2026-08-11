@@ -163,11 +163,15 @@ export default function Nav() {
                 <span className="w-3 h-3 rounded-full bg-brand-600 ring-1 ring-white/25" />
               </button>
               <LangFlagButton />
-              <Link to="/login" className="text-brand-400 hover:underline">
+              {/* One entry point: the login page carries the "no account yet →
+                  sign up" prompt, so a separate register link only splits the
+                  click. Icon mirrors the logout door icon, direction flipped. */}
+              <Link
+                to="/login"
+                className="rounded-full px-3 py-0.5 bg-brand-600 text-brand-ink hover:bg-brand-500 transition whitespace-nowrap"
+              >
+                <i className="fa-solid fa-right-to-bracket text-[10px] mr-1" />
                 {t.common.signIn}
-              </Link>
-              <Link to="/register" className="text-neutral-500 hover:text-neutral-200">
-                {t.common.signUp}
               </Link>
             </>
           )}

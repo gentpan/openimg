@@ -1,6 +1,6 @@
 # Apple 客户端
 
-macOS 菜单栏上传器，以及之后的 iOS 端。和后端同仓，不单独开仓库。
+macOS 桌面客户端（带窗口，非菜单栏），以及之后的 iOS 端。和后端同仓，不单独开仓库。
 
 ## 为什么在这个仓库里
 
@@ -13,7 +13,7 @@ macOS 菜单栏上传器，以及之后的 iOS 端。和后端同仓，不单独
 ```
 apple/OpenimgKit/
   Sources/OpenimgKit/     网络层、模型、钥匙串   ← 两端共用，无第三方依赖
-  Sources/OpenimgMac/     菜单栏应用（SwiftUI）
+  Sources/OpenimgMac/     macOS 应用（SwiftUI）
   Sources/KitCheck/       自检
 ```
 
@@ -59,7 +59,7 @@ Xcode；只有 CLT 时整个 target 编译不过。那个拖放标志放进 mode
 
 ## 现状与下一步
 
-Kit 与 macOS 应用都能用 `swift build` 构建，26 项自检全过。`package-mac.sh` 打出的是带 LSUIElement 的真 .app，ad-hoc 签名，本机可用。
+Kit 与 macOS 应用都能用 `swift build` 构建，56 项自检全过。`package-mac.sh` 打出的是窗口化的真 .app，ad-hoc 签名，本机可用。
 打包和 ad-hoc 签名都不需要 Xcode——.app 只是一个目录加 Info.plist，codesign
 随 Command Line Tools 一起装。
 

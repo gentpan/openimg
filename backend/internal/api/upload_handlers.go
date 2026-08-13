@@ -177,10 +177,20 @@ func (s *Server) storeUpload(ctx context.Context, p storeParams) (*models.Image,
 	}
 
 	// Dedup: the same bytes in the same bucket are stored once. We look for
-	// any surviving row with this hash — including other users', since the
-	// object is shared — and clone its metadata instead of re-encoding.
+	// surviving rows with this hash — including other users', since the
+	// object is shared — and clone metadata instead of re-encoding.
+	//
+	// 但只克隆处理签名一致的旧行:同样的字节在不同设置(原样/优化、转换
+	// 目标、限宽)下产物完全不同,克隆到别的设置的产物会让"改了设置再传
+	// 同一张图"看起来没生效,甚至拿到语义不符的字节(原样用户克隆到被重
+	// 编码的、优化用户克隆到 EXIF 俱在的)。签名一致意味着字节和设置都
+	// 相同,产物必然逐位可复用。同字节因此可能按设置各存一份——设置生效
+	// 优先于去重省空间;引用计数按 object_key 而非 sha 统计,互不干扰。
+	// 存量旧行签名为空,自然判不相容,首次重传按新设置重新处理后收敛。
+	sig := procSig(p.User)
 	var twin models.Image
-	dupErr := s.DB.Where("profile_id = ? AND sha256 = ? AND deleted_at IS NULL", profileID, p.SHA).
+	dupErr := s.DB.Where("profile_id = ? AND sha256 = ? AND proc_sig = ? AND deleted_at IS NULL",
+		profileID, p.SHA, sig).
 		Order("created_at ASC").First(&twin).Error
 	if dupErr == nil {
 		img, err := s.cloneImage(ctx, twin, p)
@@ -274,6 +284,7 @@ func (s *Server) storeUpload(ctx context.Context, p storeParams) (*models.Image,
 		OrigName:     p.OrigName,
 		MIME:         res.Primary.MIME,
 		Ext:          res.Primary.Ext,
+		ProcSig:      sig,
 		Width:        res.Primary.Width,
 		Height:       res.Primary.Height,
 		SizeOrig:     int64(len(p.Raw)),
@@ -291,8 +302,23 @@ func (s *Server) storeUpload(ctx context.Context, p storeParams) (*models.Image,
 		refund()
 		return nil, false, err
 	}
-	s.afterCreate(&img, res.Animated, p.User.VariantFormat == models.VariantAVIF)
+	s.afterCreate(&img)
 	return &img, false, nil
+}
+
+// procSig 把决定主图字节的全部用户设置压成一个签名,作为秒传克隆的相容
+// 判据:原样模式只有一种产物;优化模式的产物由转换目标与限宽共同决定。
+// 缩略图策略故意不进签名——它只影响网格小图,为它放弃整份对象的复用不
+// 值得。改动此函数会让存量签名全部失配(等同关闭一次秒传),慎重。
+func procSig(u *models.User) string {
+	if u.UploadMode == "original" {
+		return "orig"
+	}
+	variant := u.VariantFormat
+	if variant == "" {
+		variant = "none"
+	}
+	return fmt.Sprintf("opt:%s:%d", variant, u.MaxImageWidth)
 }
 
 // cloneImage records a second reference to bytes that are already stored.
@@ -325,6 +351,7 @@ func (s *Server) cloneImage(ctx context.Context, twin models.Image, p storeParam
 		OrigName:     p.OrigName,
 		MIME:         twin.MIME,
 		Ext:          twin.Ext,
+		ProcSig:      twin.ProcSig,
 		Width:        twin.Width,
 		Height:       twin.Height,
 		SizeOrig:     int64(len(p.Raw)),
@@ -349,14 +376,12 @@ func (s *Server) cloneImage(ctx context.Context, twin models.Image, p storeParam
 }
 
 // afterCreate queues the work that was deliberately kept out of the request:
-// AVIF encoding and replication to a backup bucket.
-func (s *Server) afterCreate(img *models.Image, animated bool, wantsAVIF bool) {
+// replication to a backup bucket. AVIF 曾经也在这里入队——转换语义落地后
+// 主图在上传时同步编码为目标格式,异步补变体的路径不复存在(原样模式下
+// 转换设置整体不参与)。
+func (s *Server) afterCreate(img *models.Image) {
 	if s.Queue == nil {
 		return
-	}
-	// AVIF is opt-out per user; it's the slowest derivative to produce.
-	if !animated && wantsAVIF {
-		s.Queue.Submit(scheduler.JobTranscode, img.ID)
 	}
 	var backupCount int64
 	s.DB.Model(&models.StorageProfile{}).

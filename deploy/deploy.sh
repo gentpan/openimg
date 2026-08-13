@@ -129,9 +129,13 @@ else
 fi
 
 say "6/6  验证"
-for host in openimg.io cdn.imgla.com cache.imgla.com; do
+code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://openimg.io/")
+[[ "$code" == "200" ]] && ok "openimg.io  $code" || die "openimg.io  $code"
+# CDN 域名根路径设计为 301 回主站(否则 MinIO 会返回整个桶的对象列表),
+# 域名健康与否要看它跳得对不对,而不是 200
+for host in cdn.imgla.com cache.imgla.com; do
     code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://$host/")
-    [[ "$code" == "200" ]] && ok "$host  $code" || die "$host  $code"
+    [[ "$code" == "301" ]] && ok "$host  301 →  openimg.io" || die "$host  $code(应为 301)"
 done
 code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://www.openimg.io/")
 [[ "$code" == "301" ]] && ok "www.openimg.io  301 →  openimg.io" || die "www 跳转异常：$code"

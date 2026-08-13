@@ -108,9 +108,9 @@ func (s *Server) adminDashboard(c *gin.Context) {
 	s.DB.Raw(`SELECT COALESCE(SUM(size_stored), 0) FROM images WHERE deleted_at IS NULL`).Row().Scan(&referencedBytes)
 	s.DB.Raw(`
 		SELECT COALESCE(SUM(size_stored), 0), COALESCE(SUM(size_orig), 0) FROM (
-			SELECT DISTINCT ON (profile_id, sha256) size_stored, size_orig
+			SELECT DISTINCT ON (profile_id, object_key) size_stored, size_orig
 			FROM images WHERE deleted_at IS NULL
-			ORDER BY profile_id, sha256, created_at
+			ORDER BY profile_id, object_key, created_at
 		) d
 	`).Row().Scan(&st.StoredBytes, &st.OriginalBytes)
 	st.DedupSavedBytes = referencedBytes - st.StoredBytes

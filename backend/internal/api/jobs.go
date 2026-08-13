@@ -61,9 +61,9 @@ func (s *Server) RequeuePendingJobs() {
 	}
 }
 
-// jobTranscode generates the AVIF derivative that the upload path skipped.
-// AVIF is worth roughly 30-50% over WebP but costs an order of magnitude more
-// CPU, which is exactly the trade that belongs off the request path.
+// jobTranscode generates an AVIF derivative alongside the primary. 转换语义
+// 落地后上传路径不再入队(选 AVIF 时主图同步编码,原样模式转换不参与),
+// 此处理器保留只为消化历史遗留任务,没有新的入队来源。
 func (s *Server) jobTranscode(ctx context.Context, job scheduler.Job) error {
 	var img models.Image
 	if err := s.DB.First(&img, "id = ?", job.ImageID).Error; err != nil {
@@ -121,8 +121,10 @@ func (s *Server) jobTranscode(ctx context.Context, job scheduler.Job) error {
 		return fmt.Errorf("put avif: %w", err)
 	}
 
-	// Every row sharing these bytes gains the variant — the object is shared,
-	// so the metadata must be too.
+	// Every row sharing this object gains the variant — the object is shared,
+	// so the metadata must be too. 按 object_key 而非 sha 圈定:同字节可能
+	// 因转换设置不同而以两种格式各存一份,变体 key 是从各自 object_key 推
+	// 导的,标到别的格式的行上会得到一个不存在的链接。
 	variants := img.Variants
 	if variants == "" {
 		variants = models.VariantAVIF
@@ -130,7 +132,7 @@ func (s *Server) jobTranscode(ctx context.Context, job scheduler.Job) error {
 		variants += "," + models.VariantAVIF
 	}
 	return s.DB.Model(&models.Image{}).
-		Where("profile_id = ? AND sha256 = ? AND deleted_at IS NULL", img.ProfileID, img.SHA256).
+		Where("profile_id = ? AND object_key = ? AND deleted_at IS NULL", img.ProfileID, img.ObjectKey).
 		Updates(map[string]any{
 			"variants":      variants,
 			"size_stored":   gorm.Expr("size_stored + ?", out.Size()),
@@ -197,14 +199,17 @@ func (s *Server) jobPurge(ctx context.Context, job scheduler.Job) error {
 		return err
 	}
 
+	// 按 object_key 数引用:克隆共享的是对象键;同 sha 不同格式的行各自
+	// 持有各自的对象,不该互相挡住清理(按 sha 数会让先删的那份成为桶里
+	// 永远清不掉的孤儿)。
 	var refs int64
 	if err := s.DB.Model(&models.Image{}).
-		Where("profile_id = ? AND sha256 = ? AND deleted_at IS NULL", img.ProfileID, img.SHA256).
+		Where("profile_id = ? AND object_key = ? AND deleted_at IS NULL", img.ProfileID, img.ObjectKey).
 		Count(&refs).Error; err != nil {
 		return err
 	}
 	if refs > 0 {
-		return nil // someone else still uses these bytes
+		return nil // someone else still uses this object
 	}
 
 	backend, _, err := s.Storage.ForStored(ctx, img.ProfileID)

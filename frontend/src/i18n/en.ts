@@ -99,7 +99,7 @@ export const en: Dict = {
       sectionSubtitle: "Smaller files, faster delivery",
       optimize: {
         title: "Automatic optimizing and conversion",
-        desc: "Every upload gets WebP / AVIF derivative formats and thumbnails at several sizes. Usually about a third of the original size, with no visible quality loss.",
+        desc: "Uploads are compressed and, per your settings, stored straight as WebP / AVIF with a grid thumbnail. Usually about a third of the original size, with no visible quality loss.",
       },
       cdn: {
         title: "Cloudflare CDN",
@@ -658,14 +658,14 @@ export const en: Dict = {
       optimizedLine2: "Max width can be capped",
       optimizedLine3: "Usually 10–30% of the original size",
       original: "Keep original",
-      originalLine1: "Bytes untouched, all EXIF and location data kept",
+      originalLine1: "Bytes stored as-is, EXIF kept (GPS wiped from JPEG only)",
       originalLine2: "No optimizing, no resizing",
       originalLine3: "Uses noticeably more storage",
     },
     badgeRecommended: "Recommended",
     original: {
       warning:
-        "Originals are published with their EXIF and GPS location — anyone with the link can read where and when the photo was taken and on what device. Make sure that's what you want before sharing photos from your phone.",
+        "Originals are published with their EXIF — anyone with the link can read when the photo was taken and on what device. GPS is wiped from JPEG; for PNG / WebP and other formats the location data is published as-is, so make sure that's what you want before sharing photos from your phone.",
       warningSecurity:
         "Uploads are still checked against the real file format (SVG and non-images are refused) and always served with an image content type.",
       warningEmphasis: "EXIF and GPS location",
@@ -679,12 +679,13 @@ export const en: Dict = {
       hint: "Wider images are scaled down proportionally before storing; smaller ones are never enlarged",
     },
     variant: {
-      title: "Derivative format",
-      hint: "Pick one — every browser that supports AVIF also supports WebP, so storing both pays for the same fallback twice.",
-      webpDesc: "25–35% smaller than the original, supported by every browser",
-      avifDesc: "Another 20–30% smaller than WebP, slow to encode, generated in the background",
-      noneLabel: "None",
-      noneDesc: "Keep the main image only, uses the least storage",
+      title: "Convert on upload",
+      hint: "Uploads are converted to this format for storage — the original format is not kept, and the public link uses the target extension. Animated images keep their format.",
+      disabledHint: "No conversion in original mode",
+      webpDesc: "25–35% smaller than the source format, supported by every browser",
+      avifDesc: "Another 20–30% smaller than WebP, slower to encode — uploads take longer",
+      noneLabel: "No conversion",
+      noneDesc: "Store in the format you upload",
     },
   },
 

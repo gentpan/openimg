@@ -54,8 +54,8 @@ func (s *Server) handleUpdatePreferences(c *gin.Context) {
 		updates["upload_mode"] = *req.UploadMode
 	}
 	if req.VariantFormat != nil {
-		// One derivative at most: any browser that decodes AVIF also decodes
-		// WebP, so keeping both is paying twice for the same fallback.
+		// 单选:转换语义下主图只能编码成一种格式;况且能解 AVIF 的浏览器
+		// 都能解 WebP,同字节存两种格式没有意义。
 		if !allowedVariants[*req.VariantFormat] {
 			c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "prefs.bad_variant_format")})
 			return

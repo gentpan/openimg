@@ -68,9 +68,9 @@ type User struct {
 	// site itself renders, and serving full-size originals in a grid would be
 	// ruinous for both bandwidth and page weight.
 	UploadMode string `gorm:"size:16;not null;default:'optimized'" json:"upload_mode"`
-	// VariantFormat picks at most one full-size derivative: "none" | "webp" |
-	// "avif". They're mutually exclusive — storing both doubles the cost for a
-	// marginal gain, since any browser that takes AVIF also takes WebP.
+	// VariantFormat is the conversion target: "none" | "webp" | "avif". 优化
+	// 模式下主图直接编码成该格式,不保留原格式主图,也没有附加变体;原样
+	// 模式下不参与。单选:主图只有一种格式。
 	VariantFormat string `gorm:"size:8;not null;default:'webp'" json:"variant_format"`
 	// MaxImageWidth downscales anything wider before storing it. 0 keeps the
 	// original size. Most uploads are far larger than they'll ever be

@@ -73,7 +73,7 @@ X-API-Key: oimg_xxxxxx                # ${t.docs.token.commentNoBearer}`}</Pre>
           </P>
           <Pre>{`{
   "image": {
-    "url":        "https://openimg.io/storage/2026/08/06/aB3dEf7hJ9kL.jpg",
+    "url":        "https://openimg.io/storage/2026/08/06/aB3dEf7hJ9kL.webp",
     "short_url":  "https://openimg.io/aB3dE",
     "thumb_url":  "https://openimg.io/storage/2026/08/06/aB3dEf7hJ9kL_w600.webp",
     "markdown":   "![photo.jpg](https://openimg.io/storage/...)",
@@ -81,9 +81,9 @@ X-API-Key: oimg_xxxxxx                # ${t.docs.token.commentNoBearer}`}</Pre>
     "bbcode":     "[img]https://openimg.io/storage/...[/img]",
     "orig_name":  "photo.jpg",
     "width": 3000, "height": 2000,
-    "size_orig": 2411520, "size_stored": 1905312,
-    "variants":     "webp,w600",
-    "variant_urls": { "webp": "...", "w600": "..." }
+    "size_orig": 2411520, "size_stored": 812544,
+    "variants":     "w600",
+    "variant_urls": { "w600": "..." }
   },
   "deduplicated": false
 }`}</Pre>

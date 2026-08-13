@@ -161,9 +161,9 @@ func (s *Server) handleGetImage(c *gin.Context) {
 // object removal.
 //
 // The objects are only purged when no other row still references the same
-// (profile, sha256) pair; dedup means one user's delete must not break another
-// user's copy. That check happens in the purge handler, under the same
-// transaction that flips the last reference.
+// (profile, object_key) pair; dedup means one user's delete must not break
+// another user's copy. 按对象键而非哈希计引用:同字节可能因处理设置不同
+// 以多种格式各存一份。That check happens in the purge handler.
 func (s *Server) handleDeleteImage(c *gin.Context) {
 	u := auth.MustUser(c)
 	var img models.Image

@@ -38,10 +38,11 @@ func (s *Server) adminStats(c *gin.Context) {
 	s.DB.Model(&models.Image{}).Where("backup_state IN ?", []models.BackupState{models.BackupPending, models.BackupFailed}).Count(&out.PendingBackup)
 	s.DB.Model(&models.Image{}).Where("deleted_at IS NULL").Select("COALESCE(SUM(size_stored), 0)").Row().Scan(&out.StoredBytes)
 	s.DB.Model(&models.User{}).Select("COALESCE(SUM(quota_bytes), 0)").Row().Scan(&out.GrantedBytes)
-	// Distinct SHA-256 count is what actually occupies the pool — the gap
-	// against TotalImages is what dedup saved us.
+	// Distinct object count is what actually occupies the pool — the gap
+	// against TotalImages is what dedup saved us. 按 object_key 计:同字节
+	// 可能因处理设置不同各存一份对象,按 sha 会少算。
 	s.DB.Model(&models.Image{}).Where("deleted_at IS NULL").
-		Distinct("sha256").Count(&out.UniqueObjects)
+		Distinct("object_key").Count(&out.UniqueObjects)
 	if s.Queue != nil {
 		out.QueueDepth = s.Queue.Depth()
 	}

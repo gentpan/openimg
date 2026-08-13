@@ -289,3 +289,56 @@ func TestGridThumbNeverLargerThanPrimary(t *testing.T) {
 		}
 	}
 }
+
+// 转换语义:选了 WebP 后主图就是 WebP,不保留原格式主图,也没有多余的
+// 附加变体(缩略图除外)。
+func TestProcessConvertsPrimaryToWebP(t *testing.T) {
+	src := synthPNG(t, 1200, 800)
+	res, err := Process(src, Options{MaxWidth: 8000, MaxHeight: 8000, Variant: models.VariantWebP})
+	if err != nil {
+		t.Fatalf("Process: %v", err)
+	}
+	if res.Primary.Ext != "webp" {
+		t.Fatalf("primary ext = %q, want webp(转换语义:主图直接变目标格式)", res.Primary.Ext)
+	}
+	if res.Primary.MIME != "image/webp" {
+		t.Errorf("primary mime = %q, want image/webp", res.Primary.MIME)
+	}
+	// RIFF....WEBP 魔数,证明字节真是 WebP 而不只是改了扩展名
+	d := res.Primary.Data
+	if len(d) < 12 || string(d[0:4]) != "RIFF" || string(d[8:12]) != "WEBP" {
+		t.Error("primary bytes are not WebP")
+	}
+	if _, ok := res.Variants[models.VariantWebP]; ok {
+		t.Error("webp variant present alongside webp primary; conversion should replace, not append")
+	}
+	if res.Primary.Width != 1200 || res.Primary.Height != 800 {
+		t.Errorf("primary dims = %dx%d, want 1200x800", res.Primary.Width, res.Primary.Height)
+	}
+}
+
+func TestProcessConvertsPrimaryToAVIF(t *testing.T) {
+	src := synthJPEG(t, 800, 600)
+	res, err := Process(src, Options{MaxWidth: 8000, MaxHeight: 8000, Variant: models.VariantAVIF})
+	if err != nil {
+		t.Fatalf("Process: %v", err)
+	}
+	if res.Primary.Ext != "avif" {
+		t.Fatalf("primary ext = %q, want avif", res.Primary.Ext)
+	}
+	if _, ok := res.Variants[models.VariantAVIF]; ok {
+		t.Error("avif variant present alongside avif primary")
+	}
+}
+
+// 原图模式下转换设置不参与:字节原样保存。
+func TestProcessOriginalModeIgnoresConversion(t *testing.T) {
+	src := synthPNG(t, 400, 300)
+	res, err := Process(src, Options{MaxWidth: 8000, MaxHeight: 8000, Original: true, Variant: models.VariantWebP})
+	if err != nil {
+		t.Fatalf("Process: %v", err)
+	}
+	if res.Primary.Ext != "png" {
+		t.Errorf("primary ext = %q, want png(原图模式不转换)", res.Primary.Ext)
+	}
+}

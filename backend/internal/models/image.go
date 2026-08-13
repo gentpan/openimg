@@ -71,6 +71,10 @@ type Image struct {
 	OrigName string `gorm:"size:255" json:"orig_name"`
 	MIME     string `gorm:"size:64;not null" json:"mime"`
 	Ext      string `gorm:"size:8;not null" json:"ext"`
+	// ProcSig 是产出这份对象的处理设置签名(原样/优化+转换目标+限宽),
+	// 秒传只克隆签名一致的行——同字节不同设置的产物不可互换。存量旧行
+	// 为空串,永不匹配,首次重传按当前设置重新处理。见 api.procSig。
+	ProcSig string `gorm:"size:32;not null;default:''" json:"-"`
 	Width    int    `gorm:"not null;default:0" json:"width"`
 	Height   int    `gorm:"not null;default:0" json:"height"`
 

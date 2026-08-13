@@ -11,10 +11,11 @@
 //     numbers, and timestamps that users rarely realise they're publishing.
 //     Orientation is applied to the pixels first so stripping doesn't rotate
 //     the picture.
-//  3. Size. A donated pool is finite, so originals are re-compressed and a
-//     WebP plus three thumbnails are generated. AVIF is the best of the lot
-//     but roughly an order of magnitude slower to encode, so it is left to
-//     the background queue rather than the upload request.
+//  3. Size. A donated pool is finite, so originals are re-compressed — and
+//     when the user picks a conversion target, the primary is encoded
+//     straight into WebP/AVIF instead of keeping the source format (AVIF
+//     synchronously, at the user's own cost in upload time; animated images
+//     are never converted). A grid thumbnail is produced up front.
 package imageproc
 
 import (
@@ -196,8 +197,9 @@ type Options struct {
 	// the CDN's nosniff header become the only thing standing between a
 	// "picture" and an HTML page.
 	Original bool
-	// Variant is the single full-size derivative to produce: "", "none",
-	// "webp" or "avif".
+	// Variant is the conversion target: "", "none", "webp" or "avif".
+	// 转换语义:选定后主图直接编码为该格式(不保留原格式主图)。
+	// 动图不转换;源已是目标格式时等价于同格式重编码。
 	Variant string
 	// ResizeWidth downscales the stored image to this width when the source is
 	// wider. 0 disables it. Never upscales. Ignored in Original mode.
@@ -341,7 +343,29 @@ func Process(buf []byte, opts Options) (*Result, error) {
 		return res, nil
 	}
 
-	primary, err := encodePrimary(img, imgType, jpegQuality)
+	// 转换语义:用户选了 WebP/AVIF 时,主图直接编码成目标格式,不再保留
+	// 原格式主图——外链扩展名即目标格式。动图除外(逐帧转换是另一码事,
+	// 保持原格式);源已是目标格式时走同格式重编码,结果等价。
+	convertTo := ""
+	if !animated {
+		switch opts.Variant {
+		case models.VariantWebP:
+			if imgType != vips.ImageTypeWEBP {
+				convertTo = "webp"
+			}
+		case models.VariantAVIF:
+			if imgType != vips.ImageTypeAVIF {
+				convertTo = "avif"
+			}
+		}
+	}
+
+	var primary Output
+	if convertTo != "" {
+		primary, err = encodeAs(img, convertTo, 0)
+	} else {
+		primary, err = encodePrimary(img, imgType, jpegQuality)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +374,22 @@ func Process(buf []byte, opts Options) (*Result, error) {
 	// just keep the original bytes (stripping EXIF and killing polyglots is
 	// why we re-encode at all), but we can spend less on it. Step the quality
 	// down until we're under the original or run out of steps.
-	if isLossy(imgType) && primary.Size() > int64(len(buf)) {
+	// 转换到 WebP 时同理降质;AVIF 本身就是最小档,不再往下试。
+	if convertTo == "webp" && primary.Size() > int64(len(buf)) {
+		for _, q := range []int{70, 62} {
+			alt, aerr := encodeAs(img, "webp", q)
+			if aerr != nil {
+				break
+			}
+			if alt.Size() < primary.Size() {
+				primary = alt
+			}
+			if primary.Size() <= int64(len(buf)) {
+				break
+			}
+		}
+	}
+	if convertTo == "" && isLossy(imgType) && primary.Size() > int64(len(buf)) {
 		for _, q := range []int{72, 62} {
 			alt, aerr := encodePrimary(img, imgType, q)
 			if aerr != nil {
@@ -369,7 +408,7 @@ func Process(buf []byte, opts Options) (*Result, error) {
 	// charts, anything with long runs of identical pixels — where the filter
 	// bytes cost more than they save. Only pay for the second encode when the
 	// first one came out bigger than the input.
-	if imgType == vips.ImageTypePNG && primary.Size() > int64(len(buf)) {
+	if convertTo == "" && imgType == vips.ImageTypePNG && primary.Size() > int64(len(buf)) {
 		if alt, aerr := encodePNG(img, vips.PngFilterNone); aerr == nil && alt.Size() < primary.Size() {
 			alt.Width, alt.Height = primary.Width, primary.Height
 			primary = alt
@@ -404,20 +443,8 @@ func Process(buf []byte, opts Options) (*Result, error) {
 	// stay on demand.
 	addGridThumb(res, buf, stillParams, width, opts)
 
-	// At most one full-size derivative. AVIF is produced by the background
-	// queue, so only WebP is handled inline here.
-	if opts.Variant == models.VariantWebP && !animated && imgType != vips.ImageTypeWEBP {
-		if out, err := encodeWebP(buf, stillParams, 0, webpQuality); err == nil {
-			// Only keep it if it actually beats the primary; for small PNGs
-			// and already-tight JPEGs it sometimes doesn't, and storing a
-			// larger "optimised" copy is pure waste.
-			if out.Size() < primary.Size() {
-				res.Variants[models.VariantWebP] = out
-			}
-		} else {
-			log.Printf("imageproc: webp variant failed: %v", err)
-		}
-	}
+	// 转换语义下主图本身就是目标格式,不再有"主图之外的附加变体"。
+	// 动图是唯一漏网(保持原格式主图),逐帧转换不在此处处理。
 
 	return res, nil
 }
@@ -623,6 +650,31 @@ func encodePNG(img *vips.ImageRef, filter vips.PngFilter) (Output, error) {
 	p.Filter = filter
 	data, meta, err := img.ExportPng(p)
 	return Output{Ext: "png", MIME: "image/png", Data: data, Width: meta.Width, Height: meta.Height}, err
+}
+
+// encodeAs 把已完成旋转/缩放/剥元数据的图像编码为目标格式——转换语义的
+// 主图出口。quality 传 0 用格式默认档;AVIF 固定用最小档(它本身就是为
+// 体积而选的)。
+func encodeAs(img *vips.ImageRef, target string, quality int) (Output, error) {
+	switch target {
+	case "webp":
+		if quality == 0 {
+			quality = webpQuality
+		}
+		p := vips.NewWebpExportParams()
+		p.Quality = quality
+		p.StripMetadata = true
+		data, meta, err := img.ExportWebp(p)
+		return Output{Ext: "webp", MIME: "image/webp", Data: data, Width: meta.Width, Height: meta.Height}, err
+	case "avif":
+		p := vips.NewAvifExportParams()
+		p.Quality = avifQuality
+		p.Effort = avifEffort
+		p.StripMetadata = true
+		data, meta, err := img.ExportAvif(p)
+		return Output{Ext: "avif", MIME: "image/avif", Data: data, Width: meta.Width, Height: meta.Height}, err
+	}
+	return Output{}, fmt.Errorf("未知转换目标:%s", target)
 }
 
 func encodePrimary(img *vips.ImageRef, t vips.ImageType, quality int) (Output, error) {

@@ -202,8 +202,12 @@ struct SettingsView: View {
                 setting("处理方式", model.uploadMode.detail) {
                     PillRow(items: UploadMode.allCases, label: \.label, selection: pref($model.uploadMode))
                 }
-                setting("衍生格式", "多存一份现代格式，浏览器优先取它") {
+                setting("上传自动转换",
+                        model.uploadMode == .original
+                        ? "原图模式下不转换" : "选定后上传直接转成该格式存储，不保留原格式；动图除外") {
                     PillRow(items: VariantFormat.allCases, label: \.label, selection: pref($model.variantFormat))
+                        .disabled(model.uploadMode == .original)
+                        .opacity(model.uploadMode == .original ? 0.45 : 1)
                 }
                 setting("最大宽度",
                         model.uploadMode == .original

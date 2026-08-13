@@ -161,7 +161,8 @@ npx tsc -b && npm run build && npx eslint .
 | `required env var DATABASE_URL is empty` | `.env` 不在工作目录——后端先找 `/opt/openimg/config/.env` 再找 `./.env` |
 | 上传报「存储不可用」 | 没配 S3 且 `STORAGE_DIR` 不可写 |
 | 图片 URL 是相对路径 | `PUBLIC_BASE_URL` 没配 |
-| AVIF 一直没生成 | 该图是去重命中（不重新处理），或用户关闭了 AVIF，或 AVIF 比原图大被丢弃 |
+| 转换设置没生效 | 「上传自动转换」只对新处理的上传生效；同字节旧行若与新设置相容会走秒传克隆（不相容则重新处理） |
+| 旧图的 AVIF 变体一直没生成 | 历史附加变体走后台队列：去重命中（不重新处理），或 AVIF 比原图大被丢弃；现在转换是上传时同步的 |
 | 邮件发不出去 | 检查 provider 配置；异步发送不能用请求 context |
 | 端口占用 | `lsof -ti:8080 \| xargs kill -9`（`pkill -f "go run"` 杀不掉子进程） |
 | `swift run OpenimgMac` 无反应 | 故意的：裸可执行没有 bundle，用 `package-mac.sh` 打 .app |

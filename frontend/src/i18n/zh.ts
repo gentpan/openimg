@@ -99,7 +99,7 @@ export const zh = {
       sectionSubtitle: "更小的体积，更快的加载",
       optimize: {
         title: "自动压缩转换",
-        desc: "上传即生成 WebP / AVIF 与多档缩略图，体积通常只剩三分之一，画质肉眼无差。",
+        desc: "上传即压缩并按设置直接转成 WebP / AVIF 存储，附带网格缩略图。体积通常只剩三分之一，画质肉眼无差。",
       },
       cdn: {
         title: "Cloudflare CDN",
@@ -655,14 +655,14 @@ export const zh = {
       optimizedLine2: "可限制最大宽度",
       optimizedLine3: "体积通常只剩 10–30%",
       original: "原图模式",
-      originalLine1: "字节不变，保留全部 EXIF 与拍摄地点",
+      originalLine1: "字节原样保存，保留 EXIF（仅 JPEG 抹除 GPS 定位）",
       originalLine2: "不压缩、不缩放",
       originalLine3: "占用空间显著更大",
     },
     badgeRecommended: "推荐",
     original: {
       warning:
-        "原图会连同 EXIF 与 GPS 定位一起公开 —— 任何拿到链接的人都能读出拍摄地点、时间和设备。分享手机拍摄的照片前请确认这是你想要的。",
+        "原图连同 EXIF 一起公开 —— 任何拿到链接的人都能读出拍摄时间和设备。JPEG 的 GPS 定位会被抹除；PNG / WebP 等其他格式的定位信息会原样公开，分享手机照片前请确认这是你想要的。",
       warningSecurity: "为安全起见，上传仍会校验真实格式（拒绝 SVG 与非图片），并强制以图片类型返回。",
       warningEmphasis: "EXIF 与 GPS 定位",
       formatNote:
@@ -675,12 +675,13 @@ export const zh = {
       hint: "超过该宽度的图片会等比缩小后再存储，小图不会被放大",
     },
     variant: {
-      title: "附加格式",
-      hint: "只能选一种 —— 支持 AVIF 的浏览器必然也支持 WebP，两个都存等于为同一个回退付两次空间。",
-      webpDesc: "比原图小 25–35%，浏览器全面支持",
-      avifDesc: "比 WebP 再小 20–30%，编码慢，后台异步生成",
-      noneLabel: "不生成",
-      noneDesc: "只保留主图，最省空间",
+      title: "上传自动转换",
+      hint: "选定后上传的图片直接转成该格式存储，不保留原格式——外链扩展名就是目标格式。动图保持原格式。",
+      disabledHint: "原图模式下不转换",
+      webpDesc: "比原格式小 25–35%，浏览器全面支持",
+      avifDesc: "比 WebP 再小 20–30%，编码更慢，上传耗时会增加",
+      noneLabel: "不转换",
+      noneDesc: "保持上传时的格式存储",
     },
   },
 

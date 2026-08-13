@@ -134,9 +134,12 @@ func (s *Server) handleMakeVariant(c *gin.Context) {
 	} else {
 		variants += "," + name
 	}
-	// Every row sharing these bytes gains the variant — the object is shared.
+	// Every row sharing this object gains the variant. 按 object_key 而非
+	// sha 圈定:同字节可能因处理设置不同各存一份,变体 key 从各自
+	// object_key 推导,标到别的格式的行上会得到不存在的链接,还会把对方
+	// 的 Variants 快照整体覆盖掉。
 	if err := s.DB.Model(&models.Image{}).
-		Where("profile_id = ? AND sha256 = ? AND deleted_at IS NULL", img.ProfileID, img.SHA256).
+		Where("profile_id = ? AND object_key = ? AND deleted_at IS NULL", img.ProfileID, img.ObjectKey).
 		Updates(map[string]any{
 			"variants":    variants,
 			"size_stored": gorm.Expr("size_stored + ?", out.Size()),

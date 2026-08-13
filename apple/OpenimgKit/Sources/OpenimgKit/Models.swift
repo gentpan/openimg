@@ -147,7 +147,7 @@ public enum UploadMode: String, CaseIterable, Sendable, Identifiable {
     public var detail: String {
         self == .optimized
             ? "重新编码并抹除元数据，通常更小"
-            : "原样保存，保留拍摄参数（定位信息仍会剥离）"
+            : "原样保存，保留拍摄参数（仅 JPEG 抹除定位信息）"
     }
 }
 
@@ -156,7 +156,7 @@ public enum VariantFormat: String, CaseIterable, Sendable, Identifiable {
     public var id: String { rawValue }
     public var label: String {
         switch self {
-        case .none: "不生成"
+        case .none: "不转换"
         case .webp: "WebP"
         case .avif: "AVIF"
         }

@@ -109,17 +109,17 @@ export default function ConvertSettings() {
         </div>
       </div>
 
-      {/* Single derivative */}
-      <div>
+      {/* Conversion target — like width, meaningless in original mode */}
+      <div className={original ? "opacity-40" : ""}>
         <div className="text-xs text-neutral-200">{t.convertSettings.variant.title}</div>
         <div className="text-[10px] text-neutral-600 mt-0.5 mb-2 leading-relaxed">
-          {t.convertSettings.variant.hint}
+          {original ? t.convertSettings.variant.disabledHint : t.convertSettings.variant.hint}
         </div>
         <div className="space-y-1.5">
           {variants(t).map((v) => (
             <button
               key={v.key}
-              disabled={busy === "variant"}
+              disabled={busy === "variant" || original}
               onClick={() => save("variant", { variant_format: v.key })}
               className={`w-full flex items-start gap-2.5 rounded-lg border px-3 py-2 text-left transition disabled:opacity-50 ${
                 user.variant_format === v.key

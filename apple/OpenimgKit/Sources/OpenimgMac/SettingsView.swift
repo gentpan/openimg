@@ -30,6 +30,7 @@ struct SettingsView: View {
                 }
                 VStack(spacing: 16) {
                     conversionCard
+                    watchCard
                     locationCard
                     siteCard
                 }
@@ -236,6 +237,88 @@ struct SettingsView: View {
                     }
                     .padding(.top, 2)
                 }
+            }
+        }
+    }
+
+    /// 目录监控自动上传。只增不删:本地删除不动云端,云端删除不回头删本地
+    /// ——这是自动上传,不是同步,卡片文案也照这个口径写。
+    private var watchCard: some View {
+        SettingsCard("自动上传目录", "folder.badge.plus") {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Toggle(isOn: Binding(
+                        get: { model.watchEnabled },
+                        set: { model.watchSetEnabled($0) }
+                    )) { Text("监控以下目录，图片自动上传").font(.callout) }
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    Spacer()
+                    if model.watchBusy { ProgressView().controlSize(.small) }
+                }
+
+                if let reason = model.watchPausedReason {
+                    HStack(spacing: 8) {
+                        Image(systemName: "pause.circle.fill").foregroundStyle(.orange)
+                        Text("已暂停：\(reason)").font(.caption).foregroundStyle(.orange)
+                        Spacer()
+                        Button("继续") { model.watchResume() }
+                            .controlSize(.small)
+                    }
+                } else if !model.watchStatus.isEmpty {
+                    Text(model.watchStatus).font(.caption).foregroundStyle(.tertiary)
+                }
+                if let issue = model.watchLastIssue {
+                    Text(issue).font(.caption2).foregroundStyle(.orange)
+                }
+
+                ForEach(model.watchFolders, id: \.self) { path in
+                    HStack(spacing: 8) {
+                        Image(systemName: "folder").foregroundStyle(.secondary)
+                        Text(path)
+                            .font(.caption)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer()
+                        Button {
+                            model.watchRemoveFolder(path)
+                        } label: {
+                            Image(systemName: "minus.circle")
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.secondary)
+                        .help("移除此目录（已上传的图片与记录不受影响）")
+                    }
+                    .padding(.vertical, 2)
+                }
+
+                HStack {
+                    Button {
+                        let panel = NSOpenPanel()
+                        panel.canChooseFiles = false
+                        panel.canChooseDirectories = true
+                        panel.allowsMultipleSelection = false
+                        panel.prompt = "选择目录"
+                        if panel.runModal() == .OK, let url = panel.url {
+                            model.watchAddFolder(url.path)
+                        }
+                    } label: {
+                        Label("添加目录…", systemImage: "plus")
+                    }
+                    .controlSize(.small)
+
+                    if model.watchEnabled, !model.watchFolders.isEmpty,
+                       model.watchPausedReason == nil {
+                        Button("立即扫描") { model.watchScanFresh() }
+                            .controlSize(.small)
+                            .disabled(model.watchBusy)
+                    }
+                    Spacer()
+                }
+
+                Text("首次启用会上传目录内的全部现有图片（含子目录）。已上传的文件记录在本地清单，改名、移动或重启不会重复占用配额。配额不足、到每日上限或令牌失效会自动暂停（每日上限次日自动继续）。只上传，不会删除任何一端的文件。")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
             }
         }
     }

@@ -82,6 +82,31 @@ final class AppModel: ObservableObject {
     @Published var detail: RemoteImage?
     @Published var linkFormat: LinkFormat = .url
 
+    // 目录监控自动上传(实现在 FolderWatch.swift;存储属性必须declare在类体里)
+    @Published var watchFolders: [String] = UserDefaults.standard.stringArray(forKey: "watchFolders") ?? []
+    @Published var watchEnabled = UserDefaults.standard.bool(forKey: "watchEnabled")
+    @Published var watchStatus = ""
+    /// 非 nil 即已暂停(配额耗尽/每日上限/令牌失效);每日上限次日自动恢复,
+    /// 其余等用户处理后手动继续。
+    @Published var watchPausedReason: String?
+    /// 最近一轮里被组规则拒绝的原因,给设置卡一行解释,免得「跳过 N」成谜。
+    @Published var watchLastIssue: String?
+    @Published var watchBusy = false
+    var watchStream: FolderEventStream?
+    var watchManifest = WatchManifest()
+    /// 记录清单从哪个 URL 加载——清单按 服务器+账号 键控,URL 变了就该换。
+    var watchManifestLoadedFrom: URL?
+    /// 扫描进行中又来了扫描请求:记账,收尾补扫,不静默丢弃。
+    var watchScanAgain = false
+    /// 本会话失败过的路径。不进清单(下次启动还会重试),只防同一会话热循环;
+    /// 「立即扫描」与恢复暂停会清空它。
+    var watchSkip: Set<String> = []
+    var watchRescan: Task<Void, Never>?
+
+    // 图库导出(实现在 Exporter.swift)
+    @Published var export: ExportProgress?
+    var exportCancelled = false
+
     // Stats
     @Published var summary: StorageSummary?
     @Published var transactions: [QuotaTransaction] = []
@@ -246,6 +271,7 @@ final class AppModel: ObservableObject {
             quota = try? await c.quota()
             await load(resetPage: true)
             await loadStats()
+            watchSetup()
             if !quiet {
                 announce("已连接 \(me.email)\(warning)")
                 section = .overview
@@ -257,6 +283,12 @@ final class AppModel: ObservableObject {
     }
 
     func signOut() {
+        watchStop()
+        watchSkip.removeAll()
+        watchStatus = ""
+        watchPausedReason = nil
+        watchLastIssue = nil
+        exportCancelled = true
         store.delete(server: server)
         token = ""
         password = ""
@@ -736,14 +768,21 @@ final class AppModel: ObservableObject {
     /// Worth doing locally because the daily upload count is consumed by the
     /// attempt, not by the success: learning from a 415 that HEIC is not in
     /// your tier costs one of the day's allowance either way.
-    private func rejectLocally(_ url: URL) -> String? {
+    func rejectLocally(_ url: URL) -> String? {
         guard let tier = quota?.tier else { return nil }
         let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
         if tier.maxFileSize > 0, Int64(size) > tier.maxFileSize {
             return "超过单文件上限 \(Self.bytes(tier.maxFileSize))"
         }
         let ext = url.pathExtension.lowercased()
-        let canon = ext == "jpg" ? "jpeg" : (ext == "heif" ? "heic" : ext)
+        // 与服务端 CanonFormat 同一套折叠:jpe/tif 少了会被本地误拒,而服务
+        // 端本会接受
+        let canon = switch ext {
+        case "jpg", "jpe": "jpeg"
+        case "heif": "heic"
+        case "tif": "tiff"
+        default: ext
+        }
         if !tier.allowedFormats.isEmpty, !tier.allowedFormats.contains(canon) {
             return "你的用户组不支持 \(ext.uppercased())"
         }

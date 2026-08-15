@@ -328,6 +328,37 @@ check("未设上限时返回 nil", LocalResize.shrink(bigPNG, maxWidth: 0) == ni
 check("非图片文件安全返回 nil",
       LocalResize.shrink(URL(fileURLWithPath: "/etc/hosts"), maxWidth: 1920) == nil)
 
+// MARK: - WatchManifest
+
+section("WatchManifest(监控目录清单)")
+
+var wm = WatchManifest()
+let we = WatchManifest.Entry(path: "/a/p.jpg", size: 100, mtime: 1000,
+                             sha256: "aa11", imageID: "id1", url: "https://x/p.webp")
+wm.record(we)
+check("收录后快路径命中", wm.isCurrent(path: "/a/p.jpg", size: 100, mtime: 1000))
+check("size 变了快路径失效", !wm.isCurrent(path: "/a/p.jpg", size: 101, mtime: 1000))
+check("mtime 变了快路径失效", !wm.isCurrent(path: "/a/p.jpg", size: 100, mtime: 2000))
+check("未收录路径不命中", !wm.isCurrent(path: "/a/q.jpg", size: 100, mtime: 1000))
+check("按 sha 找到已传内容", wm.known(sha: "aa11")?.imageID == "id1")
+check("陌生 sha 返回 nil", wm.known(sha: "bb22") == nil)
+
+// 改名收编:同内容换路径不重传,新路径指向旧上传记录
+wm.adopt(path: "/a/renamed.jpg", size: 100, mtime: 3000, from: we)
+check("收编后新路径快路径命中", wm.isCurrent(path: "/a/renamed.jpg", size: 100, mtime: 3000))
+check("收编保留原上传信息", wm.entry(path: "/a/renamed.jpg")?.url == "https://x/p.webp")
+check("原路径仍在(复制场景两路径都合法)", wm.entry(path: "/a/p.jpg") != nil)
+
+// 序列化往返
+if let data = try? wm.encoded() {
+    let back = WatchManifest.decode(data)
+    check("编码往返条目数一致", back.count == wm.count)
+    check("往返后 sha 索引重建", back.known(sha: "aa11")?.url == "https://x/p.webp")
+} else {
+    check("清单可编码", false)
+}
+check("损坏数据解码为空清单而非崩溃", WatchManifest.decode(Data("not json".utf8)).count == 0)
+
 // MARK: - Result
 
 print("\n\(checks - failures)/\(checks) 通过")

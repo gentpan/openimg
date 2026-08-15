@@ -92,6 +92,39 @@ struct GalleryView: View {
         .animation(.easeInOut(duration: 0.16), value: model.selection.isEmpty)
     }
 
+    /// 整库导出到本地目录。放在常驻的状态栏而不是 filters 行——搜索无结果
+    /// 时 filters 整行消失,进行中的进度和「取消」不能跟着蒸发。
+    @ViewBuilder private var exportControl: some View {
+        if let e = model.export, !e.finished {
+            HStack(spacing: 6) {
+                ProgressView(value: e.total > 0
+                             ? min(Double(e.processed), Double(e.total)) / Double(e.total) : 0)
+                    .frame(width: 90)
+                Text("\(min(e.processed, e.total))/\(e.total)")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                Button("取消") { model.exportCancel() }
+                    .buttonStyle(QuietButton())
+            }
+        } else {
+            Button {
+                let panel = NSOpenPanel()
+                panel.canChooseFiles = false
+                panel.canChooseDirectories = true
+                panel.allowsMultipleSelection = false
+                panel.prompt = "导出到此目录"
+                if panel.runModal() == .OK, let url = panel.url {
+                    model.exportDismiss()
+                    Task { await model.exportAll(to: url) }
+                }
+            } label: {
+                Label("导出全部", systemImage: "square.and.arrow.down")
+            }
+            .buttonStyle(QuietButton())
+            .help("把整个图库下载到本地目录；已存在的文件跳过，中断后重跑只补缺的。导出的是存储的图片——开着自动转换时是 WebP/AVIF，不是上传前的原文件。")
+        }
+    }
+
     private var sortBinding: Binding<SortKey> {
         Binding(get: { model.sort },
                 set: { model.sort = $0; Task { await model.load(resetPage: true) } })
@@ -105,6 +138,7 @@ struct GalleryView: View {
                 Text("已用 \(model.bytes(q.usedBytes))")
             }
             Spacer()
+            exportControl
             if model.pageCount > 1 {
                 ToolCluster {
                     ToolTile(icon: "chevron.left", help: "上一页",

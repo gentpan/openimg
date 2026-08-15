@@ -59,7 +59,13 @@ Xcode；只有 CLT 时整个 target 编译不过。那个拖放标志放进 mode
 
 ## 现状与下一步
 
-Kit 与 macOS 应用都能用 `swift build` 构建，56 项自检全过。`package-mac.sh` 打出的是窗口化的真 .app，ad-hoc 签名，本机可用。
+Kit 与 macOS 应用都能用 `swift build` 构建，68 项自检全过。
+
+新增两个单向管道（刻意不是双向同步——只增不删，本地删除不动云端、云端删除不删本地）：
+设置页可挂**自动上传目录**（FSEvents 监听 + 本地清单防秒传重复扣配额 + 配额/每日上限自动暂停，
+清单按服务器+账号键控），图库页可**导出全部**到本地目录（已存在跳过，可中断续传）。
+
+`package-mac.sh` 打出的是窗口化的真 .app，ad-hoc 签名，本机可用。
 打包和 ad-hoc 签名都不需要 Xcode——.app 只是一个目录加 Info.plist，codesign
 随 Command Line Tools 一起装。
 

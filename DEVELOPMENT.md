@@ -2,14 +2,14 @@
 
 永久免费的公益图床 · [openimg.io](https://openimg.io)。本文档覆盖技术栈、开发习惯、部署与进度；
 深度架构设计（上传流水线、存储路由、账本、短链）见 [ARCHITECTURE.md](ARCHITECTURE.md)，
-macOS/iOS 客户端细节见 [apple/README.md](apple/README.md)。
+macOS/iOS 客户端在独立仓库 [gentpan/openimg-app](https://github.com/gentpan/openimg-app)。
 
 三个交付物在两个仓库里：
 
 | 交付物 | 位置 | 说明 |
 | --- | --- | --- |
 | 网站（前端 + 后端） | 本仓库 `frontend/` `backend/` | openimg.io 主站 |
-| macOS 客户端 | 本仓库 `apple/` | SwiftPM 包，窗口化桌面应用 |
+| macOS 客户端 | 独立仓库 [gentpan/openimg-app](https://github.com/gentpan/openimg-app) | 从本仓库 `apple/` 拆出（保留历史），发布走其 Releases |
 | LiteZoom 灯箱库 | 独立仓库 [gentpan/litezoom](https://github.com/gentpan/litezoom) | 官网 litezoom.dev，本仓库持有同步副本 |
 
 ## 技术栈
@@ -40,15 +40,15 @@ macOS/iOS 客户端细节见 [apple/README.md](apple/README.md)。
 | 主题 | 深色固定，绿/紫双品牌色 | 见「开发习惯 · 设计」 |
 | 灯箱 | LiteZoom（`public/static/litezoom.min.js?v=N`） | 全局 `<script>` 加载不进 bundle，类型在 `litezoom.d.ts` |
 
-### macOS 客户端（`apple/`）
+### macOS 客户端（[openimg-app](https://github.com/gentpan/openimg-app)）
 
 | 层面 | 选型 | 备注 |
 | --- | --- | --- |
 | 语言 | Swift 6 + SwiftUI（+ AppKit 补面板/剪贴板） | **零第三方依赖**（刻意，CI 与非 Mac 贡献者可碰 Kit） |
-| 结构 | SwiftPM 包，无 .xcodeproj | `OpenimgKit`（共用库，为 iOS 复用设计）+ `OpenimgMac`（应用）+ `KitCheck`（56 项自检） |
+| 结构 | SwiftPM 包，无 .xcodeproj | `OpenimgKit`（共用库，为 iOS 复用设计）+ `OpenimgMac`（应用）+ `KitCheck`（95 项自检） |
 | 图表 | Swift Charts | 概览页配额/格式分布/签到 |
 | 登录 | 密码换 365 天设备令牌 / OAuth（ASWebAuthenticationSession + `openimg://` 回调）/ 粘贴令牌 | 令牌存钥匙串 |
-| 打包 | `./apple/package-mac.sh [release]` | 手写 Info.plist（io.openimg.mac），ad-hoc 签名；**禁止 `swift run OpenimgMac`**（裸可执行无 bundle 静默退出） |
+| 打包 | `./package-mac.sh [release]`（openimg-app 仓库） | 手写 Info.plist（io.openimg.mac），ad-hoc 签名；**禁止 `swift run OpenimgMac`**（裸可执行无 bundle 静默退出）；推 `v*` 标签由 CI 发布 |
 
 ### 基础设施
 
@@ -135,9 +135,9 @@ cd backend && go run .
 # 前端 :5173，vite 代理 /api /auth /admin/api /storage /healthz → :8080
 cd frontend && npm install && npm run dev
 
-# macOS 客户端
-cd apple && swift build && swift run KitCheck   # 56 项自检
-./apple/package-mac.sh                          # 打 .app（勿 swift run OpenimgMac）
+# macOS 客户端(独立仓库 openimg-app)
+cd ../openimg-app/OpenimgKit && swift run KitCheck   # 95 项自检
+../package-mac.sh                                    # 打 .app(勿 swift run OpenimgMac)
 ```
 
 ### 测试与检查
@@ -282,7 +282,7 @@ Docker 见 `backend/Dockerfile` 与根目录 `docker-compose.yml`（postgres + b
 
 ## macOS / iOS 客户端
 
-`apple/` 是 SwiftPM 包（无 .xcodeproj），三个 target：
+客户端在独立仓库 [gentpan/openimg-app](https://github.com/gentpan/openimg-app)（SwiftPM 包，无 .xcodeproj），三个 target：
 
 - **OpenimgKit** — 共用库（API 客户端、模型、钥匙串、multipart、上传前本地降宽、网格几何），为 Mac/iOS 两端复用设计，`.iOS(.v17)` 已声明
 - **OpenimgMac** — SwiftUI 窗口应用（约 3800 行）：四页（概览/图库/上传/设置）+ 全窗灯箱 + 登录。状态集中在单个 `@MainActor` AppModel（视图不用 @State：CLT 无法展开宏）
@@ -295,7 +295,7 @@ Docker 见 `backend/Dockerfile` 与根目录 `docker-compose.yml`（postgres + b
 - 令牌可达"呈现类"接口（上传/图库/配额/签到/偏好/头像）；铸 token 和删号是 cookie-only——防令牌泄露升级为账号接管
 - CDN 图片请求刻意不带令牌，防泄露给第三方存储
 
-当前状态：`swift build` 通过、KitCheck 56/56、`apple/build/` 有打包产物、源码零 TODO。
+当前状态：`swift build` 通过、KitCheck 95/95、GitHub Releases 提供打包产物、源码零 TODO。
 未竟：iOS 端未动工（阻塞在产品决策：App Store 5.1.1(v) 要求 app 内可删账号，而删号是 cookie-only）；
 分发给他人需要 Developer ID 签名 + 公证（未做）；passkey 原生 API 与数据保护钥匙串需要付费开发者证书（ad-hoc 下自动回退网页/旧式钥匙串，可用）。
 
@@ -309,7 +309,7 @@ Docker 见 `backend/Dockerfile` 与根目录 `docker-compose.yml`（postgres + b
 | --- | --- | --- |
 | M0 初始骨架 | 08-05 | 单笔 squash（152 文件 / 2.3 万行）：数据模型、上传流水线、配额账本、签到、BYOS、邀请、Passkey、管理后台一次到位 |
 | M1 上线冲刺 | 08-05 | 短链 + 落地页 + 表情反应、举报体系、缩略图独立域名、注册邮箱验证码、EXIF 剥 GPS、生产部署 |
-| M2 macOS 客户端 | 08-05 | apple/ 从骨架到可用：四页 + 灯箱 + 三种登录 + 打包脚本（约 20 笔） |
+| M2 macOS 客户端 | 08-05 | 客户端从骨架到可用（后拆分为 openimg-app 仓库）：四页 + 灯箱 + 三种登录 + 打包脚本（约 20 笔） |
 | M3 品牌视觉定稿 | 08-05→06 | 紫→绿→双色系→最终「深色固定 + 绿/紫可切」；删浅色主题，ThemeContext 收敛为 BrandContext |
 | M4 打磨与清理 | 08-06 | /docs 文档页、部署脚本自动清 CDN、favicon 双品牌 + 内容指纹、三轮死代码清理 |
 | M5 i18n 双语 | 08-07 | 前后端全量 zh/en（前端字典 ~1800 行、后端 160 处消息），docs 双语 |

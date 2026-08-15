@@ -12,6 +12,7 @@ struct UploadView: View {
                 // A small dashed box centred in a large empty page reads as an
                 // afterthought; on this screen it is the whole point.
                 dropZone
+                editRow
                 settingsHint
                 formatRow
                 limits
@@ -21,6 +22,7 @@ struct UploadView: View {
                 // The drop zone stays reachable while a batch is on screen, so
                 // adding more files does not mean clearing the list first.
                 dropZone.frame(maxHeight: 76)
+                editRow
                 formatRow
             }
         }
@@ -48,10 +50,34 @@ struct UploadView: View {
             }
             .onDrop(of: [.fileURL], isTargeted: $model.dropping) { providers in
                 // Dropped folders expand the same way a picked one does.
-                Task { await model.upload(model.expand(await urls(from: providers))) }
+                // handleDrop 里再分流:开了"单张先编辑"且恰好一张静态图时
+                // 进编辑器,其余直接上传。
+                Task { await model.handleDrop(await urls(from: providers)) }
                 return true
             }
             .animation(.easeOut(duration: 0.15), value: model.dropping)
+            .sheet(item: $model.editTarget) { t in
+                EditorSheet(model: model, source: t.url)
+            }
+    }
+
+    /// 编辑入口:显式按钮 + 可选的"单张拖入先编辑"。
+    private var editRow: some View {
+        HStack(spacing: 14) {
+            Button {
+                model.pickAndEdit()
+            } label: {
+                Label("编辑后上传…", systemImage: "crop")
+            }
+            .controlSize(.small)
+            .help("裁剪、马赛克、旋转、水印，改完直接进上传队列")
+            Toggle("单张拖入先打开编辑器", isOn: Binding(
+                get: { model.editOnDrop },
+                set: { model.editOnDrop = $0; model.saveWatermarkPrefs() }
+            ))
+            .toggleStyle(.checkbox)
+            .font(.caption)
+        }
     }
 
     @ViewBuilder

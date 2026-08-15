@@ -273,6 +273,21 @@ extension AppModel {
                 temp = smaller
             }
             defer { if let temp { try? FileManager.default.removeItem(at: temp) } }
+            // 自动水印:先缩放后打水印(水印字号相对最终尺寸才对)。原图
+            // 模式不加——字节原样是那个模式的承诺;动图渲染返回 nil,自然
+            // 落回原件。
+            var editTemp: URL?
+            if wmAutoWatch, uploadMode == .optimized, let wm = watermarkSpec() {
+                var wmSpec = EditSpec()
+                wmSpec.watermark = wm
+                let wmSource = toSend
+                let wmTask = Task.detached { ImageEdit.render(source: wmSource, spec: wmSpec) }
+                if let out = await wmTask.value {
+                    toSend = out
+                    editTemp = out
+                }
+            }
+            defer { if let editTemp { try? FileManager.default.removeItem(at: editTemp.deletingLastPathComponent()) } }
 
             do {
                 let res = try await watchUploadWithBackoff(toSend, filename: url.lastPathComponent)

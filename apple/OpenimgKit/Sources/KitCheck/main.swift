@@ -359,6 +359,231 @@ if let data = try? wm.encoded() {
 }
 check("损坏数据解码为空清单而非崩溃", WatchManifest.decode(Data("not json".utf8)).count == 0)
 
+// MARK: - EditGeometry(编辑几何)
+
+section("EditGeometry(编辑几何)")
+
+let full = CGRect(x: 0, y: 0, width: 1, height: 1)
+check("整幅裁剪夹取后不变", EditGeometry.clampCrop(full) == full)
+check("越界裁剪被夹回 0-1", {
+    let r = EditGeometry.clampCrop(CGRect(x: -0.2, y: 0.5, width: 0.4, height: 0.9))
+    return r.minX >= 0 && r.minY >= 0 && r.maxX <= 1.0001 && r.maxY <= 1.0001
+}())
+check("零面积裁剪被撑到最小边", {
+    let r = EditGeometry.clampCrop(CGRect(x: 0.5, y: 0.5, width: 0, height: 0))
+    return r.width >= 0.02 && r.height >= 0.02
+}())
+
+check("旋转 1 次尺寸互换", EditGeometry.rotatedSize(CGSize(width: 300, height: 200), quarters: 1) == CGSize(width: 200, height: 300))
+check("旋转 2 次尺寸不变", EditGeometry.rotatedSize(CGSize(width: 300, height: 200), quarters: 2) == CGSize(width: 300, height: 200))
+
+// 顺时针 90°:左上角 (0,0) 应到右上角 (1,0)
+check("点旋转:左上→右上", EditGeometry.rotateQuarterCW(CGPoint(x: 0, y: 0)) == CGPoint(x: 1, y: 0))
+check("点旋转:中心不动", EditGeometry.rotateQuarterCW(CGPoint(x: 0.5, y: 0.5)) == CGPoint(x: 0.5, y: 0.5))
+check("点旋转四次回原位", {
+    var p = CGPoint(x: 0.2, y: 0.7)
+    for _ in 0..<4 { p = EditGeometry.rotateQuarterCW(p) }
+    return abs(p.x - 0.2) < 1e-9 && abs(p.y - 0.7) < 1e-9
+}())
+check("矩形旋转四次回原位", {
+    var r = CGRect(x: 0.1, y: 0.2, width: 0.3, height: 0.4)
+    for _ in 0..<4 { r = EditGeometry.rotateQuarterCW(r) }
+    return abs(r.minX - 0.1) < 1e-9 && abs(r.minY - 0.2) < 1e-9
+        && abs(r.width - 0.3) < 1e-9 && abs(r.height - 0.4) < 1e-9
+}())
+
+check("配方整体旋转:计数+1 且笔迹跟转", {
+    var s = EditSpec()
+    s.strokes = [MosaicStroke(points: [CGPoint(x: 0, y: 0)], radius: 0.02)]
+    let r = EditGeometry.rotateSpecCW(s)
+    return r.rotationQuarters == 1 && r.strokes[0].points[0] == CGPoint(x: 1, y: 0)
+        && r.strokes[0].radius == 0.02
+}())
+
+// 九宫格(CG 坐标 y 向上):锚 0=视觉左上 → 高 y;锚 8=视觉右下 → 低 y
+let ts = CGSize(width: 100, height: 20)
+let cv = CGSize(width: 1000, height: 500)
+check("水印锚点:左上", {
+    let o = EditGeometry.watermarkOrigin(anchor: 0, textSize: ts, canvas: cv, margin: 10)
+    return o.x == 10 && o.y == 500 - 20 - 10
+}())
+check("水印锚点:居中", {
+    let o = EditGeometry.watermarkOrigin(anchor: 4, textSize: ts, canvas: cv, margin: 10)
+    return o.x == 450 && o.y == 240
+}())
+check("水印锚点:右下", {
+    let o = EditGeometry.watermarkOrigin(anchor: 8, textSize: ts, canvas: cv, margin: 10)
+    return o.x == 1000 - 100 - 10 && o.y == 10
+}())
+
+check("比例约束 1:1 得到像素正方形", {
+    let r = EditGeometry.applyRatio(CGRect(x: 0.1, y: 0.1, width: 0.8, height: 0.8),
+                                    pixelRatio: 1, canvas: CGSize(width: 2000, height: 1000))
+    let pw = r.width * 2000, ph = r.height * 1000
+    return abs(pw - ph) < 1
+}())
+
+// 锚点版比例约束:拖角时固定角必须钉死(中心重锚版会让它漂移)
+check("锚点比例:固定角钉死且像素比恒真", {
+    let cv = CGSize(width: 2000, height: 1000)
+    let r = EditGeometry.applyRatio(anchor: CGPoint(x: 0.2, y: 0.2),
+                                    cursor: CGPoint(x: 0.9, y: 0.4),
+                                    pixelRatio: 1, canvas: cv)
+    let anchorFixed = abs(r.minX - 0.2) < 1e-9 && abs(r.minY - 0.2) < 1e-9
+    let pw = r.width * 2000, ph = r.height * 1000
+    return anchorFixed && abs(pw - ph) < 0.5
+}())
+check("锚点比例:反方向拖动锚在右下", {
+    let cv = CGSize(width: 1000, height: 1000)
+    let r = EditGeometry.applyRatio(anchor: CGPoint(x: 0.8, y: 0.8),
+                                    cursor: CGPoint(x: 0.2, y: 0.5),
+                                    pixelRatio: 1, canvas: cv)
+    return abs(r.maxX - 0.8) < 1e-9 && abs(r.maxY - 0.8) < 1e-9
+}())
+check("锚点比例:顶到画布边等比缩回不越界", {
+    let cv = CGSize(width: 1000, height: 1000)
+    let r = EditGeometry.applyRatio(anchor: CGPoint(x: 0.9, y: 0.9),
+                                    cursor: CGPoint(x: 2.0, y: 2.0),
+                                    pixelRatio: 1, canvas: cv)
+    return r.maxX <= 1.0001 && r.maxY <= 1.0001 && abs(r.width - r.height) < 1e-6
+}())
+
+// 水印文字度量:CJK 每字约 1em,估算 0.62em 那种偏差必须被同源度量取代
+check("水印度量:CJK 宽度接近 1em/字", {
+    let s = ImageEdit.watermarkTextSize("水印文字", fontSize: 24)
+    return s.width > 24 * 4 * 0.9 && s.width < 24 * 4 * 1.2
+}())
+
+// MARK: - ImageEdit(渲染冒烟)
+
+section("ImageEdit(渲染冒烟)")
+
+// 32x16 纯色 PNG 走完整管线:旋转+裁剪+马赛克+水印
+let editPNG: URL = {
+    let ctx = CGContext(data: nil, width: 32, height: 16, bitsPerComponent: 8, bytesPerRow: 0,
+                        space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.setFillColor(CGColor(red: 0.2, green: 0.5, blue: 0.9, alpha: 1))
+    ctx.fill(CGRect(x: 0, y: 0, width: 32, height: 16))
+    let u = FileManager.default.temporaryDirectory.appendingPathComponent("kitcheck-edit.png")
+    let d = CGImageDestinationCreateWithURL(u as CFURL, UTType.png.identifier as CFString, 1, nil)!
+    CGImageDestinationAddImage(d, ctx.makeImage()!, nil)
+    CGImageDestinationFinalize(d)
+    return u
+}()
+defer { try? FileManager.default.removeItem(at: editPNG) }
+
+check("静态图可编辑", ImageEdit.editable(editPNG))
+check("空配方不渲染(返回 nil)", ImageEdit.render(source: editPNG, spec: EditSpec()) == nil)
+if true {
+    var s = EditSpec()
+    s.rotationQuarters = 1
+    s.crop = CGRect(x: 0, y: 0, width: 0.5, height: 0.5)
+    s.strokes = [MosaicStroke(points: [CGPoint(x: 0.3, y: 0.3), CGPoint(x: 0.7, y: 0.7)], radius: 0.05)]
+    s.watermark = WatermarkSpec(text: "openimg.io")
+    if let out = ImageEdit.render(source: editPNG, spec: s),
+       let src = CGImageSourceCreateWithURL(out as CFURL, nil),
+       let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any],
+       let w = props[kCGImagePropertyPixelWidth] as? Int,
+       let h = props[kCGImagePropertyPixelHeight] as? Int {
+        // 32x16 转 90° 后 16x32,再裁一半 → 8x16
+        check("全管线渲染:旋转+裁剪后尺寸正确", w == 8 && h == 16)
+        check("产物保留源文件名", out.deletingPathExtension().lastPathComponent == "kitcheck-edit")
+        try? FileManager.default.removeItem(at: out.deletingLastPathComponent())
+    } else {
+        check("全管线渲染成功", false)
+    }
+}
+
+// 渲染位置断言:尺寸对不等于方向对——旋转/裁剪的坐标系颠倒在尺寸上不可见。
+// 4x2 图:左上角一颗红像素,其余蓝。顺时针 90° 后红点应在右上角;
+// 裁掉左半后应不含红点。
+func pixelAt(_ url: URL, _ x: Int, _ y: Int) -> (r: UInt8, g: UInt8, b: UInt8)? {
+    guard let src = CGImageSourceCreateWithURL(url as CFURL, nil),
+          let img = CGImageSourceCreateImageAtIndex(src, 0, nil),
+          let ctx = CGContext(data: nil, width: img.width, height: img.height,
+                              bitsPerComponent: 8, bytesPerRow: img.width * 4,
+                              space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                              bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+    else { return nil }
+    ctx.draw(img, in: CGRect(x: 0, y: 0, width: img.width, height: img.height))
+    guard let data = ctx.data else { return nil }
+    // CGContext 的坐标 y 向上,但底层缓冲区首行是视觉顶行——内存本来就是
+    // 自顶向下的,直接用视觉 y 当行号,不要再翻一次。
+    let p = data.advanced(by: (y * img.width + x) * 4).assumingMemoryBound(to: UInt8.self)
+    return (p[0], p[1], p[2])
+}
+
+let posPNG: URL = {
+    let ctx = CGContext(data: nil, width: 4, height: 2, bitsPerComponent: 8, bytesPerRow: 0,
+                        space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.setFillColor(CGColor(red: 0, green: 0, blue: 1, alpha: 1))
+    ctx.fill(CGRect(x: 0, y: 0, width: 4, height: 2))
+    ctx.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: 1))
+    ctx.fill(CGRect(x: 0, y: 1, width: 1, height: 1))   // CG y 向上:视觉左上角
+    let u = FileManager.default.temporaryDirectory.appendingPathComponent("kitcheck-pos.png")
+    let d = CGImageDestinationCreateWithURL(u as CFURL, UTType.png.identifier as CFString, 1, nil)!
+    CGImageDestinationAddImage(d, ctx.makeImage()!, nil)
+    CGImageDestinationFinalize(d)
+    return u
+}()
+defer { try? FileManager.default.removeItem(at: posPNG) }
+
+if let p = pixelAt(posPNG, 0, 0), p.r > 200, p.b < 60 {
+    check("位置基准:源图左上角是红", true)
+} else {
+    check("位置基准:源图左上角是红", false)
+}
+if true {
+    var s = EditSpec()
+    s.rotationQuarters = 1
+    if let out = ImageEdit.render(source: posPNG, spec: s),
+       let tr = pixelAt(out, 1, 0), let tl = pixelAt(out, 0, 0) {
+        // 视觉顺时针 90°:左上角 → 右上角(2x4 图的右上是 x=1,y=0)
+        check("旋转方向:红点到右上角", tr.r > 200 && tr.b < 60 && tl.b > 200)
+        try? FileManager.default.removeItem(at: out.deletingLastPathComponent())
+    } else {
+        check("旋转方向:红点到右上角", false)
+    }
+}
+if true {
+    var s = EditSpec()
+    s.crop = CGRect(x: 0.5, y: 0, width: 0.5, height: 1)   // 右半
+    if let out = ImageEdit.render(source: posPNG, spec: s),
+       let p0 = pixelAt(out, 0, 0), let p1 = pixelAt(out, 1, 0) {
+        check("裁剪位置:右半不含红点", p0.b > 200 && p1.b > 200 && p0.r < 60)
+        try? FileManager.default.removeItem(at: out.deletingLastPathComponent())
+    } else {
+        check("裁剪位置:右半不含红点", false)
+    }
+}
+if true {
+    var s = EditSpec()
+    s.crop = CGRect(x: 0, y: 0, width: 0.25, height: 0.5)   // 左上角那格
+    if let out = ImageEdit.render(source: posPNG, spec: s),
+       let p0 = pixelAt(out, 0, 0) {
+        check("裁剪位置:左上角保留红点", p0.r > 200 && p0.b < 60)
+        try? FileManager.default.removeItem(at: out.deletingLastPathComponent())
+    } else {
+        check("裁剪位置:左上角保留红点", false)
+    }
+}
+if true {
+    var s = EditSpec()
+    s.strokes = [MosaicStroke(points: [CGPoint(x: 0.125, y: 0.25)], radius: 0.12)]
+    s.mosaicStyle = .solid
+    if let out = ImageEdit.render(source: posPNG, spec: s),
+       let p0 = pixelAt(out, 0, 0), let p3 = pixelAt(out, 3, 1) {
+        // 纯色涂抹在视觉左上角:红点被抹黑,远端右下角保持蓝
+        check("马赛克位置:左上角被涂黑,远角不受影响",
+              p0.r < 60 && p0.b < 60 && p3.b > 200)
+        try? FileManager.default.removeItem(at: out.deletingLastPathComponent())
+    } else {
+        check("马赛克位置:左上角被涂黑,远角不受影响", false)
+    }
+}
+
 // MARK: - Result
 
 print("\n\(checks - failures)/\(checks) 通过")

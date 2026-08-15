@@ -31,6 +31,7 @@ struct SettingsView: View {
                 VStack(spacing: 16) {
                     conversionCard
                     watchCard
+                    watermarkCard
                     locationCard
                     siteCard
                 }
@@ -322,6 +323,91 @@ struct SettingsView: View {
             }
         }
     }
+
+    /// 水印:本机合成后上传,不上服务器,所以是应用偏好而非账号偏好。
+    /// 编辑器里按需开关;对监控目录可选自动应用。
+    private var watermarkCard: some View {
+        SettingsCard("水印", "signature") {
+            VStack(alignment: .leading, spacing: 12) {
+                TextField("水印文字（留空即不启用）", text: Binding(
+                    get: { model.wmText },
+                    set: { model.wmText = $0; model.saveWatermarkPrefs() }
+                ))
+                .textFieldStyle(.roundedBorder)
+                .controlSize(.small)
+
+                HStack(alignment: .top, spacing: 18) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("位置").font(.caption).foregroundStyle(.secondary)
+                        // 九宫格:所见即所得的位置选择,比下拉菜单直观。
+                        Grid(horizontalSpacing: 3, verticalSpacing: 3) {
+                            ForEach(0..<3, id: \.self) { row in
+                                GridRow {
+                                    ForEach(0..<3, id: \.self) { col in
+                                        let a = row * 3 + col
+                                        let name = Self.anchorNames[a]
+                                        Button {
+                                            model.wmAnchor = a
+                                            model.saveWatermarkPrefs()
+                                        } label: {
+                                            RoundedRectangle(cornerRadius: 3)
+                                                .fill(model.wmAnchor == a
+                                                      ? Color.brand : .white.opacity(0.12))
+                                                .frame(width: 18, height: 14)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .help(name)
+                                        .accessibilityLabel("水印位置：\(name)")
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("透明度 \(Int(model.wmOpacity * 100))%")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Slider(value: Binding(
+                            get: { model.wmOpacity },
+                            set: { model.wmOpacity = $0; model.saveWatermarkPrefs() }
+                        ), in: 0.1...0.9)
+                        .frame(width: 130)
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("大小").font(.caption).foregroundStyle(.secondary)
+                        Picker("", selection: Binding(
+                            get: { model.wmScale },
+                            set: { model.wmScale = $0; model.saveWatermarkPrefs() }
+                        )) {
+                            Text("小").tag(0.02)
+                            Text("中").tag(0.03)
+                            Text("大").tag(0.045)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 120)
+                    }
+                }
+
+                Toggle("对监控目录上传的图片自动加水印", isOn: Binding(
+                    get: { model.wmAutoWatch },
+                    set: { model.wmAutoWatch = $0; model.saveWatermarkPrefs() }
+                ))
+                .toggleStyle(.checkbox)
+                .font(.caption)
+                .disabled(model.watermarkSpec() == nil)
+
+                Text("水印在本机合成后上传。手动上传时在编辑器里按需勾选；原图模式下监控上传不加水印（字节原样是该模式的承诺），动图也不加（逐帧合成不支持）。")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    /// 九宫格锚点的可读名,行优先与 WatermarkSpec.anchor 对齐。
+    private static let anchorNames = [
+        "左上", "上中", "右上", "左中", "居中", "右中", "左下", "下中", "右下",
+    ]
 
     private func setting<C: View>(_ title: String, _ hint: String,
                                   @ViewBuilder control: () -> C) -> some View {

@@ -107,6 +107,37 @@ final class AppModel: ObservableObject {
     @Published var export: ExportProgress?
     var exportCancelled = false
 
+    // 上传前编辑(实现在 EditorSheet.swift)
+    @Published var editTarget: EditTarget?
+    @Published var editOnDrop = UserDefaults.standard.bool(forKey: "editOnDrop")
+    /// 编辑确认后的渲染进行中:上传按钮转圈并禁用,防双击双传。
+    @Published var editSubmitting = false
+    /// upload() 的并发调用计数——uploading 只在归零时熄灭。
+    private var activeUploads = 0
+
+    // 水印偏好——纯本机合成,不上服务器,所以存 UserDefaults 而非账号偏好
+    @Published var wmText = UserDefaults.standard.string(forKey: "wmText") ?? ""
+    @Published var wmAnchor = (UserDefaults.standard.object(forKey: "wmAnchor") as? Int) ?? 8
+    @Published var wmOpacity = (UserDefaults.standard.object(forKey: "wmOpacity") as? Double) ?? 0.45
+    @Published var wmScale = (UserDefaults.standard.object(forKey: "wmScale") as? Double) ?? 0.03
+    @Published var wmAutoWatch = UserDefaults.standard.bool(forKey: "wmAutoWatch")
+
+    func watermarkSpec() -> WatermarkSpec? {
+        let t = wmText.trimmingCharacters(in: .whitespaces)
+        guard !t.isEmpty else { return nil }
+        return WatermarkSpec(text: t, anchor: wmAnchor, opacity: wmOpacity, scale: wmScale)
+    }
+
+    func saveWatermarkPrefs() {
+        let d = UserDefaults.standard
+        d.set(wmText, forKey: "wmText")
+        d.set(wmAnchor, forKey: "wmAnchor")
+        d.set(wmOpacity, forKey: "wmOpacity")
+        d.set(wmScale, forKey: "wmScale")
+        d.set(wmAutoWatch, forKey: "wmAutoWatch")
+        d.set(editOnDrop, forKey: "editOnDrop")
+    }
+
     // Stats
     @Published var summary: StorageSummary?
     @Published var transactions: [QuotaTransaction] = []
@@ -569,22 +600,33 @@ final class AppModel: ObservableObject {
     }
     func upload(_ urls: [URL]) async {
         guard !urls.isEmpty else { return }
+        // 并发调用(拖放/编辑器确认/监控几路都能进来)必须安全:旧实现整体
+        // 替换 queue 后,另一路在途循环拿旧下标解引用会越界崩溃。改成:
+        // 每个批次只按 id 定位自己的行,写入时刻找不到(队列被新批次换掉)
+        // 就静默跳过——那行已不在屏幕上。
+        let items = urls.map { UploadItem(url: $0) }
+        activeUploads += 1
         uploading = true
-        defer { uploading = false }
+        defer {
+            activeUploads -= 1
+            if activeUploads == 0 { uploading = false }
+        }
 
         // The whole batch goes on screen up front, so the user can see what was
         // accepted before anything starts moving.
-        queue = urls.map { UploadItem(url: $0) }
+        queue = items
+
+        func row(_ id: UUID) -> Int? { queue.firstIndex { $0.id == id } }
 
         var done = 0
         var lastLink = ""
-        for i in queue.indices {
-            let url = queue[i].url
+        for (idx, item) in items.enumerated() {
+            let url = item.url
             if let reason = rejectLocally(url) {
-                queue[i].state = .failed(reason)
+                if let k = row(item.id) { queue[k].state = .failed(reason) }
                 continue
             }
-            queue[i].state = .uploading
+            if let k = row(item.id) { queue[k].state = .uploading }
 
             // Shrink first when a width limit is set. Only ever a downscale in
             // the same format — see LocalResize for why nothing else happens on
@@ -596,13 +638,15 @@ final class AppModel: ObservableObject {
                let smaller = LocalResize.shrink(url, maxWidth: maxImageWidth) {
                 toSend = smaller
                 temp = smaller
-                queue[i].sentBytes =
-                    (try? smaller.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init)
+                if let k = row(item.id) {
+                    queue[k].sentBytes =
+                        (try? smaller.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init)
+                }
             }
             defer { if let temp { try? FileManager.default.removeItem(at: temp) } }
 
             do {
-                let id = queue[i].id
+                let id = item.id
                 // The server sees the original filename regardless of which
                 // file the bytes came from.
                 let res = try await client().upload(fileURL: toSend,
@@ -613,17 +657,21 @@ final class AppModel: ObservableObject {
                         self.queue[k].progress = p
                     }
                 }
-                queue[i].state = .done
-                queue[i].progress = 1
-                queue[i].deduplicated = res.deduplicated
+                if let k = row(item.id) {
+                    queue[k].state = .done
+                    queue[k].progress = 1
+                    queue[k].deduplicated = res.deduplicated
+                }
                 lastLink = linkFormat.render(res.image)
                 done += 1
             } catch {
-                queue[i].state = .failed(message(error))
+                if let k = row(item.id) { queue[k].state = .failed(message(error)) }
                 // Quota, daily cap and an invalid token all doom the rest of
                 // the batch, so mark them rather than retrying into the wall.
-                for j in queue.indices where j > i && queue[j].state == .queued {
-                    queue[j].state = .failed("已取消")
+                for rest in items[(idx + 1)...] {
+                    if let k = row(rest.id), queue[k].state == .queued {
+                        queue[k].state = .failed("已取消")
+                    }
                 }
                 announce(message(error))
                 break

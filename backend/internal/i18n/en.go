@@ -64,7 +64,7 @@ var en = map[string]string{
 	"otp.purpose.password": "change password",
 	"otp.purpose.passkey":  "add passkey",
 	"otp.purpose.purge":    "clear gallery",
-	"otp.purpose.reset":    "reset password",
+	"otp.purpose.storage":  "change storage settings", "otp.purpose.reset": "reset password",
 	"otp.purpose.register": "sign up",
 	"otp.purpose.login":    "sign in",
 

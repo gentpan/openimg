@@ -22,6 +22,11 @@ const (
 	CookieName    = "openimg_session"
 	contextUser   = "openimg_user"
 	contextSID    = "openimg_sid"
+	// contextViaToken marks requests authenticated by an API token rather than
+	// a browser session. Handlers that guard a sensitive change use it to ask
+	// for a second factor only where one is warranted: a cookie session already
+	// implies a live browser login, a token does not.
+	contextViaToken = "openimg_via_token"
 	tokenLifetime = 7 * 24 * time.Hour
 	bcryptCost    = 11
 
@@ -185,8 +190,10 @@ func (s *Service) Middleware(required bool) gin.HandlerFunc {
 // TokenOrSession accepts either a session cookie or a personal access token.
 // Mounted only on the upload and library routes: a token pasted into a
 // third-party tool should be able to post pictures, never to change the
-// account's password, storage credentials, or passkeys. Those stay
-// cookie-only, so a leaked token can't be escalated into a takeover.
+// account's password, storage credentials, or passkeys. Those either stay
+// cookie-only (minting tokens, deleting the account) or demand an emailed
+// code as a second factor, so a leaked token can't be escalated into a
+// takeover on its own.
 func (s *Service) TokenOrSession() gin.HandlerFunc {
 	cookieAuth := s.Middleware(true)
 	return func(c *gin.Context) {
@@ -207,8 +214,15 @@ func (s *Service) TokenOrSession() gin.HandlerFunc {
 		}(tok.ID)
 
 		c.Set(contextUser, user)
+		c.Set(contextViaToken, true)
 		c.Next()
 	}
+}
+
+/// ViaToken reports whether this request came in on an API token.
+func ViaToken(c *gin.Context) bool {
+	v, ok := c.Get(contextViaToken)
+	return ok && v == true
 }
 
 // extractBearer pulls a token from either the Authorization header or the

@@ -118,6 +118,9 @@ type profileReq struct {
 	SecretKey     string `json:"secret_key"` // empty on edit = keep existing
 	PublicBaseURL string `json:"public_base_url"`
 	TestOnly      bool   `json:"test_only"`
+	// Code 是令牌调用时的二次因子。网页会话不需要——它本身就意味着一次
+	// 活着的浏览器登录;令牌不意味着任何东西。
+	Code string `json:"code"`
 }
 
 // inferKind labels a bucket from its endpoint. R2, AWS and MinIO all speak the
@@ -152,6 +155,23 @@ func inferPathStyle(endpoint string) bool {
 	return true
 }
 
+// requireCodeIfToken 是存储配置改动类操作的二次因子闸门。
+//
+// 这组接口比"能传能删"更进一步:新建一个指向别处的桶并设为默认之后,连
+// 用户在网页上传的图也会落进那里——一条持久的外泄通道。所以令牌可以调,
+// 但必须附一枚发到账号邮箱的验证码;浏览器会话免除,它已经是一次登录。
+func (s *Server) requireCodeIfToken(c *gin.Context, code string) bool {
+	if !auth.ViaToken(c) {
+		return true
+	}
+	u := auth.MustUser(c)
+	if status, key := s.consumeOTP(u.Email, code, models.OTPPurposeStorage); key != "" {
+		c.JSON(status, gin.H{"error": i18n.T(c, key)})
+		return false
+	}
+	return true
+}
+
 // POST /api/storage/profiles — add a bucket. The probe must pass before
 // anything is persisted: a bucket that can't be written to is worse than no
 // bucket, because uploads would fail after the user thinks they're set up.
@@ -181,6 +201,11 @@ func (s *Server) handleCreateProfile(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{
 			"error": i18n.T(c, "profile.limit_reached"), "max": g.MaxProfiles,
 		})
+		return
+	}
+
+	// 只探测不落库的调用无需验证码——它不改变任何东西。
+	if !req.TestOnly && !s.requireCodeIfToken(c, req.Code) {
 		return
 	}
 
@@ -247,6 +272,9 @@ func (s *Server) handleUpdateProfile(c *gin.Context) {
 	var req profileReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !req.TestOnly && !s.requireCodeIfToken(c, req.Code) {
 		return
 	}
 	cfg, kind, err := s.buildProfileConfig(c.Request.Context(), req, p)
@@ -343,6 +371,10 @@ func (s *Server) handleSetDefaultProfile(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "profile.backup_as_default")})
 		return
 	}
+	// 这两个端点没有请求体,验证码走查询串。
+	if !s.requireCodeIfToken(c, c.Query("code")) {
+		return
+	}
 	var val any = p.ID
 	if p.IsPlatform() {
 		val = nil // nil means "platform pool", which is the fallback anyway
@@ -357,6 +389,8 @@ func (s *Server) handleSetDefaultProfile(c *gin.Context) {
 type setBackupReq struct {
 	// BackupOfID is the profile this one mirrors. Empty string detaches it.
 	BackupOfID string `json:"backup_of_id"`
+	// Code 是令牌调用时的二次因子,见 requireCodeIfToken。
+	Code string `json:"code"`
 }
 
 // POST /api/storage/profiles/:id/backup — mark this profile as another's
@@ -374,6 +408,9 @@ func (s *Server) handleSetBackupProfile(c *gin.Context) {
 	var req setBackupReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !s.requireCodeIfToken(c, req.Code) {
 		return
 	}
 	if strings.TrimSpace(req.BackupOfID) == "" {
@@ -426,6 +463,9 @@ func (s *Server) handleDeleteProfile(c *gin.Context) {
 	}
 	if p.IsPlatform() {
 		c.JSON(http.StatusForbidden, gin.H{"error": i18n.T(c, "profile.platform_locked")})
+		return
+	}
+	if !s.requireCodeIfToken(c, c.Query("code")) {
 		return
 	}
 	var n int64

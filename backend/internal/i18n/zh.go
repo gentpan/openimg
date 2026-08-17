@@ -76,7 +76,7 @@ var zh = map[string]string{
 	"otp.purpose.password": "修改密码",
 	"otp.purpose.passkey":  "添加 Passkey",
 	"otp.purpose.purge":    "清空图库",
-	"otp.purpose.reset":    "重置密码",
+	"otp.purpose.storage":  "修改存储配置", "otp.purpose.reset": "重置密码",
 	"otp.purpose.register": "注册",
 	"otp.purpose.login":    "登录",
 

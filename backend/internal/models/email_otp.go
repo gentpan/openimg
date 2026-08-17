@@ -33,6 +33,7 @@ const (
 	OTPPurposePassword = "password"
 	OTPPurposePasskey  = "passkey"
 	OTPPurposePurge    = "purge"
+	OTPPurposeStorage  = "storage"
 	OTPPurposeReset    = "reset"
 	OTPPurposeRegister = "register"
 )
@@ -49,6 +50,8 @@ func OTPPurposeLabel(p string) string {
 		return "otp.purpose.passkey"
 	case OTPPurposePurge:
 		return "otp.purpose.purge"
+	case OTPPurposeStorage:
+		return "otp.purpose.storage"
 	case OTPPurposeReset:
 		return "otp.purpose.reset"
 	case OTPPurposeRegister:
@@ -61,7 +64,7 @@ func OTPPurposeLabel(p string) string {
 func ValidOTPPurpose(p string) bool {
 	switch p {
 	case OTPPurposeLogin, OTPPurposePassword, OTPPurposePasskey, OTPPurposePurge, OTPPurposeReset,
-		OTPPurposeRegister:
+		OTPPurposeRegister, OTPPurposeStorage:
 		return true
 	}
 	return false

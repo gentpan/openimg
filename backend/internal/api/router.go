@@ -250,13 +250,21 @@ func (s *Server) Router() *gin.Engine {
 	// Space economy
 
 	// Storage profiles (bring your own bucket)
-	authed.GET("/api/storage/profiles", s.handleListProfiles)
-	authed.POST("/api/storage/profiles", s.handleCreateProfile)
-	authed.PATCH("/api/storage/profiles/:id", s.handleUpdateProfile)
-	authed.DELETE("/api/storage/profiles/:id", s.handleDeleteProfile)
-	authed.POST("/api/storage/profiles/:id/test", s.handleTestProfile)
-	authed.POST("/api/storage/profiles/:id/default", s.handleSetDefaultProfile)
-	authed.POST("/api/storage/profiles/:id/backup", s.handleSetBackupProfile)
+	//
+	// 令牌可达,但改动类操作一律要邮箱验证码作二次因子——与改密码、注册
+	// Passkey 同一条界线。理由是这组接口比"能传能删"更进一步:能新建一个
+	// 指向别处的桶并设为默认,此后连用户在网页上传的图也会落进那里,是一
+	// 条持久的外泄通道。有了验证码,单靠泄露的令牌做不成这件事。
+	//
+	// 读取(列表)与探测不要码:前者只返回打码后的 access key,后者只是拿
+	// 用户自己已存的凭据去戳自己的桶。
+	machine.GET("/api/storage/profiles", s.handleListProfiles)
+	machine.POST("/api/storage/profiles", s.handleCreateProfile)
+	machine.PATCH("/api/storage/profiles/:id", s.handleUpdateProfile)
+	machine.DELETE("/api/storage/profiles/:id", s.handleDeleteProfile)
+	machine.POST("/api/storage/profiles/:id/test", s.handleTestProfile)
+	machine.POST("/api/storage/profiles/:id/default", s.handleSetDefaultProfile)
+	machine.POST("/api/storage/profiles/:id/backup", s.handleSetBackupProfile)
 
 	// Admin API
 	adminAPI := r.Group("/admin/api", s.Auth.Middleware(true), auth.AdminOnly())

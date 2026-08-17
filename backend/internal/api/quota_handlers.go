@@ -109,12 +109,13 @@ func (s *Server) handleCheckin(c *gin.Context) {
 		return
 	}
 	if res.Capped && res.Granted == 0 {
-		c.JSON(http.StatusOK, gin.H{
-			"ok":      true,
-			"granted": 0,
-			"streak":  res.Streak,
-			"capped":  true,
-			"message": i18n.T(c, "checkin.capped"),
+		// 内嵌 Result 而不是手抄字段。手抄过一版,结果把 granted_bytes 写成
+		// 了 granted,还整个漏掉 ai_credits——存储顶到上限时 AI 次数照常发放,
+		// 前端却收不到,于是"本月生成次数用完"的唯一解法看上去无效。
+		c.JSON(http.StatusOK, checkinOut{
+			Result:  res,
+			OK:      true,
+			Message: i18n.T(c, "checkin.capped"),
 		})
 		return
 	}
@@ -166,4 +167,12 @@ func (s *Server) handleQuotaTransactions(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"transactions": txs, "total": total, "limit": limit, "offset": offset,
 	})
+}
+
+// checkinOut 在签到结果之外挂一句给人看的话。内嵌 *checkin.Result 让它的
+// 字段原样展开,新增字段自动跟上,不会再出现某个分支少给一个键的情况。
+type checkinOut struct {
+	*checkin.Result
+	OK      bool   `json:"ok"`
+	Message string `json:"message,omitempty"`
 }

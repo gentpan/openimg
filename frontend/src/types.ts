@@ -381,7 +381,7 @@ export interface OAuthStatus {
  * `running` are both "still working" — the split exists because the queue only
  * flips to running once a worker has actually picked the job up.
  */
-export type AIGenStatus = "pending" | "running" | "completed" | "failed";
+export type AIGenStatus = "charging" | "pending" | "running" | "completed" | "failed";
 
 export interface AIGeneration {
   id: string;

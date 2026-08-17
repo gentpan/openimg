@@ -410,6 +410,7 @@ export const zh = {
       empty: "还没有生成过图片",
       emptyHint: "在上面写一句描述，试试第一张",
       status: {
+        charging: "提交中",
         pending: "排队中",
         running: "生成中",
         completed: "已完成",

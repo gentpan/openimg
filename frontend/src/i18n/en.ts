@@ -406,6 +406,7 @@ export const en: Dict = {
       empty: "Nothing generated yet",
       emptyHint: "Write a description above and try your first one",
       status: {
+        charging: "Submitting",
         pending: "Queued",
         running: "Generating",
         completed: "Done",

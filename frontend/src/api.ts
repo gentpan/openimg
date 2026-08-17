@@ -221,7 +221,30 @@ export const aiApi = {
       method: "POST",
       body: JSON.stringify({ prompt, size, resolution }),
     }).then((r) => r.generation),
-  /** Newest first, capped server-side. Both members can come back null. */
+  /**
+   * Retouching: the same submission, given one to four pictures to work from.
+   *
+   * The ids are the user's own images and the server resolves them to their
+   * public CDN URLs before calling upstream — nothing is uploaded again, and
+   * nothing is base64'd, because the files are already on a public origin the
+   * model can fetch for itself.
+   *
+   * `size` and `resolution` are genuinely optional here: omit the size and the
+   * output keeps the shape of the picture that went in, which is what someone
+   * removing a watermark almost always wants.
+   */
+  edit: (prompt: string, imageIds: string[], size?: string | null, resolution?: string | null) =>
+    jfetch<{ generation: AIGeneration }>("/api/ai/edit", {
+      method: "POST",
+      body: JSON.stringify({
+        prompt,
+        image_ids: imageIds,
+        ...(size ? { size } : {}),
+        ...(resolution ? { resolution } : {}),
+      }),
+    }).then((r) => r.generation),
+  /** Newest first, capped server-side. Both members can come back null.
+   *  Carries generations and edits alike; the pages filter by `kind`. */
   generations: () =>
     jfetch<{ generations: AIGeneration[] | null; images: Record<string, Image> | null }>(
       "/api/ai/generations",

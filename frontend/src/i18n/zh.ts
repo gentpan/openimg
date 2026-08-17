@@ -216,6 +216,7 @@ export const zh = {
     overview: "概览",
     gallery: "图库",
     generate: "AI 生成",
+    retouch: "AI 修图",
     refer: "邀请",
     admin: "管理",
     checkin: "签到",
@@ -422,6 +423,62 @@ export const zh = {
       openDetail: "查看详情与各格式链接",
       reusePrompt: "把描述填回输入框",
       failedLabel: "失败原因",
+    },
+  },
+
+  /**
+   * AI 修图。额度、状态、失败原因这些跟文生图共用一套（`generate.*`），
+   * 这里只写「选源图」这条路上独有的文案。
+   */
+  retouch: {
+    title: "AI 修图",
+    subtitle: "从图库里挑 1–4 张图，写一句要改什么，改完的图直接进你的图库",
+    sourceLabel: "源图",
+    sourceCount: (n: number, max: number) => `${n} / ${max}`,
+    sourcePick: "从图库选图",
+    /** 说清楚图从哪来：这里不上传本地文件，图本来就在你的图床里。 */
+    sourceHint: (max: number) => `最多 ${max} 张，从已上传的图片里选`,
+    sourceAdd: "再加一张",
+
+    presetsLabel: "常用改法",
+    presets: {
+      watermark: "去水印",
+      declutter: "去除路人杂物",
+      background: "换背景",
+      restore: "修复老照片",
+      sharpen: "提升清晰度",
+    },
+
+    promptLabel: "要改成什么样",
+    promptPlaceholder: "说清楚改哪里、改成什么样，以及哪些地方不要动",
+    /** 不传比例时上游按原图输出，所以这是个真选项，不是「默认值」。 */
+    matchSource: "跟随原图",
+    matchSourceHint: "不指定时，输出保持原图的比例与清晰度",
+
+    needSource: "先选一张源图",
+    submit: "开始修图",
+    submitted: "已提交",
+    submittedDetail: "通常几十秒，完成后会出现在下面的记录里",
+    submitFailed: "提交失败",
+
+    picker: {
+      title: "选择源图",
+      subtitle: (max: number) => `最多 ${max} 张 · 按选中的先后顺序交给模型`,
+      selected: (n: number, max: number) => `已选 ${n} / ${max}`,
+      limitReached: (max: number) => `已选满 ${max} 张，取消一张才能换`,
+      confirm: "就用这些",
+    },
+
+    history: {
+      title: "修图记录",
+      empty: "还没有修过图",
+      emptyHint: "在上面选张图，写一句要改什么",
+      kindBadge: "修图",
+      sourceLabel: "源图",
+      /** 记录比图片活得久，源图可能已经删了；这时至少要说清有几张。 */
+      sourceUnavailable: (n: number) => `${n} 张（已不在图库）`,
+      sourceMissing: (n: number) => `另有 ${n} 张已删除`,
+      reuse: "把描述和源图填回去",
     },
   },
 

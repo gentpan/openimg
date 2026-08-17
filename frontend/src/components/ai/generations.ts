@@ -1,0 +1,138 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { aiApi } from "../../api";
+import { refreshAIStatus } from "../../aiStatus";
+import type { AIGenStatus, AIGeneration, Image } from "../../types";
+
+/**
+ * The half of the AI pages that is not a component.
+ *
+ * Text-to-image and retouching are the same machine with a different intake:
+ * one credit pool, one submission-then-poll shape, one history endpoint. Only
+ * the composer differs — a prompt alone versus a prompt plus source pictures —
+ * so that is the only thing the pages own themselves. The visual half lives
+ * next door in parts.tsx; it is split from this file only because Fast Refresh
+ * wants a module to export components or values, not both.
+ *
+ * All of it was lifted out of pages/Generate.tsx with its behaviour unchanged,
+ * comments included — those reasons are what keep the next edit from undoing
+ * them.
+ */
+
+/** Mirrors the server's own cap. Enforced here so the counter can turn red
+ *  before a submission is rejected for a reason nothing on screen showed. */
+export const MAX_PROMPT = 1000;
+
+/** Generation takes tens of seconds; three seconds is frequent enough to feel
+ *  live without turning one picture into twenty requests. */
+export const POLL_MS = 3000;
+
+/** Upstream accepts sixteen source images; the product offers four. Past that
+ *  the model stops treating them as one scene, and the picker stops being a
+ *  choice and becomes a file manager. */
+export const MAX_SOURCES = 4;
+
+/**
+ * Still working.
+ *
+ * Asked as "not settled" rather than by listing the working states, because the
+ * two sides of that question fail differently: a status this build has not
+ * heard of should keep the spinner up and the polling going until the server
+ * calls it done, not look finished and stop the one thing that would have
+ * corrected it.
+ */
+export const inFlight = (s: AIGenStatus) => s !== "completed" && s !== "failed";
+
+export type GenKind = "generate" | "edit";
+
+/** Records written before retouching existed carry no `kind` at all, and the
+ *  server does not backfill them. They are generations — read every record
+ *  through here rather than comparing the raw field. */
+export function genKind(g: AIGeneration): GenKind {
+  return g.kind === "edit" ? "edit" : "generate";
+}
+
+/** The source pictures an edit started from. Stored as one comma-separated
+ *  column, so unpacking it is the client's job. */
+export function genSources(g: AIGeneration): string[] {
+  return (g.source_ids ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/**
+ * The polled history, shared by both pages.
+ *
+ * `kind` filters what comes back: each page lists its own work, so the count in
+ * its header means something and "still working" refers to a row you can see.
+ * The fetch itself is unfiltered — one endpoint serves both — and the split
+ * happens here.
+ *
+ * `onSettled` fires once, on the edge where the last in-flight job finishes: a
+ * completed picture consumed storage and a failed one handed a credit back, and
+ * both of those numbers live outside this hook.
+ */
+export function useGenerations(active: boolean, kind: GenKind, onSettled: () => void) {
+  const [gens, setGens] = useState<AIGeneration[]>([]);
+  const [images, setImages] = useState<Record<string, Image>>({});
+
+  // Every list fetch takes a ticket, and only the newest one may write. Without
+  // it a poll issued three seconds ago can land *after* a submission and
+  // overwrite the record that submission just put on screen — and with nothing
+  // pending any more, the polling that was about to correct the list stops too,
+  // so the generation stays invisible until a reload.
+  const ticket = useRef(0);
+
+  // Held in a ref because callers build it from `refresh()` off the auth
+  // context, which is a fresh function on every render — in a dependency array
+  // it would re-arm the effects below on every keystroke.
+  const settled = useRef(onSettled);
+  useEffect(() => {
+    settled.current = onSettled;
+  });
+
+  const load = useCallback(async () => {
+    const mine = ++ticket.current;
+    const r = await aiApi.generations();
+    if (mine !== ticket.current) return;
+    setGens(r.generations);
+    setImages(r.images);
+  }, []);
+
+  useEffect(() => {
+    if (!active) return;
+    load().catch(() => {});
+    // The cached status can be stale in either direction — a check-in grants
+    // credits, a failed generation refunds one — so arriving here resyncs it.
+    refreshAIStatus();
+  }, [active, load]);
+
+  const mine = gens.filter((g) => genKind(g) === kind);
+  const working = mine.some((g) => inFlight(g.status));
+
+  useEffect(() => {
+    if (!working) return;
+    const h = window.setInterval(() => {
+      // A backgrounded tab is nobody watching. The next visible tick catches up.
+      if (document.hidden) return;
+      load().catch(() => {});
+    }, POLL_MS);
+    return () => window.clearInterval(h);
+  }, [working, load]);
+
+  const wasWorking = useRef(false);
+  useEffect(() => {
+    if (wasWorking.current && !working) settled.current();
+    wasWorking.current = working;
+  }, [working]);
+
+  /** Puts a just-submitted record on screen without a round trip. Any list
+   *  fetch still in flight was issued before this record existed, so it is now
+   *  stale — retire its ticket rather than let it erase what was just added. */
+  const prepend = useCallback((g: AIGeneration) => {
+    ticket.current++;
+    setGens((prev) => [g, ...prev]);
+  }, []);
+
+  return { gens: mine, images, setImages, working, prepend, reload: load };
+}

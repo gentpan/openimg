@@ -212,6 +212,7 @@ export const en: Dict = {
     overview: "Overview",
     gallery: "Gallery",
     generate: "AI images",
+    retouch: "AI retouch",
     refer: "Referrals",
     admin: "Admin",
     checkin: "Check in",
@@ -418,6 +419,57 @@ export const en: Dict = {
       openDetail: "Details and links in every format",
       reusePrompt: "Put this description back in the box",
       failedLabel: "Reason",
+    },
+  },
+
+  retouch: {
+    title: "AI retouch",
+    subtitle:
+      "Pick one to four pictures from your gallery, say what to change, and the result lands back in your gallery",
+    sourceLabel: "Source pictures",
+    sourceCount: (n: number, max: number) => `${n} / ${max}`,
+    sourcePick: "Choose from your gallery",
+    sourceHint: (max: number) => `Up to ${max}, from what you have already uploaded`,
+    sourceAdd: "Add another",
+
+    presetsLabel: "Common edits",
+    presets: {
+      watermark: "Remove watermarks",
+      declutter: "Remove people and clutter",
+      background: "Replace background",
+      restore: "Restore an old photo",
+      sharpen: "Sharpen detail",
+    },
+
+    promptLabel: "What to change",
+    promptPlaceholder: "Say what to change, what it should become, and what to leave alone",
+    matchSource: "Match source",
+    matchSourceHint: "Left unset, the result keeps the shape and resolution of the source",
+
+    needSource: "Pick a source picture first",
+    submit: "Retouch",
+    submitted: "Submitted",
+    submittedDetail: "Usually under a minute — it appears in the history below when it is done",
+    submitFailed: "Could not submit",
+
+    picker: {
+      title: "Choose source pictures",
+      subtitle: (max: number) => `Up to ${max} · the model reads them in the order you pick`,
+      selected: (n: number, max: number) => `${n} of ${max} selected`,
+      limitReached: (max: number) => `${max} is the limit — deselect one to swap`,
+      confirm: "Use these",
+    },
+
+    history: {
+      title: "Retouch history",
+      empty: "Nothing retouched yet",
+      emptyHint: "Pick a picture above and say what to change",
+      kindBadge: "Retouch",
+      sourceLabel: "From",
+      sourceUnavailable: (n: number) =>
+        `${n} ${p(n, "picture", "pictures")}, no longer in your gallery`,
+      sourceMissing: (n: number) => `plus ${n} since deleted`,
+      reuse: "Put the description and sources back",
     },
   },
 

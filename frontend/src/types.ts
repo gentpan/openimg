@@ -386,6 +386,16 @@ export type AIGenStatus = "charging" | "pending" | "running" | "completed" | "fa
 export interface AIGeneration {
   id: string;
   prompt: string;
+  /**
+   * "generate" | "edit". Optional because records written before retouching
+   * existed have it empty and the server does not backfill them — read it
+   * through `genKind()` in components/ai/shared, which calls empty a generation.
+   */
+  kind?: string;
+  /** Comma-separated image ids an edit started from; empty for pure generation.
+   *  One column rather than a join table, so unpacking it is the client's job —
+   *  `genSources()` does that. */
+  source_ids?: string;
   model: string;
   size: string;
   resolution: string;

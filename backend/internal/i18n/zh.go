@@ -85,6 +85,8 @@ var zh = map[string]string{
 	"ai.submit_failed":     "提交生成失败：%s",
 	"ai.abandoned":         "这次生成没能递交出去，次数已退回",
 	"ai.timed_out":         "等待上游超时，次数已退回",
+	"ai.no_source":         "请选择 1~4 张要修改的图片",
+	"ai.source_missing":    "选中的图片不存在，或者不在你的图库里",
 	"otp.purpose.register": "注册",
 	"otp.purpose.login":    "登录",
 

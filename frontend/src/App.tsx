@@ -17,6 +17,7 @@ import LoginPage from "./pages/Login";
 import ReferPage from "./pages/Refer";
 import DocsPage from "./pages/Docs";
 import RegisterPage from "./pages/Register";
+import RetouchPage from "./pages/Retouch";
 import SettingsPage from "./pages/Settings";
 import SpacePage from "./pages/Space";
 import UploadPage from "./pages/Upload";
@@ -54,6 +55,8 @@ export default function App() {
             {/* Sends itself away when the deployment has no AI key configured;
                 see pages/Generate.tsx. */}
             <Route path="/generate" element={<GeneratePage />} />
+            {/* Same gate, same reason: no AI key, no route. */}
+            <Route path="/retouch" element={<RetouchPage />} />
             <Route path="/space" element={<SpacePage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/refer" element={<ReferPage />} />

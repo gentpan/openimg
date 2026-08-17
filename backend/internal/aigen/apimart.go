@@ -46,19 +46,44 @@ func New(key, base string) *Client {
 
 func (c *Client) Enabled() bool { return c != nil && c.key != "" }
 
+// Req 是一次生成请求的全部输入。
+//
+// 用结构体而不是继续加位置参数:文生图与图生图在上游是同一个接口、同一段
+// 请求体,唯一的差别是多带一个 image_urls。为后者另开一个 SubmitEdit 就要把
+// 编码、发请求、取任务号那一串再抄一遍,以后改一处就得记得改两处。
+type Req struct {
+	Prompt string
+	Model  string
+	// Size 与 Resolution 留空表示不传给上游。图生图不传 size 时,输出的
+	// 尺寸跟随输入图——这正是"修图"想要的默认行为。
+	Size       string
+	Resolution string
+	// ImageURLs 是参考图的公开地址,空则是纯文生图。上游直接去取这些 URL,
+	// 所以不必也不该把图下载下来转 base64。
+	ImageURLs []string
+}
+
 // Submit 递交一次生成,返回上游任务号。上游是异步的:这里只拿到受理回执,
 // 图要靠 Poll 取。
-func (c *Client) Submit(ctx context.Context, prompt, model, size, resolution string) (string, error) {
+func (c *Client) Submit(ctx context.Context, req Req) (string, error) {
 	if !c.Enabled() {
 		return "", ErrNotConfigured
 	}
-	body, _ := json.Marshal(map[string]any{
-		"model":      model,
-		"prompt":     prompt,
-		"n":          1,
-		"size":       size,
-		"resolution": resolution,
-	})
+	payload := map[string]any{
+		"model":  req.Model,
+		"prompt": req.Prompt,
+		"n":      1,
+	}
+	if req.Size != "" {
+		payload["size"] = req.Size
+	}
+	if req.Resolution != "" {
+		payload["resolution"] = req.Resolution
+	}
+	if len(req.ImageURLs) > 0 {
+		payload["image_urls"] = req.ImageURLs
+	}
+	body, _ := json.Marshal(payload)
 	var out struct {
 		Code int `json:"code"`
 		Data []struct {

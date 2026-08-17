@@ -191,6 +191,8 @@ func (s *Server) Router() *gin.Engine {
 	machine.GET("/api/ai/status", s.handleAIStatus)
 	machine.GET("/api/ai/generations", s.handleAIGenerations)
 	machine.POST("/api/ai/generate", s.handleAIGenerate)
+	// 修图与生成同组同闸:它同样是"产出一张新图",只是多了几张源图作输入。
+	machine.POST("/api/ai/edit", s.handleAIEdit)
 	machine.GET("/api/checkin/history", s.handleCheckinHistory)
 	// Check-in is the one write here, and it is safe to expose: the only thing
 	// it can do is grant the token's own owner more space. Daily check-in is

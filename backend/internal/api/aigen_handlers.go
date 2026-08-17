@@ -40,6 +40,14 @@ type aiGenerateReq struct {
 	Resolution string `json:"resolution"`
 }
 
+type aiEditReq struct {
+	Prompt string `json:"prompt"`
+	// ImageIDs 收字符串,解析放到后面自己做,理由见 parseSourceIDs。
+	ImageIDs   []string `json:"image_ids"`
+	Size       string   `json:"size"`
+	Resolution string   `json:"resolution"`
+}
+
 // GET /api/ai/status — 这个部署有没有开 AI，以及我还能生成几次。
 func (s *Server) handleAIStatus(c *gin.Context) {
 	u := auth.MustUser(c)
@@ -106,6 +114,7 @@ func (s *Server) handleAIGenerate(c *gin.Context) {
 
 	g := s.groupFor(u)
 	gen := models.AIGeneration{
+		Kind:       models.AIGenKindGenerate,
 		Prompt:     prompt,
 		Model:      aigen.DefaultModel,
 		Size:       size,
@@ -126,24 +135,192 @@ func (s *Server) handleAIGenerate(c *gin.Context) {
 		return
 	}
 
+	s.submitAIGen(c, &gen, nil)
+}
+
+// POST /api/ai/edit — 拿自己图库里的图去改。
+//
+// 与 /api/ai/generate 是同一件事的两种入口:同一把额度闸、同一条轮询、同一
+// 条退款路径、同一条入库流水线,差别只在提交给上游时多带几张源图的地址。所以
+// 这里只负责"把源图校验成一串公开 URL",剩下的交给 submitAIGen。
+func (s *Server) handleAIEdit(c *gin.Context) {
+	u := auth.MustUser(c)
+	if !s.AIGen.Enabled() {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": i18n.T(c, "ai.disabled")})
+		return
+	}
+	if !u.EmailVerified {
+		c.JSON(http.StatusForbidden, gin.H{"error": i18n.T(c, "upload.verify_email")})
+		return
+	}
+
+	var req aiEditReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "ai.prompt_required")})
+		return
+	}
+	prompt := strings.TrimSpace(req.Prompt)
+	if prompt == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "ai.prompt_required")})
+		return
+	}
+	if len([]rune(prompt)) > 1000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "ai.prompt_too_long")})
+		return
+	}
+
+	ids, ok := parseSourceIDs(req.ImageIDs)
+	if !ok {
+		// 带一个机器可读的 code:客户端要区分"没选图"和"图不在了"才能给出
+		// 不同的说法,而 error 里是已经翻译过的人话,拿它去 contains 匹配
+		// 一换语言就失效。
+		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "ai.no_source"), "code": "no_source"})
+		return
+	}
+	urls, err := s.sourceImageURLs(u.ID, ids)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "ai.source_missing"), "code": "source_missing"})
+		return
+	}
+
+	// size 与文生图不同:留空是有意义的取值,表示"跟着输入图走"。只有用户
+	// 明确点了某个比例才传给上游,乱填的照样落回空。
+	size := req.Size
+	if !aiAllowedSizes[size] {
+		size = ""
+	}
+	resolution := req.Resolution
+	if !aiAllowedResolutions[resolution] {
+		resolution = "1k"
+	}
+
+	g := s.groupFor(u)
+	gen := models.AIGeneration{
+		Kind:       models.AIGenKindEdit,
+		SourceIDs:  models.JoinSourceIDs(ids),
+		Prompt:     prompt,
+		Model:      aigen.DefaultModel,
+		Size:       size,
+		Resolution: resolution,
+		Credits:    1,
+	}
+	if err := aigen.Begin(s.DB, u, g, &gen); err != nil {
+		switch {
+		case errors.Is(err, aigen.ErrDailyLimit):
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": i18n.T(c, "ai.daily_limit")})
+		case errors.Is(err, aigen.ErrNoCredits):
+			c.JSON(http.StatusPaymentRequired, gin.H{"error": i18n.T(c, "ai.no_credits")})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	s.submitAIGen(c, &gen, urls)
+}
+
+// aiEditMaxSources 是一次修图能带几张源图。上游允许 16 张,这里收到 4:一次
+// 生成只扣 1 点,源图越多上游算得越贵,而 4 张已经够覆盖"合成/换背景/参考
+// 风格"这些实际用法。
+const aiEditMaxSources = 4
+
+// parseSourceIDs 校验数量并把字符串解析成 ID。
+//
+// 收字符串而不是直接绑成 []uuid.UUID:后者一旦有一个 ID 格式不对,整个
+// ShouldBindJSON 就失败,只能笼统地报"提示词有问题",而真正的原因在图上。
+func parseSourceIDs(raw []string) ([]uuid.UUID, bool) {
+	if len(raw) == 0 || len(raw) > aiEditMaxSources {
+		return nil, false
+	}
+	ids := make([]uuid.UUID, 0, len(raw))
+	seen := map[uuid.UUID]bool{}
+	for _, s := range raw {
+		id, err := uuid.Parse(strings.TrimSpace(s))
+		if err != nil {
+			// 解析不出来的 ID 一定不在这个人的图库里,和"图不存在"同类,
+			// 但这里还分不出该报哪个,交给调用方按 no_source 处理。
+			return nil, false
+		}
+		if seen[id] {
+			continue // 同一张图传两遍没有意义,也白白抬高上游成本
+		}
+		seen[id] = true
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 {
+		return nil, false
+	}
+	return ids, true
+}
+
+// sourceImageURLs 把源图 ID 换成公开 URL,顺带完成归属校验。
+//
+// 归属这一步不能省:少了 user_id 这个条件,任何人只要猜到一个 ID 就能把别人
+// 的图丢给上游去改。查询里同时排除已删除和被封禁的——它们的对象要么已经不在,
+// 要么本来就不该再被取出来。
+//
+// URL 用 decorate 算,不自己拼:BYOS 的图挂在用户自己的域名下,平台域名拼出来
+// 的地址上游根本取不到。decorate 已经把 profile 的 PublicBaseURL、KeyPrefix
+// 和站点回退基址那套规则处理完了。
+func (s *Server) sourceImageURLs(userID uuid.UUID, ids []uuid.UUID) ([]string, error) {
+	var imgs []models.Image
+	if err := s.DB.Where("id IN ? AND user_id = ? AND deleted_at IS NULL AND status <> ?",
+		ids, userID, models.ImageBlocked).Find(&imgs).Error; err != nil {
+		return nil, err
+	}
+	byID := map[uuid.UUID]imageOut{}
+	for _, out := range s.decorate(imgs) {
+		byID[out.ID] = out
+	}
+
+	urls := make([]string, 0, len(ids))
+	for _, id := range ids {
+		out, ok := byID[id]
+		if !ok {
+			return nil, errAISourceMissing
+		}
+		// 上游要去取这个地址,不是绝对 URL 就没得取。私有部署把
+		// PUBLIC_BASE_URL 配成了内网地址时会落在这里,报错好过让上游
+		// 拿着半截路径失败几十秒。
+		if !strings.HasPrefix(out.URL, "http://") && !strings.HasPrefix(out.URL, "https://") {
+			return nil, errAISourceMissing
+		}
+		urls = append(urls, out.URL)
+	}
+	return urls, nil
+}
+
+var errAISourceMissing = errors.New("ai: 源图不存在或不属于此用户")
+
+// submitAIGen 是两个入口共用的后半段:递交上游、存任务号、入队轮询。
+//
+// gen 必须已经过 aigen.Begin(额度已扣、记录已落库)。失败一律走 failAIGen,
+// 退款与状态落库因此只有一条路径,不会因为多一个入口就多一份要维护的退款逻辑。
+func (s *Server) submitAIGen(c *gin.Context, gen *models.AIGeneration, imageURLs []string) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
-	taskID, err := s.AIGen.Submit(ctx, prompt, aigen.DefaultModel, size, resolution)
+	taskID, err := s.AIGen.Submit(ctx, aigen.Req{
+		Prompt:     gen.Prompt,
+		Model:      gen.Model,
+		Size:       gen.Size,
+		Resolution: gen.Resolution,
+		ImageURLs:  imageURLs,
+	})
 	if err != nil {
 		// 没递交成功就没花上游的钱。走统一的失败路径,让退款和状态落库
 		// 只发生一次。
-		_ = s.failAIGen(&gen, err.Error())
+		_ = s.failAIGen(gen, err.Error())
 		c.JSON(http.StatusBadGateway, gin.H{"error": i18n.T(c, "ai.submit_failed", err.Error())})
 		return
 	}
 
-	if err := s.DB.Model(&gen).Updates(map[string]any{
+	if err := s.DB.Model(gen).Updates(map[string]any{
 		"task_id": taskID,
 		"status":  models.AIGenPending,
 	}).Error; err != nil {
 		// 任务号没存住就无从轮询,但上游已经在跑了。标失败并退款,由对账器
 		// 兜住剩下的——总好过留一条查不到进度的记录。
-		_ = s.failAIGen(&gen, err.Error())
+		_ = s.failAIGen(gen, err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -162,17 +339,20 @@ func (s *Server) handleAIGenerations(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	// 顺带把已完成记录对应的图片带上,客户端不用再查一次图库。
+	// 顺带把记录牵扯到的图片带上,客户端不用再查一次图库。产出图与修图的
+	// 源图放进同一个 map:两者都只是"一张图",分成两个字段只会让客户端多写
+	// 一遍相同的取用代码。已删除的源图查不出来,客户端按缺失渲染即可。
 	ids := make([]uuid.UUID, 0, len(list))
 	for _, g := range list {
 		if g.ImageID != nil {
 			ids = append(ids, *g.ImageID)
 		}
+		ids = append(ids, g.SourceIDList()...)
 	}
 	images := map[string]imageOut{}
 	if len(ids) > 0 {
 		var imgs []models.Image
-		s.DB.Where("id IN ? AND deleted_at IS NULL", ids).Find(&imgs)
+		s.DB.Where("id IN ? AND user_id = ? AND deleted_at IS NULL", ids, u.ID).Find(&imgs)
 		for _, out := range s.decorate(imgs) {
 			images[out.ID.String()] = out
 		}

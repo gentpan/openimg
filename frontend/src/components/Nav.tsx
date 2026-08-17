@@ -81,12 +81,20 @@ export default function Nav() {
               {/* Absent, not disabled, where the deployment configured no AI
                   key: there is nothing behind the link on such a build. */}
               {aiEnabled && (
-                <NavItem
-                  to="/generate"
-                  icon="fa-wand-magic-sparkles"
-                  label={t.nav.generate}
-                  active={pathname === "/generate"}
-                />
+                <>
+                  <NavItem
+                    to="/generate"
+                    icon="fa-wand-magic-sparkles"
+                    label={t.nav.generate}
+                    active={pathname === "/generate"}
+                  />
+                  <NavItem
+                    to="/retouch"
+                    icon="fa-wand-magic"
+                    label={t.nav.retouch}
+                    active={pathname === "/retouch"}
+                  />
+                </>
               )}
               <NavItem to="/refer" icon="fa-gift" label={t.nav.refer} active={pathname === "/refer"} />
             </>

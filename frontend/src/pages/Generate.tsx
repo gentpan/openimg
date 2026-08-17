@@ -134,7 +134,7 @@ export default function GeneratePage() {
 
   if (loading) return <Center>{t.common.loading}</Center>;
   if (!user) return <Navigate to="/login" replace />;
-  if (statusLoading && !status) return <Center>{t.common.loading}</Center>;
+  if (statusLoading) return <Center>{t.common.loading}</Center>;
   // Not "disabled": on a deployment without a key this route is not a place.
   if (!status || !status.enabled) return <Navigate to="/dashboard" replace />;
 
@@ -220,12 +220,12 @@ export default function GeneratePage() {
                 {t.generate.resolutionLabel}
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {status.resolutions.map((r) => (
+                {resolutions.map((r) => (
                   <button
                     key={r}
                     onClick={() => setResolution(r)}
                     className={`rounded-lg border px-3 py-1.5 text-[11px] uppercase transition ${
-                      r === resolution
+                      r === activeResolution
                         ? "border-brand-500 bg-brand-950/40 text-brand-300"
                         : "border-neutral-800 bg-neutral-900 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200"
                     }`}

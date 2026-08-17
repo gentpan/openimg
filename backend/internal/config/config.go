@@ -13,6 +13,11 @@ type Config struct {
 	ListenAddr  string
 	DatabaseURL string
 
+	// APIMart 文生图。留空即不开这个功能——接口一律回"未开启",界面把入口
+	// 藏起来,而不是让用户点一下才收到 401。
+	APIMartKey  string
+	APIMartBase string
+
 	// StorageDir backs the Local development storage driver. In production
 	// every object lives in MinIO/S3 and this is only used for the temp
 	// working files the upload pipeline writes while transcoding.
@@ -77,6 +82,8 @@ func Load() Config {
 	requireVerified, _ := strconv.ParseBool(getenv("REQUIRE_EMAIL_VERIFIED", "true"))
 
 	cfg := Config{
+		APIMartKey:  getenv("APIMART_API_KEY", ""),
+		APIMartBase: getenv("APIMART_BASE_URL", ""),
 		ListenAddr:    getenv("LISTEN_ADDR", "127.0.0.1:8080"),
 		DatabaseURL:   mustGet("DATABASE_URL"),
 		StorageDir:    getenv("STORAGE_DIR", "/opt/openimg/storage"),

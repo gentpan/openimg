@@ -215,6 +215,7 @@ export const zh = {
   nav: {
     overview: "概览",
     gallery: "图库",
+    generate: "AI 生成",
     refer: "邀请",
     admin: "管理",
     checkin: "签到",
@@ -365,6 +366,60 @@ export const zh = {
     recentHint: "点击查看详情与各格式链接",
     viewGallery: "全部图库 →",
     networkError: "网络错误，上传失败",
+  },
+
+  generate: {
+    title: "AI 生成",
+    subtitle: "写一句描述，生成的图直接进你的图库，和手动上传的完全一样",
+    promptLabel: "画面描述",
+    promptPlaceholder: "描述你想要的画面：主体、场景、风格、光线、镜头……写得越具体越接近",
+    /** 字数计数器紧跟输入框，两个数字都由这条渲染。 */
+    promptCounter: (used: number, max: number) => `${used} / ${max}`,
+    sizeLabel: "画面比例",
+    resolutionLabel: "清晰度",
+    submit: "生成图片",
+    submitBusy: "提交中…",
+    submitted: "已提交",
+    submittedDetail: "通常几十秒，完成后会出现在下面的记录里",
+    submitFailed: "提交失败",
+    costHint: (n: number) => `本次消耗 ${n} 次`,
+
+    quota: {
+      title: "生成额度",
+      remaining: "现在还能生成",
+      /** 数字由组件单独渲染，这条只是紧跟其后的量词。 */
+      unit: (_n: number) => "次",
+      today: "今日已用",
+      todayValue: (used: number, limit: number) => `${used} / ${limit} 次`,
+      monthly: "本月剩余",
+      monthlyValue: (credits: number, monthly: number) => `${credits} / ${monthly} 次`,
+      resetNote: "每月重置，不累加到下个月",
+      /** 两种「用完了」的解法不同：一个等明天，一个靠签到。 */
+      dailyExhausted: "今天的次数用完了",
+      dailyExhaustedHint: (limit: number) => `每天最多 ${limit} 次，明天恢复`,
+      monthlyExhausted: "这个月的次数用完了",
+      monthlyExhaustedHint: "每天签到随机送 1–3 次，攒够了就能接着生成",
+      checkinLink: "去签到领次数 →",
+    },
+
+    history: {
+      title: "生成记录",
+      count: (n: number) => `共 ${n} 条`,
+      empty: "还没有生成过图片",
+      emptyHint: "在上面写一句描述，试试第一张",
+      status: {
+        pending: "排队中",
+        running: "生成中",
+        completed: "已完成",
+        failed: "失败",
+      },
+      working: "正在生成，通常几十秒",
+      refunded: "已退还次数",
+      copyLink: "复制链接",
+      openDetail: "查看详情与各格式链接",
+      reusePrompt: "把描述填回输入框",
+      failedLabel: "失败原因",
+    },
   },
 
   uploader: {

@@ -31,6 +31,9 @@ const (
 	JobBackup JobKind = "backup"
 	// JobPurge removes objects belonging to a soft-deleted image.
 	JobPurge JobKind = "purge"
+	// JobAIPoll 跟进一次 AI 生成。ImageID 这里承载的是 AIGeneration 的 ID
+	// ——Job 只有一个 UUID 字段,再加一个只为这一种任务服务的字段不划算。
+	JobAIPoll JobKind = "ai_poll"
 )
 
 type Job struct {

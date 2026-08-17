@@ -48,6 +48,13 @@ type User struct {
 	QuotaBytes int64 `gorm:"not null;default:0" json:"quota_bytes"`
 	UsedBytes  int64 `gorm:"not null;default:0" json:"used_bytes"`
 
+	// AI 余额(次)。AICreditsMonth 记录这份月度额度是哪个月发的——下次用
+	// 时发现月份变了就补发,不需要定时任务(这个项目没有 cron,见
+	// scheduler 的注释)。
+	AICredits      int    `gorm:"not null;default:0" json:"ai_credits"`
+	AICreditsMonth string `gorm:"size:7" json:"-"`
+
+
 	// Last UTC date the user checked in (yyyy-mm-dd), and how many consecutive
 	// days that streak has run. Empty date means never checked in.
 	LastCheckinDate string `gorm:"size:10;index" json:"last_checkin_date,omitempty"`
@@ -147,6 +154,16 @@ type UserGroup struct {
 	MaxTotalSpace   int64 `gorm:"not null;default:10737418240" json:"max_total_space"` // 0 = uncapped
 
 	// Bring-your-own-storage.
+	// AI 文生图额度。按"次"计,与存储字节是两套账——一次生成占的空间由
+	// 产出的图自己按字节计,而生成本身的成本是调用上游一次。
+	//
+	// 三个数一起约束:AIMonthly 是每月发放的次数,AIDaily 是每天最多用几次
+	// (防一天烧光整月配额),签到再随机加 [AICheckinMin, AICheckinMax] 次。
+	AIMonthly    int `gorm:"not null;default:50" json:"ai_monthly"`
+	AIDaily      int `gorm:"not null;default:5" json:"ai_daily"`
+	AICheckinMin int `gorm:"not null;default:1" json:"ai_checkin_min"`
+	AICheckinMax int `gorm:"not null;default:3" json:"ai_checkin_max"`
+
 	AllowBYOS   bool `gorm:"not null;default:true" json:"allow_byos"`
 	MaxProfiles int  `gorm:"not null;default:3" json:"max_profiles"`
 

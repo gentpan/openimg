@@ -25,6 +25,7 @@ func (s *Server) RegisterJobs() {
 	s.Queue.Register(scheduler.JobTranscode, s.jobTranscode)
 	s.Queue.Register(scheduler.JobBackup, s.jobBackup)
 	s.Queue.Register(scheduler.JobPurge, s.jobPurge)
+	s.Queue.Register(scheduler.JobAIPoll, s.jobAIPoll)
 }
 
 // RequeuePendingJobs re-enqueues work that was in flight when the process last

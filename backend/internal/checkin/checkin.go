@@ -9,8 +9,11 @@
 package checkin
 
 import (
+	"log"
+
 	"errors"
 	"fmt"
+	"github.com/gentpan/openimg/backend/internal/aigen"
 	"math/rand/v2"
 	"strings"
 	"time"
@@ -34,7 +37,10 @@ const (
 
 // Result describes what a successful check-in granted.
 type Result struct {
-	Granted    int64  `json:"granted_bytes"`
+	Granted int64 `json:"granted_bytes"`
+	// AICredits 是本次签到附带送出的 AI 生成次数。0 表示这个用户组没开
+	// 这项赠送,或者余额已经顶到上限。
+	AICredits  int    `json:"ai_credits"`
 	BonusPart  int64  `json:"bonus_bytes"` // week + month milestones, if any fired
 	WeekBonus  int64  `json:"week_bonus_bytes"`
 	MonthBonus int64  `json:"month_bonus_bytes"`
@@ -178,8 +184,16 @@ func Do(db *gorm.DB, user *models.User, group *models.UserGroup) (*Result, error
 		// Report the bonus actually received, not the nominal one.
 		effectiveBonus = granted
 	}
+	// 签到附带送 AI 次数。送不出去(没开/顶到上限)不算签到失败——空间已经
+	// 发了,为一份附赠回滚整次签到不合算。
+	aiGranted, aiErr := aigen.GrantCheckin(db, user, *group)
+	if aiErr != nil {
+		log.Printf("checkin: AI 次数赠送失败 user=%s: %v", user.ID, aiErr)
+	}
+
 	return &Result{
 		Granted:    granted,
+		AICredits:  aiGranted,
 		BonusPart:  effectiveBonus,
 		WeekBonus:  weekBonus,
 		MonthBonus: monthBonus,

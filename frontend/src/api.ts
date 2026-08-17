@@ -2,6 +2,8 @@ import type {
   AdminImage,
   AdminQuotaTx,
   AdminUser,
+  AIGeneration,
+  AIStatus,
   ApiToken,
   CheckinRecord,
   CheckinResult,
@@ -199,6 +201,31 @@ export const imageApi = {
       `/api/images/${id}/variant`,
       { method: "POST", body: JSON.stringify({ width }) },
     ),
+};
+
+// ----- AI image generation -----
+/**
+ * Text to image. Three calls, and the middle one does not wait for a picture:
+ * generation takes tens of seconds, so `generate` returns as soon as the task
+ * is accepted and `generations` is polled until that record turns terminal.
+ *
+ * The completed record carries an `image_id` into the `images` map, whose
+ * entries are the same `Image` objects the gallery lists — a generated picture
+ * is an ordinary upload from the moment it lands.
+ */
+export const aiApi = {
+  /** `{enabled: false}` on a deployment with no upstream key configured. */
+  status: () => jfetch<AIStatus>("/api/ai/status"),
+  generate: (prompt: string, size: string, resolution: string) =>
+    jfetch<{ generation: AIGeneration }>("/api/ai/generate", {
+      method: "POST",
+      body: JSON.stringify({ prompt, size, resolution }),
+    }).then((r) => r.generation),
+  /** Newest first, capped server-side. Both members can come back null. */
+  generations: () =>
+    jfetch<{ generations: AIGeneration[] | null; images: Record<string, Image> | null }>(
+      "/api/ai/generations",
+    ).then((r) => ({ generations: r.generations ?? [], images: r.images ?? {} })),
 };
 
 // ----- Quota & check-in -----

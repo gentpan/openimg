@@ -211,6 +211,7 @@ export const en: Dict = {
   nav: {
     overview: "Overview",
     gallery: "Gallery",
+    generate: "AI images",
     refer: "Referrals",
     admin: "Admin",
     checkin: "Check in",
@@ -363,6 +364,59 @@ export const en: Dict = {
     recentHint: "Click for details and links in every format",
     viewGallery: "Full gallery →",
     networkError: "Network error, upload failed",
+  },
+
+  generate: {
+    title: "AI images",
+    subtitle:
+      "Describe a picture and it lands in your gallery, identical in every way to one you uploaded",
+    promptLabel: "Description",
+    promptPlaceholder:
+      "Describe the picture: subject, setting, style, lighting, camera… the more specific, the closer it lands",
+    promptCounter: (used: number, max: number) => `${used} / ${max}`,
+    sizeLabel: "Aspect ratio",
+    resolutionLabel: "Resolution",
+    submit: "Generate",
+    submitBusy: "Submitting…",
+    submitted: "Submitted",
+    submittedDetail: "Usually under a minute — it appears in the history below when it is done",
+    submitFailed: "Could not submit",
+    costHint: (n: number) => `Uses ${n} ${p(n, "generation", "generations")}`,
+
+    quota: {
+      title: "Generation allowance",
+      remaining: "Available right now",
+      unit: (n: number) => p(n, "generation", "generations"),
+      today: "Used today",
+      todayValue: (used: number, limit: number) => `${used} / ${limit}`,
+      monthly: "Left this month",
+      monthlyValue: (credits: number, monthly: number) => `${credits} / ${monthly}`,
+      resetNote: "Resets monthly — unused generations do not carry over",
+      dailyExhausted: "That is all for today",
+      dailyExhaustedHint: (limit: number) => `${limit} per day. Comes back tomorrow`,
+      monthlyExhausted: "This month's generations are gone",
+      monthlyExhaustedHint: "Each daily check-in grants a random 1–3 more",
+      checkinLink: "Check in for more →",
+    },
+
+    history: {
+      title: "History",
+      count: (n: number) => `${n} total`,
+      empty: "Nothing generated yet",
+      emptyHint: "Write a description above and try your first one",
+      status: {
+        pending: "Queued",
+        running: "Generating",
+        completed: "Done",
+        failed: "Failed",
+      },
+      working: "Generating — usually under a minute",
+      refunded: "Generation refunded",
+      copyLink: "Copy link",
+      openDetail: "Details and links in every format",
+      reusePrompt: "Put this description back in the box",
+      failedLabel: "Reason",
+    },
   },
 
   uploader: {

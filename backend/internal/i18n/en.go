@@ -65,6 +65,12 @@ var en = map[string]string{
 	"otp.purpose.passkey":  "add passkey",
 	"otp.purpose.purge":    "clear gallery",
 	"otp.purpose.storage":  "change storage settings", "otp.purpose.reset": "reset password",
+	"ai.disabled":          "AI generation is not enabled on this site",
+	"ai.prompt_required":   "Describe the image you want first",
+	"ai.prompt_too_long":   "That description is too long — keep it under 1000 characters",
+	"ai.daily_limit":       "You've used today's generations — try again tomorrow",
+	"ai.no_credits":        "You're out of generations this month; daily check-in grants more",
+	"ai.submit_failed":     "Could not submit the generation: %s",
 	"otp.purpose.register": "sign up",
 	"otp.purpose.login":    "sign in",
 

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { authApi } from "./api";
+import { resetAIStatus } from "./aiStatus";
 import type { User } from "./types";
 
 interface AuthCtx {
@@ -51,6 +52,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout: async () => {
           await authApi.logout();
           setUser(null);
+          // AI credits are per account, and the cache outlives this session
+          // otherwise — the next person to sign in on this tab would see the
+          // previous one's remaining count until something refetched it.
+          resetAIStatus();
         },
         refresh,
       }}

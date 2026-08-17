@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gentpan/openimg/backend/internal/aigen"
 	"github.com/gentpan/openimg/backend/internal/auth"
 	"github.com/gentpan/openimg/backend/internal/crypto"
 	"github.com/gentpan/openimg/backend/internal/email"
@@ -38,6 +39,9 @@ type Server struct {
 	AppleAppID string
 	// ReactionSalt keeps hashed visitor addresses non-portable.
 	ReactionSalt string
+	// AIGen 是文生图上游。没配 APIMART_API_KEY 时它是禁用态,相关接口
+	// 一律回"未开启",界面据此把入口藏起来——而不是让用户点一下才收到 401。
+	AIGen *aigen.Client
 	Cipher       *crypto.Cipher
 
 	StorageDir string
@@ -181,6 +185,12 @@ func (s *Server) Router() *gin.Engine {
 	// holder cannot already derive from the image list.
 	machine.GET("/api/quota/transactions", s.handleQuotaTransactions)
 	machine.GET("/api/storage/summary", s.handleStorageSummary)
+
+	// AI 文生图。放在机器组:它就是一种上传,只不过图是生成出来的。
+	// 额度由 aigen 的余额与每日上限把关,不另设中间件。
+	machine.GET("/api/ai/status", s.handleAIStatus)
+	machine.GET("/api/ai/generations", s.handleAIGenerations)
+	machine.POST("/api/ai/generate", s.handleAIGenerate)
 	machine.GET("/api/checkin/history", s.handleCheckinHistory)
 	// Check-in is the one write here, and it is safe to expose: the only thing
 	// it can do is grant the token's own owner more space. Daily check-in is

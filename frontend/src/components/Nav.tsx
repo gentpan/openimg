@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import Logo from "../Logo";
 import { formatBytes, quotaApi } from "../api";
+import { useAIStatus } from "../aiStatus";
 import { RingSpinner } from "./Spinner";
 import { useBrand } from "../BrandContext";
 import { useLang } from "../LangContext";
@@ -22,6 +23,10 @@ export default function Nav() {
   const toast = useToast();
   const { pathname } = useLocation();
   const [busy, setBusy] = useState(false);
+  // Signed-out visitors never ask: the endpoint needs a session, and the entry
+  // it controls is inside the signed-in half of the bar anyway.
+  const { status: ai } = useAIStatus(!!user);
+  const aiEnabled = ai?.enabled === true;
 
   const pct = user && user.quota_bytes > 0 ? Math.min(100, (user.used_bytes / user.quota_bytes) * 100) : 0;
   const low = pct >= 90;
@@ -64,6 +69,16 @@ export default function Nav() {
               <NavItem to="/dashboard" icon="fa-gauge" label={t.nav.overview} active={pathname === "/dashboard"} />
               <NavItem to="/upload" icon="fa-cloud-arrow-up" label={t.common.upload} active={pathname === "/upload"} />
               <NavItem to="/gallery" icon="fa-images" label={t.nav.gallery} active={pathname === "/gallery"} />
+              {/* Absent, not disabled, where the deployment configured no AI
+                  key: there is nothing behind the link on such a build. */}
+              {aiEnabled && (
+                <NavItem
+                  to="/generate"
+                  icon="fa-wand-magic-sparkles"
+                  label={t.nav.generate}
+                  active={pathname === "/generate"}
+                />
+              )}
               <NavItem to="/refer" icon="fa-gift" label={t.nav.refer} active={pathname === "/refer"} />
             </>
           )}

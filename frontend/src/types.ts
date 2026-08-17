@@ -369,3 +369,59 @@ export interface OAuthStatus {
   email_otp: { enabled: boolean };
   base_url: string;
 }
+
+// ----- AI image generation -----
+
+/**
+ * A generation is asynchronous: the POST returns the moment the upstream task
+ * is accepted, and everything after that is observed by polling. `pending` and
+ * `running` are both "still working" — the split exists because the queue only
+ * flips to running once a worker has actually picked the job up.
+ */
+export type AIGenStatus = "pending" | "running" | "completed" | "failed";
+
+export interface AIGeneration {
+  id: string;
+  prompt: string;
+  model: string;
+  size: string;
+  resolution: string;
+  status: AIGenStatus;
+  /** Only on `failed`. The upstream message, shown to the user verbatim. */
+  error?: string;
+  /** Only on `completed`. Keys into the `images` map of the same response. */
+  image_id?: string;
+  /** How many generations this record consumed. Refunded whole on failure. */
+  credits: number;
+  created_at: string;
+  done_at?: string;
+}
+
+/**
+ * Two shapes, discriminated on `enabled`.
+ *
+ * A deployment without an upstream key answers `{enabled: false}` and nothing
+ * else — the feature does not exist there, so the union refuses to hand out
+ * quota numbers that were never sent.
+ */
+export interface AIStatusOff {
+  enabled: false;
+}
+
+export interface AIStatusOn {
+  enabled: true;
+  /** Generations left this month. Reset monthly, not accumulated. */
+  credits: number;
+  used_today: number;
+  daily_limit: number;
+  /** The monthly allowance, for reading `credits` as a fraction. */
+  monthly: number;
+  /** min(credits, daily_limit − used_today) — what is left right now. */
+  remaining: number;
+  /** Aspect ratios the server accepts, e.g. "16:9". */
+  sizes: string[];
+  /** Billing tiers, not pixel sizes: "1k" / "2k". */
+  resolutions: string[];
+}
+
+export type AIStatus = AIStatusOff | AIStatusOn;

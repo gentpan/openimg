@@ -10,6 +10,7 @@ import UploadPanel from "./components/UploadPanel";
 import AdminLayout from "./pages/Admin";
 import DashboardPage from "./pages/Dashboard";
 import GalleryPage from "./pages/Gallery";
+import GeneratePage from "./pages/Generate";
 import SharePage from "./pages/Share";
 import Home from "./pages/Home";
 import LoginPage from "./pages/Login";
@@ -50,6 +51,9 @@ export default function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/gallery" element={<GalleryPage />} />
+            {/* Sends itself away when the deployment has no AI key configured;
+                see pages/Generate.tsx. */}
+            <Route path="/generate" element={<GeneratePage />} />
             <Route path="/space" element={<SpacePage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/refer" element={<ReferPage />} />

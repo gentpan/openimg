@@ -77,6 +77,12 @@ var zh = map[string]string{
 	"otp.purpose.passkey":  "添加 Passkey",
 	"otp.purpose.purge":    "清空图库",
 	"otp.purpose.storage":  "修改存储配置", "otp.purpose.reset": "重置密码",
+	"ai.disabled":          "本站未开启 AI 生成",
+	"ai.prompt_required":   "请先描述你想要的画面",
+	"ai.prompt_too_long":   "描述太长了，请精简到 1000 字以内",
+	"ai.daily_limit":       "今天的生成次数已用完，明天再来",
+	"ai.no_credits":        "本月生成次数已用完，签到可以再领",
+	"ai.submit_failed":     "提交生成失败：%s",
 	"otp.purpose.register": "注册",
 	"otp.purpose.login":    "登录",
 

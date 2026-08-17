@@ -118,6 +118,25 @@ export default function GeneratePage() {
           </div>
         )}
 
+        <GenerationHistory
+          gens={gens}
+          images={images}
+          working={working}
+          title={t.generate.history.title}
+          empty={t.generate.history.empty}
+          emptyHint={t.generate.history.emptyHint}
+          icon="fa-wand-magic-sparkles"
+          reuseLabel={t.generate.history.reusePrompt}
+          onReuse={(g) => {
+            setPrompt(g.prompt);
+            promptRef.current?.focus();
+            // 输入框在页面底部,所以是把它滚进视野,而不是回到顶部——顶部
+            // 现在是历史列表,滚上去恰好看不到刚被填好的那个框。
+            promptRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }}
+          onOpenDetail={setDetail}
+        />
+
         <div className="grid lg:grid-cols-3 gap-3">
           {/* Composer */}
           <div className="lg:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
@@ -190,23 +209,6 @@ export default function GeneratePage() {
 
           <QuotaCard status={status} availableBytes={user.available_bytes} />
         </div>
-
-        <GenerationHistory
-          gens={gens}
-          images={images}
-          working={working}
-          title={t.generate.history.title}
-          empty={t.generate.history.empty}
-          emptyHint={t.generate.history.emptyHint}
-          icon="fa-wand-magic-sparkles"
-          reuseLabel={t.generate.history.reusePrompt}
-          onReuse={(g) => {
-            setPrompt(g.prompt);
-            promptRef.current?.focus();
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          onOpenDetail={setDetail}
-        />
       </div>
 
       {detail && (

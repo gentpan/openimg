@@ -185,6 +185,32 @@ export default function RetouchPage() {
           </div>
         )}
 
+        <GenerationHistory
+          gens={gens}
+          images={images}
+          working={working}
+          title={t.retouch.history.title}
+          empty={t.retouch.history.empty}
+          emptyHint={t.retouch.history.emptyHint}
+          icon="fa-wand-magic"
+          reuseLabel={t.retouch.history.reuse}
+          onReuse={(g) => {
+            setPrompt(g.prompt);
+            // The sources come back too where they can: re-running an edit with
+            // the same words on a different picture is rare, and re-picking the
+            // same four out of a gallery is the tedious half of the job.
+            const back = genSources(g)
+              .map(resolveSource)
+              .filter((i): i is Image => !!i);
+            if (back.length > 0) setSources(back);
+            promptRef.current?.focus();
+            // 输入区在底部,滚它进视野而不是回顶部——顶部现在是历史列表。
+            promptRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }}
+          onOpenDetail={setDetail}
+          resolveSource={resolveSource}
+        />
+
         <div className="grid lg:grid-cols-3 gap-3">
           {/* Composer */}
           <div className="lg:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
@@ -341,31 +367,6 @@ export default function RetouchPage() {
 
           <QuotaCard status={status} availableBytes={user.available_bytes} />
         </div>
-
-        <GenerationHistory
-          gens={gens}
-          images={images}
-          working={working}
-          title={t.retouch.history.title}
-          empty={t.retouch.history.empty}
-          emptyHint={t.retouch.history.emptyHint}
-          icon="fa-wand-magic"
-          reuseLabel={t.retouch.history.reuse}
-          onReuse={(g) => {
-            setPrompt(g.prompt);
-            // The sources come back too where they can: re-running an edit with
-            // the same words on a different picture is rare, and re-picking the
-            // same four out of a gallery is the tedious half of the job.
-            const back = genSources(g)
-              .map(resolveSource)
-              .filter((i): i is Image => !!i);
-            if (back.length > 0) setSources(back);
-            promptRef.current?.focus();
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          onOpenDetail={setDetail}
-          resolveSource={resolveSource}
-        />
       </div>
 
       {picking && (

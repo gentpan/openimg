@@ -384,6 +384,10 @@ export const zh = {
     submittedDetail: "通常几十秒，完成后会出现在下面的记录里",
     submitFailed: "提交失败",
     costHint: (n: number) => `本次消耗 ${n} 次`,
+    /** 放了参考图之后，这一次其实是「照着这几张改」，按钮下面得说一声。 */
+    withRefHint: (n: number) => `参考 ${n} 张图 · 消耗 1 次`,
+    refsUnresolved: "这条记录的参考图不在本次会话中，请重新选择",
+    submitWithRef: "按参考图生成",
 
     quota: {
       title: "生成额度",
@@ -427,19 +431,44 @@ export const zh = {
   },
 
   /**
+   * 选图那一行，两个 AI 页共用（components/ai/SourceImages）。修图页管它叫
+   * 「源图」、生成页管它叫「参考图」，除了这两个称呼和空态的分量，其余完全
+   * 是同一件事，所以文案也只有这一份。
+   */
+  aiSource: {
+    sourceLabel: "源图",
+    refLabel: "参考图",
+    optionalTag: "可选",
+    count: (n: number, max: number) => `${n} / ${max}`,
+    fromGallery: "从图库选",
+    uploadNew: "上传图片",
+    /** 两条提示都要说清「上传的图会进图库」，因为它确实会占用空间。 */
+    sourceHint: (max: number) => `最多 ${max} 张 · 从图库选，或把图片拖进来上传`,
+    refHint: (max: number) => `不填也能生成 · 最多 ${max} 张，可拖入上传`,
+    dropHere: "松开即可上传",
+    recentLabel: "最近上传",
+    retry: "重试",
+    uploadFailedTitle: "上传失败",
+    notImage: "只能上传图片文件，其余的已跳过",
+    full: (max: number) => `最多 ${max} 张，多出来的没有上传`,
+
+    /** 选图弹层。两页共用，所以标题说「图片」而不是「源图」。 */
+    picker: {
+      title: "从图库选图",
+      subtitle: (max: number) => `最多 ${max} 张 · 按选中的先后顺序交给模型`,
+      selected: (n: number, max: number) => `已选 ${n} / ${max}`,
+      limitReached: (max: number) => `已选满 ${max} 张，取消一张才能换`,
+      confirm: "就用这些",
+    },
+  },
+
+  /**
    * AI 修图。额度、状态、失败原因这些跟文生图共用一套（`generate.*`），
-   * 这里只写「选源图」这条路上独有的文案。
+   * 选图那一行走 `aiSource.*`，这里只剩这条路上独有的文案。
    */
   retouch: {
     title: "AI 修图",
-    subtitle: "从图库里挑 1–4 张图，写一句要改什么，改完的图直接进你的图库",
-    sourceLabel: "源图",
-    sourceCount: (n: number, max: number) => `${n} / ${max}`,
-    sourcePick: "从图库选图",
-    /** 说清楚图从哪来：这里不上传本地文件，图本来就在你的图床里。 */
-    sourceHint: (max: number) => `最多 ${max} 张，从已上传的图片里选`,
-    sourceAdd: "再加一张",
-    recentLabel: "最近上传",
+    subtitle: "挑 1–4 张图（图库里选或直接上传），写一句要改什么，改完的图直接进你的图库",
 
     presetsLabel: "常用改法",
     presets: {
@@ -461,14 +490,6 @@ export const zh = {
     submitted: "已提交",
     submittedDetail: "通常几十秒，完成后会出现在下面的记录里",
     submitFailed: "提交失败",
-
-    picker: {
-      title: "选择源图",
-      subtitle: (max: number) => `最多 ${max} 张 · 按选中的先后顺序交给模型`,
-      selected: (n: number, max: number) => `已选 ${n} / ${max}`,
-      limitReached: (max: number) => `已选满 ${max} 张，取消一张才能换`,
-      confirm: "就用这些",
-    },
 
     history: {
       title: "修图记录",

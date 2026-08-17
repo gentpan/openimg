@@ -10,11 +10,14 @@ import type { Image } from "../../types";
 const PAGE = 24;
 
 /**
- * Picks source pictures for a retouch out of the user's own gallery.
+ * Picks pictures out of the user's own gallery — sources for a retouch, or
+ * references for a generation.
  *
- * Not a file input. The pictures are already hosted here, and the upstream
- * editor takes public URLs — asking someone to upload a copy of a file this
- * service is already serving costs a round trip and leaves a duplicate behind.
+ * Not a file input, and deliberately still not one: what upstream needs is a
+ * public URL, so a picture that is already hosted here needs nothing done to
+ * it. Local files reach the same place from the row that opens this dialog
+ * (components/ai/SourceImages) — they go up through the ordinary upload
+ * pipeline first and arrive here as ordinary gallery images.
  *
  * Selection is an ordered list rather than a set: the order the ids go up is
  * the order the model reads them in, and for a two-image edit ("put the subject
@@ -89,8 +92,8 @@ export default function ImagePicker({
       <div className="relative flex w-full max-w-4xl max-h-full flex-col rounded-2xl border border-neutral-800 bg-neutral-900 shadow-panel">
         <div className="flex flex-wrap items-center gap-3 border-b border-neutral-800 px-5 py-3">
           <div className="min-w-0">
-            <div className="text-sm text-neutral-100">{t.retouch.picker.title}</div>
-            <div className="text-[11px] text-neutral-600">{t.retouch.picker.subtitle(max)}</div>
+            <div className="text-sm text-neutral-100">{t.aiSource.picker.title}</div>
+            <div className="text-[11px] text-neutral-600">{t.aiSource.picker.subtitle(max)}</div>
           </div>
 
           <div className="flex-1" />
@@ -173,9 +176,9 @@ export default function ImagePicker({
 
         <div className="flex items-center gap-3 border-t border-neutral-800 px-5 py-3">
           <span className={`text-[11px] tabular-nums ${full ? "text-amber-300" : "text-neutral-500"}`}>
-            {t.retouch.picker.selected(picked.length, max)}
+            {t.aiSource.picker.selected(picked.length, max)}
           </span>
-          {full && <span className="text-[10px] text-neutral-600">{t.retouch.picker.limitReached(max)}</span>}
+          {full && <span className="text-[10px] text-neutral-600">{t.aiSource.picker.limitReached(max)}</span>}
 
           <div className="flex-1" />
 
@@ -190,7 +193,7 @@ export default function ImagePicker({
             disabled={picked.length === 0}
             className="rounded-xl bg-brand-600 px-4 py-2 text-xs font-medium text-brand-ink transition hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-600"
           >
-            {t.retouch.picker.confirm}
+            {t.aiSource.picker.confirm}
           </button>
         </div>
       </div>

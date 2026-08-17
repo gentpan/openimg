@@ -5,8 +5,15 @@ import Footer from "../Footer";
 import Nav from "../components/Nav";
 import ImageDetail from "../components/ImageDetail";
 import { RingSpinner } from "../components/Spinner";
+import SourceImages from "../components/ai/SourceImages";
 import { Center, GenerationHistory, OptionPicker, QuotaCard } from "../components/ai/parts";
-import { MAX_PROMPT, useGenerations } from "../components/ai/generations";
+import {
+  MAX_PROMPT,
+  MAX_SOURCES,
+  genSources,
+  useGenerations,
+  useKnownImages,
+} from "../components/ai/generations";
 import { aiApi } from "../api";
 import { refreshAIStatus, useAIStatus } from "../aiStatus";
 import { useLang } from "../LangContext";
@@ -20,6 +27,12 @@ import type { Image } from "../types";
  * status endpoint answers `{enabled: false}` otherwise and both this route and
  * its nav entry disappear, because a disabled feature that is still visible
  * reads as something broken rather than something absent.
+ *
+ * Reference pictures are optional and change which endpoint the one button
+ * calls: with none it is text-to-image, and with one to four it is the edit
+ * endpoint, given those pictures to work from. That is a difference in what the
+ * request contains, not a mode the user switches into — attaching a picture is
+ * already the switch, and a toggle beside it would only let the two disagree.
  *
  * Everything after submission is polled: the POST returns a `pending` record,
  * and the history below is refetched until that record settles. Polling stops
@@ -35,6 +48,9 @@ export default function GeneratePage() {
   const { status, loading: statusLoading } = useAIStatus(!!user);
 
   const [prompt, setPrompt] = useState("");
+  // Optional. Empty is the ordinary case, and the row below stays a single line
+  // until something is in it.
+  const [refs, setRefs] = useState<Image[]>([]);
   // Null until the user picks. The valid set arrives with the status, so the
   // effective choice is derived below rather than stored and then corrected —
   // storing it would mean rendering buttons for a value the server will
@@ -50,10 +66,27 @@ export default function GeneratePage() {
 
   // The moment the last job settles: a completed picture consumed storage, and
   // a failed one handed a credit back. Both numbers live outside this page.
-  const { gens, images, setImages, working, prepend } = useGenerations(!!user, "generate", () => {
-    refresh();
-    refreshAIStatus();
-  });
+  //
+  // Both kinds are listed, because a submission with reference pictures *is* an
+  // edit: filtered to "generate" alone, the record the user just watched appear
+  // would vanish on the next poll and turn up on a page they were not on.
+  const { gens, images, setImages, working, prepend } = useGenerations(
+    !!user,
+    ["generate", "edit"],
+    () => {
+      refresh();
+      refreshAIStatus();
+    },
+  );
+
+  // Reference pictures this session has seen, so an edit row can draw what it
+  // started from rather than only saying how many went in.
+  const { remember, forget, resolve: resolveSource } = useKnownImages(images);
+
+  function pickRefs(next: Image[]) {
+    setRefs(next);
+    remember(next);
+  }
 
   const sizes = status?.enabled ? status.sizes : [];
   const resolutions = status?.enabled ? status.resolutions : [];
@@ -67,7 +100,19 @@ export default function GeneratePage() {
     setBusy(true);
     setErr(null);
     try {
-      const gen = await aiApi.generate(text, activeSize, activeResolution);
+      // The whole of the branch. One button, two endpoints: reference pictures
+      // are what the edit endpoint exists for, and sending none of them to it
+      // is the one thing it refuses.
+      const gen =
+        refs.length > 0
+          ? await aiApi.edit(
+              text,
+              refs.map((r) => r.id),
+              activeSize,
+              activeResolution,
+            )
+          : await aiApi.generate(text, activeSize, activeResolution);
+      if (refs.length > 0) remember(refs);
       // Prepended rather than refetched: the record is already the server's
       // own, and waiting a round trip to see your own submission appear is
       // exactly the moment a page feels unresponsive.
@@ -127,8 +172,26 @@ export default function GeneratePage() {
           emptyHint={t.generate.history.emptyHint}
           icon="fa-wand-magic-sparkles"
           reuseLabel={t.generate.history.reusePrompt}
+          resolveSource={resolveSource}
           onReuse={(g) => {
             setPrompt(g.prompt);
+            // Re-running an edit means re-running it on the same pictures; the
+            // ones this session can still resolve come back with the words.
+            const want = genSources(g);
+            const back = want
+              .map((id) => resolveSource(id))
+              .filter((i): i is Image => !!i);
+            // 只在真的取回了参考图时才替换。无条件 setRefs 有两个后果:抄一条
+            // 纯文生图记录的措辞会把已挂的参考图静默清空;而一条 edit 记录若
+            // 因为刷新过页面解析不出源图,按钮会从「按参考图生成」变回「生成
+            // 图片」——再点一下就是一次凭空文生图,扣掉一次额度,产出一张与
+            // 预期无关的图。
+            if (back.length > 0) setRefs(back);
+            setErr(
+              want.length > 0 && back.length < want.length
+                ? t.generate.refsUnresolved
+                : "",
+            );
             promptRef.current?.focus();
             // 输入框在页面底部,所以是把它滚进视野,而不是回到顶部——顶部
             // 现在是历史列表,滚上去恰好看不到刚被填好的那个框。
@@ -162,6 +225,19 @@ export default function GeneratePage() {
               }`}
             />
 
+            {/* After the prompt, not before it: the words are what this page is
+                for, and most generations never attach a picture. Empty, this is
+                one line. */}
+            <div className="mt-4">
+              <SourceImages
+                value={refs}
+                onChange={pickRefs}
+                max={MAX_SOURCES}
+                variant="optional"
+                onUploaded={() => refresh()}
+              />
+            </div>
+
             <div className="mt-4">
               <OptionPicker
                 label={t.generate.sizeLabel}
@@ -185,7 +261,9 @@ export default function GeneratePage() {
             {err && <div className="mt-3 text-[11px] text-red-400">{err}</div>}
 
             <div className="mt-4 flex items-center gap-3">
-              <span className="text-[11px] text-neutral-600">{t.generate.costHint(1)}</span>
+              <span className="text-[11px] text-neutral-600">
+                {refs.length > 0 ? t.generate.withRefHint(refs.length) : t.generate.costHint(1)}
+              </span>
               <div className="flex-1" />
               <button
                 onClick={submit}
@@ -200,7 +278,9 @@ export default function GeneratePage() {
                 ) : (
                   <>
                     <i className="fa-solid fa-wand-magic-sparkles mr-1.5 text-xs" />
-                    {t.generate.submit}
+                    {/* The label follows the request rather than announcing a
+                        mode: it is still one button doing one thing. */}
+                    {refs.length > 0 ? t.generate.submitWithRef : t.generate.submit}
                   </>
                 )}
               </button>
@@ -223,6 +303,8 @@ export default function GeneratePage() {
               delete next[detail.id];
               return next;
             });
+            forget(detail.id);
+            setRefs((prev) => prev.filter((r) => r.id !== detail.id));
             setDetail(null);
             refresh();
           }}

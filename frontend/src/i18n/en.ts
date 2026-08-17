@@ -383,6 +383,9 @@ export const en: Dict = {
     submittedDetail: "Usually under a minute — it appears in the history below when it is done",
     submitFailed: "Could not submit",
     costHint: (n: number) => `Uses ${n} ${p(n, "generation", "generations")}`,
+    withRefHint: (n: number) => `From ${n} reference ${p(n, "picture", "pictures")} · uses 1`,
+    refsUnresolved: "This record’s reference images aren’t loaded in this session — pick them again",
+    submitWithRef: "Generate from references",
 
     quota: {
       title: "Generation allowance",
@@ -422,16 +425,35 @@ export const en: Dict = {
     },
   },
 
+  aiSource: {
+    sourceLabel: "Source pictures",
+    refLabel: "Reference pictures",
+    optionalTag: "optional",
+    count: (n: number, max: number) => `${n} / ${max}`,
+    fromGallery: "From gallery",
+    uploadNew: "Upload",
+    sourceHint: (max: number) => `Up to ${max} · pick from your gallery, or drop files here`,
+    refHint: (max: number) => `Works without them · up to ${max}, drop files here to upload`,
+    dropHere: "Drop to upload",
+    recentLabel: "Recent",
+    retry: "Retry",
+    uploadFailedTitle: "Upload failed",
+    notImage: "Only image files can be uploaded — the rest were skipped",
+    full: (max: number) => `${max} is the limit — the extras were not uploaded`,
+
+    picker: {
+      title: "Choose from your gallery",
+      subtitle: (max: number) => `Up to ${max} · the model reads them in the order you pick`,
+      selected: (n: number, max: number) => `${n} of ${max} selected`,
+      limitReached: (max: number) => `${max} is the limit — deselect one to swap`,
+      confirm: "Use these",
+    },
+  },
+
   retouch: {
     title: "AI retouch",
     subtitle:
-      "Pick one to four pictures from your gallery, say what to change, and the result lands back in your gallery",
-    sourceLabel: "Source pictures",
-    sourceCount: (n: number, max: number) => `${n} / ${max}`,
-    sourcePick: "Choose from your gallery",
-    sourceHint: (max: number) => `Up to ${max}, from what you have already uploaded`,
-    sourceAdd: "Add another",
-    recentLabel: "Recent",
+      "Take one to four pictures — from your gallery or straight off your desktop — say what to change, and the result lands back in your gallery",
 
     presetsLabel: "Common edits",
     presets: {
@@ -452,14 +474,6 @@ export const en: Dict = {
     submitted: "Submitted",
     submittedDetail: "Usually under a minute — it appears in the history below when it is done",
     submitFailed: "Could not submit",
-
-    picker: {
-      title: "Choose source pictures",
-      subtitle: (max: number) => `Up to ${max} · the model reads them in the order you pick`,
-      selected: (n: number, max: number) => `${n} of ${max} selected`,
-      limitReached: (max: number) => `${max} is the limit — deselect one to swap`,
-      confirm: "Use these",
-    },
 
     history: {
       title: "Retouch history",

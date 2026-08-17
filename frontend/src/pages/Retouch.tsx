@@ -1,14 +1,20 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import Footer from "../Footer";
 import Nav from "../components/Nav";
 import ImageDetail from "../components/ImageDetail";
 import { RingSpinner } from "../components/Spinner";
-import ImagePicker from "../components/ai/ImagePicker";
+import SourceImages from "../components/ai/SourceImages";
 import { Center, GenerationHistory, OptionPicker, QuotaCard } from "../components/ai/parts";
-import { MAX_PROMPT, MAX_SOURCES, genSources, useGenerations } from "../components/ai/generations";
-import { aiApi, imageApi } from "../api";
+import {
+  MAX_PROMPT,
+  MAX_SOURCES,
+  genSources,
+  useGenerations,
+  useKnownImages,
+} from "../components/ai/generations";
+import { aiApi } from "../api";
 import { refreshAIStatus, useAIStatus } from "../aiStatus";
 import { useLang } from "../LangContext";
 import { useToast } from "../ToastContext";
@@ -61,10 +67,13 @@ const PRESETS = [
  *
  * Same credits, same submission-then-poll shape, same allowance card and
  * history list (all of it in components/ai/shared). The one difference is what
- * goes in: one to four pictures the user already owns, chosen from their
- * gallery rather than uploaded. They are already on a public CDN origin, so the
- * server hands upstream their URLs — a local file picker here would upload a
- * second copy of a file this service is already serving.
+ * goes in: one to four pictures out of the user's own gallery. Dropping a local
+ * file on the source row is a shortcut to the same place rather than a second
+ * intake — it uploads through the ordinary pipeline first and the resulting
+ * gallery picture is what gets selected, so the server still hands upstream a
+ * URL it can fetch and the record still names an image that can be clicked
+ * back into. All of that lives in components/ai/SourceImages, shared with the
+ * generate page's reference pictures.
  *
  * Like the generate page it only exists where the deployment configured an
  * upstream key; without one both this route and its nav entry are absent.
@@ -77,10 +86,6 @@ export default function RetouchPage() {
 
   const [prompt, setPrompt] = useState("");
   const [sources, setSources] = useState<Image[]>([]);
-  const [picking, setPicking] = useState(false);
-  // 最近上传的十张,供输入区一键取用:多数修图针对的就是刚传上去那张,
-  // 为它开一次选图窗再从头找一遍,步骤全花在"找回自己五秒前传的图"上。
-  const [recent, setRecent] = useState<Image[]>([]);
   // Null means "don't send it". Retouching is the case where that is a real
   // answer: with no size the output keeps the shape of the picture that went
   // in, which is what someone removing a watermark almost always wants.
@@ -93,42 +98,21 @@ export default function RetouchPage() {
 
   const promptRef = useRef<HTMLTextAreaElement>(null);
 
-  // 已经选中的排除掉——留着只会让人点了没反应,而它在原图行里本来就看得见。
-  const recentPickable = recent.filter((r) => !sources.some((s) => s.id === r.id));
-
-  // 只在进页面时拉一次:它是捷径不是图库,不必跟着每次上传实时更新。
-  useEffect(() => {
-    let alive = true;
-    imageApi
-      .list({ limit: 10, offset: 0, sort: "newest" })
-      .then((r) => alive && setRecent(r.images ?? []))
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  // Source pictures this session has seen, kept so a history row can show what
-  // an edit started from. The generations endpoint only promises the *result*
-  // image in its map — the sources are ordinary gallery images and may never
-  // have been fetched on this page — so what the user picked is remembered here
-  // rather than asked for again.
-  const [known, setKnown] = useState<Record<string, Image>>({});
-
   const { gens, images, setImages, working, prepend } = useGenerations(!!user, "edit", () => {
     refresh();
     refreshAIStatus();
   });
 
-  function remember(list: Image[]) {
-    setKnown((prev) => {
-      const next = { ...prev };
-      for (const img of list) next[img.id] = img;
-      return next;
-    });
-  }
+  // What the user picked or uploaded, kept so a history row can show what an
+  // edit started from.
+  const { remember, forget, resolve: resolveSource } = useKnownImages(images);
 
-  const resolveSource = (id: string): Image | undefined => known[id] ?? images[id];
+  /** Selection and its bookkeeping move together — a source that is not
+   *  remembered is a history row that cannot draw its own thumbnail. */
+  function pickSources(next: Image[]) {
+    setSources(next);
+    remember(next);
+  }
 
   const sizes = status?.enabled ? status.sizes : [];
   const resolutions = status?.enabled ? status.resolutions : [];
@@ -218,7 +202,7 @@ export default function RetouchPage() {
             // the same words on a different picture is rare, and re-picking the
             // same four out of a gallery is the tedious half of the job.
             const back = genSources(g)
-              .map(resolveSource)
+              .map((id) => resolveSource(id))
               .filter((i): i is Image => !!i);
             if (back.length > 0) setSources(back);
             promptRef.current?.focus();
@@ -234,88 +218,15 @@ export default function RetouchPage() {
           <div className="lg:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
             {/* Sources first: nothing below it means anything until there is a
                 picture to apply it to. */}
-            <div className="mb-1.5 flex items-baseline justify-between">
-              <span className="text-xs text-neutral-300">{t.retouch.sourceLabel}</span>
-              <span className="text-[10px] tabular-nums text-neutral-600">
-                {t.retouch.sourceCount(sources.length, MAX_SOURCES)}
-              </span>
-            </div>
-
-            {sources.length === 0 ? (
-              <button
-                onClick={() => setPicking(true)}
-                className="flex w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-neutral-800 bg-neutral-950 px-4 py-8 text-neutral-500 transition hover:border-brand-500 hover:text-brand-300"
-              >
-                <i className="fa-solid fa-images text-lg" />
-                <span className="text-xs">{t.retouch.sourcePick}</span>
-                <span className="text-[10px] text-neutral-600">{t.retouch.sourceHint(MAX_SOURCES)}</span>
-              </button>
-            ) : (
-              <div className="flex flex-wrap items-center gap-2">
-                {sources.map((img, i) => (
-                  <div
-                    key={img.id}
-                    className="group relative h-20 w-20 overflow-hidden rounded-xl border border-neutral-800"
-                  >
-                    <img
-                      src={img.thumb_url}
-                      alt={img.orig_name}
-                      title={img.orig_name}
-                      loading="lazy"
-                      className="h-full w-full object-cover"
-                    />
-                    <span className="absolute left-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/60 text-[9px] tabular-nums text-white">
-                      {i + 1}
-                    </span>
-                    <button
-                      onClick={() => setSources((prev) => prev.filter((p) => p.id !== img.id))}
-                      title={t.common.remove}
-                      aria-label={t.common.remove}
-                      className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/60 text-[9px] text-white/70 transition hover:bg-red-600 hover:text-white"
-                    >
-                      <i className="fa-solid fa-xmark" />
-                    </button>
-                  </div>
-                ))}
-                {sources.length < MAX_SOURCES && (
-                  <button
-                    onClick={() => setPicking(true)}
-                    title={t.retouch.sourceAdd}
-                    className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-neutral-800 text-neutral-600 transition hover:border-brand-500 hover:text-brand-300"
-                  >
-                    <i className="fa-solid fa-plus text-sm" />
-                    <span className="text-[10px]">{t.retouch.sourceAdd}</span>
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* 最近上传的快捷条。方块比原图小一半:它是捷径不是主角,尺寸上
-                就该分得出来。已选中的排除掉,留着只会让人点了没反应。 */}
-            {sources.length < MAX_SOURCES && recentPickable.length > 0 && (
-              <div className="mt-3">
-                <div className="mb-1.5 text-[10px] uppercase tracking-wider text-neutral-600">
-                  {t.retouch.recentLabel}
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {recentPickable.map((img) => (
-                    <button
-                      key={img.id}
-                      onClick={() => setSources((prev) => [...prev, img])}
-                      title={img.orig_name}
-                      className="h-11 w-11 overflow-hidden rounded-lg border border-neutral-800 transition hover:border-brand-500"
-                    >
-                      <img
-                        src={img.thumb_url}
-                        alt={img.orig_name}
-                        loading="lazy"
-                        className="h-full w-full object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <SourceImages
+              value={sources}
+              onChange={pickSources}
+              max={MAX_SOURCES}
+              variant="required"
+              // An upload spent storage, and the figure sits on the card to
+              // the right of this one.
+              onUploaded={() => refresh()}
+            />
 
             {/* Presets. Five things people actually come here to do, each one a
                 first draft in the box rather than a mode — the text stays
@@ -414,19 +325,6 @@ export default function RetouchPage() {
         </div>
       </div>
 
-      {picking && (
-        <ImagePicker
-          initial={sources}
-          max={MAX_SOURCES}
-          onCancel={() => setPicking(false)}
-          onConfirm={(picked) => {
-            setSources(picked);
-            remember(picked);
-            setPicking(false);
-          }}
-        />
-      )}
-
       {detail && (
         <ImageDetail
           img={detail}
@@ -440,11 +338,7 @@ export default function RetouchPage() {
               delete next[detail.id];
               return next;
             });
-            setKnown((prev) => {
-              const next = { ...prev };
-              delete next[detail.id];
-              return next;
-            });
+            forget(detail.id);
             setSources((prev) => prev.filter((s) => s.id !== detail.id));
             setDetail(null);
             refresh();

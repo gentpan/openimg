@@ -63,16 +63,24 @@ export function genSources(g: AIGeneration): string[] {
 /**
  * The polled history, shared by both pages.
  *
- * `kind` filters what comes back: each page lists its own work, so the count in
- * its header means something and "still working" refers to a row you can see.
- * The fetch itself is unfiltered — one endpoint serves both — and the split
- * happens here.
+ * `kind` filters what comes back: each page lists its work, so the count in its
+ * header means something and "still working" refers to a row you can see. The
+ * fetch itself is unfiltered — one endpoint serves both — and the split happens
+ * here.
+ *
+ * It takes a list because one page is no longer one kind: the generate page
+ * submits an *edit* the moment reference pictures are attached, and a filter of
+ * `"generate"` alone would swallow the record the user just watched appear.
  *
  * `onSettled` fires once, on the edge where the last in-flight job finishes: a
  * completed picture consumed storage and a failed one handed a credit back, and
  * both of those numbers live outside this hook.
  */
-export function useGenerations(active: boolean, kind: GenKind, onSettled: () => void) {
+export function useGenerations(
+  active: boolean,
+  kind: GenKind | GenKind[],
+  onSettled: () => void,
+) {
   const [gens, setGens] = useState<AIGeneration[]>([]);
   const [images, setImages] = useState<Record<string, Image>>({});
 
@@ -107,7 +115,8 @@ export function useGenerations(active: boolean, kind: GenKind, onSettled: () => 
     refreshAIStatus();
   }, [active, load]);
 
-  const mine = gens.filter((g) => genKind(g) === kind);
+  const kinds = Array.isArray(kind) ? kind : [kind];
+  const mine = gens.filter((g) => kinds.includes(genKind(g)));
   const working = mine.some((g) => inFlight(g.status));
 
   useEffect(() => {
@@ -135,4 +144,44 @@ export function useGenerations(active: boolean, kind: GenKind, onSettled: () => 
   }, []);
 
   return { gens: mine, images, setImages, working, prepend, reload: load };
+}
+
+/**
+ * The source pictures this session has seen.
+ *
+ * A history row wants to show what an edit started from, but the generations
+ * endpoint only promises the *result* image in its map — the sources are
+ * ordinary gallery images this page may never have fetched. So what the user
+ * picked or uploaded is remembered here rather than asked for again, and
+ * `resolve` falls back to the server's map for anything it does not hold.
+ *
+ * Both AI pages need it now that either of them can submit an edit.
+ */
+export function useKnownImages(images: Record<string, Image>) {
+  const [known, setKnown] = useState<Record<string, Image>>({});
+
+  const remember = useCallback((list: Image[]) => {
+    setKnown((prev) => {
+      const next = { ...prev };
+      for (const img of list) next[img.id] = img;
+      return next;
+    });
+  }, []);
+
+  /** The record outlives its picture: once one is deleted, stop offering a
+   *  thumbnail that now 404s. */
+  const forget = useCallback((id: string) => {
+    setKnown((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }, []);
+
+  const resolve = useCallback(
+    (id: string): Image | undefined => known[id] ?? images[id],
+    [known, images],
+  );
+
+  return { remember, forget, resolve };
 }

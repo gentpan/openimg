@@ -400,6 +400,8 @@ export const zh = {
       monthlyExhausted: "这个月的次数用完了",
       monthlyExhaustedHint: "每天签到随机送 1–3 次，攒够了就能接着生成",
       checkinLink: "去签到领次数 →",
+      /** 签到反馈里的一句：不说的话，用户不知道签到到底有没有把次数领到手。 */
+      checkinGranted: (n: number) => `另外领到 ${n} 次 AI 生成`,
     },
 
     history: {

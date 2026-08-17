@@ -41,6 +41,15 @@ type AIGeneration struct {
 type AIGenStatus string
 
 const (
+	// AIGenCharging 是"额度已扣、还没递交给上游"的一瞬。
+	//
+	// 它存在的理由是日限:UsedToday 数的是这张表的行,如果行要等递交成功
+	// 才写,并发的请求就会全部读到同一个旧计数、全部放行。把行提到扣费
+	// 那一刻落库,它才能同时当计数器用。
+	//
+	// 副产品是对账有了抓手:一条停在 charging 又没有 TaskID 的老记录,
+	// 就是扣了费却没递交出去的孤儿。
+	AIGenCharging  AIGenStatus = "charging"
 	AIGenPending   AIGenStatus = "pending"
 	AIGenRunning   AIGenStatus = "running"
 	AIGenCompleted AIGenStatus = "completed"

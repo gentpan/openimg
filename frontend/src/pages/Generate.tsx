@@ -9,7 +9,7 @@ import { aiApi, formatBytes } from "../api";
 import { refreshAIStatus, useAIStatus } from "../aiStatus";
 import { useLang } from "../LangContext";
 import { useToast } from "../ToastContext";
-import type { AIGeneration, Image } from "../types";
+import type { AIGeneration, AIGenStatus, Image } from "../types";
 
 /** Mirrors the server's own cap. Enforced here so the counter can turn red
  *  before a submission is rejected for a reason nothing on screen showed. */
@@ -18,6 +18,17 @@ const MAX_PROMPT = 1000;
 /** Generation takes tens of seconds; three seconds is frequent enough to feel
  *  live without turning one picture into twenty requests. */
 const POLL_MS = 3000;
+
+/**
+ * Still working.
+ *
+ * Asked as "not settled" rather than by listing the working states, because the
+ * two sides of that question fail differently: a status this build has not
+ * heard of should keep the spinner up and the polling going until the server
+ * calls it done, not look finished and stop the one thing that would have
+ * corrected it.
+ */
+const inFlight = (s: AIGenStatus) => s !== "completed" && s !== "failed";
 
 /**
  * Text to image.
@@ -54,8 +65,17 @@ export default function GeneratePage() {
 
   const promptRef = useRef<HTMLTextAreaElement>(null);
 
+  // Every list fetch takes a ticket, and only the newest one may write. Without
+  // it a poll issued three seconds ago can land *after* a submission and
+  // overwrite the record that submission just put on screen — and with nothing
+  // pending any more, the polling that was about to correct the list stops too,
+  // so the generation stays invisible until a reload.
+  const ticket = useRef(0);
+
   const load = useCallback(async () => {
+    const mine = ++ticket.current;
     const r = await aiApi.generations();
+    if (mine !== ticket.current) return;
     setGens(r.generations);
     setImages(r.images);
   }, []);
@@ -74,7 +94,7 @@ export default function GeneratePage() {
   const activeResolution =
     resolution && resolutions.includes(resolution) ? resolution : (resolutions[0] ?? "1k");
 
-  const active = gens.some((g) => g.status === "pending" || g.status === "running");
+  const active = gens.some((g) => inFlight(g.status));
 
   useEffect(() => {
     if (!active) return;
@@ -106,7 +126,10 @@ export default function GeneratePage() {
       const gen = await aiApi.generate(text, activeSize, activeResolution);
       // Prepended rather than refetched: the record is already the server's
       // own, and waiting a round trip to see your own submission appear is
-      // exactly the moment a page feels unresponsive.
+      // exactly the moment a page feels unresponsive. Any list fetch still in
+      // flight was issued before this record existed, so it is now stale —
+      // retire its ticket rather than let it erase what was just added.
+      ticket.current++;
       setGens((prev) => [gen, ...prev]);
       toast.success(t.generate.submitted, t.generate.submittedDetail);
     } catch (e) {
@@ -139,9 +162,14 @@ export default function GeneratePage() {
   if (!status || !status.enabled) return <Navigate to="/dashboard" replace />;
 
   // Which wall you hit decides what to do about it, so the two are never
-  // collapsed into one "out of quota". Monthly wins when both are spent: it is
-  // the one that is still there tomorrow.
-  const blocked = status.remaining > 0 ? null : status.credits <= 0 ? "monthly" : "daily";
+  // collapsed into one "out of quota". They are also not exclusive: spending
+  // the last of the month on the same day as the fifth of the day hits both,
+  // and showing only one of them would send someone off to check in for
+  // credits they still could not spend until tomorrow. So each is asked
+  // separately, and both notices appear when both are true.
+  const blocked = status.remaining <= 0;
+  const monthlySpent = status.credits <= 0;
+  const dailySpent = status.used_today >= status.daily_limit;
   const overLimit = prompt.length > MAX_PROMPT;
   const canSubmit =
     !busy && prompt.trim().length > 0 && !overLimit && !blocked && user.email_verified;
@@ -295,18 +323,9 @@ export default function GeneratePage() {
             </div>
             <div className="mt-1.5 text-[10px] text-faint">{t.generate.quota.resetNote}</div>
 
-            {blocked === "daily" && (
-              <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-950/20 px-3 py-2.5 text-[11px] text-amber-200">
-                <div>
-                  <i className="fa-solid fa-clock mr-1.5" />
-                  {t.generate.quota.dailyExhausted}
-                </div>
-                <div className="mt-1 text-amber-200/70">
-                  {t.generate.quota.dailyExhaustedHint(status.daily_limit)}
-                </div>
-              </div>
-            )}
-            {blocked === "monthly" && (
+            {/* Monthly first when both are up: its remedy is the one that takes
+                a day to act on, so it is the one to start on. */}
+            {blocked && monthlySpent && (
               <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-950/20 px-3 py-2.5 text-[11px] text-amber-200">
                 <div>
                   <i className="fa-solid fa-hourglass-end mr-1.5" />
@@ -318,6 +337,17 @@ export default function GeneratePage() {
                 <Link to="/space" className="mt-1.5 inline-block text-brand-400 hover:underline">
                   {t.generate.quota.checkinLink}
                 </Link>
+              </div>
+            )}
+            {blocked && dailySpent && (
+              <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-950/20 px-3 py-2.5 text-[11px] text-amber-200">
+                <div>
+                  <i className="fa-solid fa-clock mr-1.5" />
+                  {t.generate.quota.dailyExhausted}
+                </div>
+                <div className="mt-1 text-amber-200/70">
+                  {t.generate.quota.dailyExhaustedHint(status.daily_limit)}
+                </div>
               </div>
             )}
             {/* Storage is the other thing a generated picture spends, and it is
@@ -382,7 +412,7 @@ export default function GeneratePage() {
                         {g.prompt}
                       </div>
 
-                      {(g.status === "pending" || g.status === "running") && (
+                      {inFlight(g.status) && (
                         <div className="mt-1 text-[10px] text-neutral-600">
                           {t.generate.history.working}
                         </div>
@@ -497,9 +527,7 @@ function StatusBadge({ status, label }: { status: AIGeneration["status"]; label:
         : "bg-neutral-800 text-neutral-400";
   return (
     <span className={`rounded-full px-2 py-0.5 text-[10px] ${tone}`}>
-      {(status === "pending" || status === "running") && (
-        <RingSpinner className="h-2.5 w-2.5 inline-block align-[-1px] mr-1" />
-      )}
+      {inFlight(status) && <RingSpinner className="h-2.5 w-2.5 inline-block align-[-1px] mr-1" />}
       {label}
     </span>
   );

@@ -397,6 +397,7 @@ export const en: Dict = {
       monthlyExhausted: "This month's generations are gone",
       monthlyExhaustedHint: "Each daily check-in grants a random 1–3 more",
       checkinLink: "Check in for more →",
+      checkinGranted: (n: number) => `Plus ${n} AI ${p(n, "generation", "generations")}`,
     },
 
     history: {

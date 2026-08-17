@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -104,8 +105,16 @@ func (s *Server) handleAIGenerate(c *gin.Context) {
 	}
 
 	g := s.groupFor(u)
-	// 先扣后调:上游那一次调用是真花钱的,先调再扣会让并发请求越过余额。
-	if err := aigen.Reserve(s.DB, u, g, 1); err != nil {
+	gen := models.AIGeneration{
+		Prompt:     prompt,
+		Model:      aigen.DefaultModel,
+		Size:       size,
+		Resolution: resolution,
+		Credits:    1,
+	}
+	// 数今日、扣额度、落记录三步在一个事务里完成,理由见 aigen.Begin:
+	// 记录不落库,日限就没有计数依据,并发提交会全部放行。
+	if err := aigen.Begin(s.DB, u, g, &gen); err != nil {
 		switch {
 		case errors.Is(err, aigen.ErrDailyLimit):
 			c.JSON(http.StatusTooManyRequests, gin.H{"error": i18n.T(c, "ai.daily_limit")})
@@ -121,27 +130,25 @@ func (s *Server) handleAIGenerate(c *gin.Context) {
 	defer cancel()
 	taskID, err := s.AIGen.Submit(ctx, prompt, aigen.DefaultModel, size, resolution)
 	if err != nil {
-		// 没提交成功就没花上游的钱,把次数还回去。
-		_ = aigen.Refund(s.DB, u.ID, 1)
+		// 没递交成功就没花上游的钱。走统一的失败路径,让退款和状态落库
+		// 只发生一次。
+		_ = s.failAIGen(&gen, err.Error())
 		c.JSON(http.StatusBadGateway, gin.H{"error": i18n.T(c, "ai.submit_failed", err.Error())})
 		return
 	}
 
-	gen := models.AIGeneration{
-		UserID:     u.ID,
-		Prompt:     prompt,
-		Model:      aigen.DefaultModel,
-		Size:       size,
-		Resolution: resolution,
-		TaskID:     taskID,
-		Status:     models.AIGenPending,
-		Credits:    1,
-	}
-	if err := s.DB.Create(&gen).Error; err != nil {
-		_ = aigen.Refund(s.DB, u.ID, 1)
+	if err := s.DB.Model(&gen).Updates(map[string]any{
+		"task_id": taskID,
+		"status":  models.AIGenPending,
+	}).Error; err != nil {
+		// 任务号没存住就无从轮询,但上游已经在跑了。标失败并退款,由对账器
+		// 兜住剩下的——总好过留一条查不到进度的记录。
+		_ = s.failAIGen(&gen, err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	gen.TaskID, gen.Status = taskID, models.AIGenPending
+
 	s.queueAIPoll(gen.ID)
 	c.JSON(http.StatusAccepted, gin.H{"generation": gen})
 }
@@ -227,15 +234,36 @@ func (s *Server) jobAIPoll(ctx context.Context, job scheduler.Job) error {
 	}
 }
 
+// failAIGen 终结一次生成并退还额度。今日次数不退,它是防滥用的闸门。
+//
+// 顺序是先抢状态再退款,不能反。反过来的话:退款成功、随后那次状态落库因为
+// 连接抖动失败 → handler 返回错误 → 队列重投 → jobAIPoll 顶上的终态检查因为
+// 状态压根没写成而拦不住 → 再退一次,最多退到重试次数用尽。条件更新放在前面,
+// 只有抢到状态转换的那一次才有资格退款。
 func (s *Server) failAIGen(gen *models.AIGeneration, msg string) error {
 	now := time.Now()
-	// 失败退还余额:那一次上游调用没换来图。今日次数不退,它是防滥用的闸门。
-	_ = aigen.Refund(s.DB, gen.UserID, gen.Credits)
-	return s.DB.Model(gen).Updates(map[string]any{
-		"status":  models.AIGenFailed,
-		"error":   msg,
-		"done_at": &now,
-	}).Error
+	res := s.DB.Model(&models.AIGeneration{}).
+		Where("id = ? AND status NOT IN ?", gen.ID,
+			[]models.AIGenStatus{models.AIGenCompleted, models.AIGenFailed}).
+		Updates(map[string]any{
+			"status":  models.AIGenFailed,
+			"error":   msg,
+			"done_at": &now,
+		})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil // 已经被别的路径终结过了
+	}
+	if err := aigen.Refund(s.DB, gen.UserID, gen.Credits); err != nil {
+		// 本地账本下这是一次几乎不会失败的 UPDATE,但错误绝不能吞:接上
+		// pic.bi 之后退款失败会变成常态,而那时丢掉的是用户充值的真钱。
+		log.Printf("ai: 退款失败 gen=%s user=%s credits=%d: %v",
+			gen.ID, gen.UserID, gen.Credits, err)
+	}
+	gen.Status = models.AIGenFailed
+	return nil
 }
 
 // completeAIGen 把生成的图下下来,走与手动上传完全相同的那条流水线。

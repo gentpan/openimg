@@ -141,6 +141,9 @@ export interface CheckinResult {
   date: string;
   quota_bytes: number;
   capped: boolean;
+  /** AI generations this check-in threw in — 0 where the group grants none.
+   *  Absent on the capped reply, which the server builds field by field. */
+  ai_credits?: number;
 }
 
 // ----- Storage profiles -----

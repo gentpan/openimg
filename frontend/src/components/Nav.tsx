@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import Logo from "../Logo";
 import { formatBytes, quotaApi } from "../api";
-import { useAIStatus } from "../aiStatus";
+import { refreshAIStatus, useAIStatus } from "../aiStatus";
 import { RingSpinner } from "./Spinner";
 import { useBrand } from "../BrandContext";
 import { useLang } from "../LangContext";
@@ -37,12 +37,21 @@ export default function Nav() {
     setBusy(true);
     try {
       const res = await quotaApi.checkin();
+      // Check-in also throws in AI generations, and that is the advertised way
+      // out of a spent monthly allowance — so say it happened, and resync the
+      // count the generate page reads.
+      const ai = res.ai_credits ?? 0;
       if (res.capped) {
         toast.info(t.nav.checkinCappedTitle, t.nav.checkinCappedDetail);
       } else {
-        toast.success(t.nav.checkinSuccessTitle(formatBytes(res.granted_bytes)), t.nav.checkinSuccessDetail);
+        toast.success(
+          t.nav.checkinSuccessTitle(formatBytes(res.granted_bytes)),
+          ai > 0
+            ? `${t.nav.checkinSuccessDetail} · ${t.generate.quota.checkinGranted(ai)}`
+            : t.nav.checkinSuccessDetail,
+        );
       }
-      await refresh();
+      await Promise.all([refresh(), refreshAIStatus()]);
     } catch (e) {
       toast.error(t.nav.checkinFailed, e instanceof Error ? e.message : undefined);
     } finally {

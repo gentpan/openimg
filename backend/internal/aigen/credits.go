@@ -9,6 +9,7 @@ import (
 	"github.com/gentpan/openimg/backend/internal/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -120,6 +121,84 @@ func Reserve(db *gorm.DB, u *models.User, g models.UserGroup, credits int) error
 	}
 	u.AICredits -= credits
 	return nil
+}
+
+// Begin 开一次生成:在同一个事务里数今日、扣额度、落记录。
+//
+// 这三步必须原子,否则日限拦不住任何东西。UsedToday 数的是 ai_generations
+// 的行数,而这行原本要等上游递交成功才写——中间隔着一次几十秒的 HTTP。同时
+// 提交的请求会全部读到同一个旧计数、全部通过检查,日限形同虚设(只剩月额度
+// 那个条件更新兜底,后果从"今天 5 张"退化成"一次烧光整月")。
+//
+// 用用户行的排他锁做串行点:粒度正好是"同一个用户的并发提交",既不会拖累
+// 别人,也不需要 INSERT...SELECT 那种读起来费劲的条件插入。
+//
+// gen 需预先填好 Prompt/Model/Size/Resolution/Credits;返回时它已入库,状态
+// 为 charging。
+func Begin(db *gorm.DB, u *models.User, g models.UserGroup, gen *models.AIGeneration) error {
+	if gen.Credits <= 0 {
+		gen.Credits = 1
+	}
+	return db.Transaction(func(tx *gorm.DB) error {
+		// 锁住用户行。之后的数数与扣减都在这把锁里,同一用户的第二个请求
+		// 会等在这里,拿到的是已经包含前一次的计数。
+		var locked models.User
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			First(&locked, "id = ?", u.ID).Error; err != nil {
+			return err
+		}
+		if err := ensureMonthlyTx(tx, &locked, g); err != nil {
+			return err
+		}
+
+		if g.AIDaily > 0 {
+			start := time.Now().UTC().Truncate(24 * time.Hour)
+			var used int64
+			if err := tx.Model(&models.AIGeneration{}).
+				Where("user_id = ? AND created_at >= ?", u.ID, start).
+				Count(&used).Error; err != nil {
+				return err
+			}
+			if int(used) >= g.AIDaily {
+				return ErrDailyLimit
+			}
+		}
+
+		if locked.AICredits < gen.Credits {
+			return ErrNoCredits
+		}
+		if err := tx.Model(&models.User{}).Where("id = ?", u.ID).
+			UpdateColumn("ai_credits", gorm.Expr("ai_credits - ?", gen.Credits)).Error; err != nil {
+			return err
+		}
+
+		gen.UserID = u.ID
+		gen.Status = models.AIGenCharging
+		if err := tx.Create(gen).Error; err != nil {
+			return err
+		}
+
+		// 事务提交后调用方手里的 u 才该反映新余额。
+		u.AICredits = locked.AICredits - gen.Credits
+		u.AICreditsMonth = locked.AICreditsMonth
+		return nil
+	})
+}
+
+// ensureMonthlyTx 是 EnsureMonthly 的事务内版本。逻辑一致,只是复用外面
+// 传进来的 tx,好让补发与扣减落在同一把锁里。
+func ensureMonthlyTx(tx *gorm.DB, u *models.User, g models.UserGroup) error {
+	now := monthKey(time.Now())
+	if u.AICreditsMonth == now {
+		return nil
+	}
+	u.AICredits = g.AIMonthly
+	u.AICreditsMonth = now
+	return tx.Model(&models.User{}).Where("id = ?", u.ID).
+		Updates(map[string]any{
+			"ai_credits":       u.AICredits,
+			"ai_credits_month": u.AICreditsMonth,
+		}).Error
 }
 
 // Refund 在生成失败时把次数还回去。今日次数不退,理由见 UsedToday。

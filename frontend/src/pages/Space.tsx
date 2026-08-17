@@ -4,6 +4,7 @@ import { useAuth } from "../AuthContext";
 import Footer from "../Footer";
 import Nav from "../components/Nav";
 import { formatBytes, quotaApi } from "../api";
+import { refreshAIStatus } from "../aiStatus";
 import { BarMeter, useCountUp } from "../components/Meters";
 import CheckinCalendar from "../components/CheckinCalendar";
 import CheckinWeek, { MilestoneBar } from "../components/CheckinWeek";
@@ -77,13 +78,18 @@ export default function SpacePage() {
     setMsg(null);
     try {
       const res = await quotaApi.checkin();
+      // The generate page sends people here to top up their AI allowance, so
+      // the reply has to confirm the generations landed — and the shared status
+      // cache has to hear about them.
+      const ai = res.ai_credits ?? 0;
+      const base = res.capped
+        ? t.space.checkin.cappedMsg
+        : t.space.checkin.successMsg(formatBytes(res.granted_bytes), res.streak);
       setMsg({
         kind: "ok",
-        text: res.capped
-          ? t.space.checkin.cappedMsg
-          : t.space.checkin.successMsg(formatBytes(res.granted_bytes), res.streak),
+        text: ai > 0 ? `${base} · ${t.generate.quota.checkinGranted(ai)}` : base,
       });
-      await Promise.all([load(), refresh()]);
+      await Promise.all([load(), refresh(), refreshAIStatus()]);
     } catch (e) {
       setMsg({ kind: "err", text: e instanceof Error ? e.message : String(e) });
     } finally {

@@ -439,6 +439,7 @@ export const zh = {
     /** 说清楚图从哪来：这里不上传本地文件，图本来就在你的图床里。 */
     sourceHint: (max: number) => `最多 ${max} 张，从已上传的图片里选`,
     sourceAdd: "再加一张",
+    recentLabel: "最近上传",
 
     presetsLabel: "常用改法",
     presets: {

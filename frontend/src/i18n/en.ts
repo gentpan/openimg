@@ -431,6 +431,7 @@ export const en: Dict = {
     sourcePick: "Choose from your gallery",
     sourceHint: (max: number) => `Up to ${max}, from what you have already uploaded`,
     sourceAdd: "Add another",
+    recentLabel: "Recent",
 
     presetsLabel: "Common edits",
     presets: {

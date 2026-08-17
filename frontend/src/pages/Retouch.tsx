@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import Footer from "../Footer";
@@ -8,7 +8,7 @@ import { RingSpinner } from "../components/Spinner";
 import ImagePicker from "../components/ai/ImagePicker";
 import { Center, GenerationHistory, OptionPicker, QuotaCard } from "../components/ai/parts";
 import { MAX_PROMPT, MAX_SOURCES, genSources, useGenerations } from "../components/ai/generations";
-import { aiApi } from "../api";
+import { aiApi, imageApi } from "../api";
 import { refreshAIStatus, useAIStatus } from "../aiStatus";
 import { useLang } from "../LangContext";
 import { useToast } from "../ToastContext";
@@ -78,6 +78,9 @@ export default function RetouchPage() {
   const [prompt, setPrompt] = useState("");
   const [sources, setSources] = useState<Image[]>([]);
   const [picking, setPicking] = useState(false);
+  // 最近上传的十张,供输入区一键取用:多数修图针对的就是刚传上去那张,
+  // 为它开一次选图窗再从头找一遍,步骤全花在"找回自己五秒前传的图"上。
+  const [recent, setRecent] = useState<Image[]>([]);
   // Null means "don't send it". Retouching is the case where that is a real
   // answer: with no size the output keeps the shape of the picture that went
   // in, which is what someone removing a watermark almost always wants.
@@ -89,6 +92,21 @@ export default function RetouchPage() {
   const [detail, setDetail] = useState<Image | null>(null);
 
   const promptRef = useRef<HTMLTextAreaElement>(null);
+
+  // 已经选中的排除掉——留着只会让人点了没反应,而它在原图行里本来就看得见。
+  const recentPickable = recent.filter((r) => !sources.some((s) => s.id === r.id));
+
+  // 只在进页面时拉一次:它是捷径不是图库,不必跟着每次上传实时更新。
+  useEffect(() => {
+    let alive = true;
+    imageApi
+      .list({ limit: 10, offset: 0, sort: "newest" })
+      .then((r) => alive && setRecent(r.images ?? []))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // Source pictures this session has seen, kept so a history row can show what
   // an edit started from. The generations endpoint only promises the *result*
@@ -269,6 +287,33 @@ export default function RetouchPage() {
                     <span className="text-[10px]">{t.retouch.sourceAdd}</span>
                   </button>
                 )}
+              </div>
+            )}
+
+            {/* 最近上传的快捷条。方块比原图小一半:它是捷径不是主角,尺寸上
+                就该分得出来。已选中的排除掉,留着只会让人点了没反应。 */}
+            {sources.length < MAX_SOURCES && recentPickable.length > 0 && (
+              <div className="mt-3">
+                <div className="mb-1.5 text-[10px] uppercase tracking-wider text-neutral-600">
+                  {t.retouch.recentLabel}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {recentPickable.map((img) => (
+                    <button
+                      key={img.id}
+                      onClick={() => setSources((prev) => [...prev, img])}
+                      title={img.orig_name}
+                      className="h-11 w-11 overflow-hidden rounded-lg border border-neutral-800 transition hover:border-brand-500"
+                    >
+                      <img
+                        src={img.thumb_url}
+                        alt={img.orig_name}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 

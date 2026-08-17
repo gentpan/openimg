@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gentpan/openimg/backend/internal/aigen"
 	"github.com/gentpan/openimg/backend/internal/api"
 	"github.com/gentpan/openimg/backend/internal/auth"
 	"github.com/gentpan/openimg/backend/internal/config"
@@ -124,6 +125,10 @@ func main() {
 	// Existing rows predate short links; give them one.
 	go srv.BackfillShortCodes()
 	srv.MaxUploadSize = cfg.MaxUploadSize
+	// 没配 key 时 aigen.New 造出来的客户端是禁用态,接口回"未开启",两端把
+	// 入口整个藏掉——所以这一行无论如何都要有,漏了就等于永久关闭 AI,而且
+	// 表现和"没配 key"一模一样,极难看出来。
+	srv.AIGen = aigen.New(cfg.APIMartKey, cfg.APIMartBase)
 	srv.RequireEmailVerified = cfg.RequireEmailVerified
 	srv.CookieDomain = cfg.CookieDomain
 	srv.CookieSecure = cfg.CookieSecure
@@ -137,6 +142,10 @@ func main() {
 	srv.Email = pickEmailSender(cfg)
 	log.Printf("email: provider=%s from=%s configured=%v",
 		srv.Email.Name(), cfg.EmailFrom, srv.Email.Configured())
+	// 与 email 那行同一个用意:功能开没开要在启动日志里看得见。这个字段漏赋
+	// 值过一次,症状是接口一直回"未开启"、两端入口整个消失,而配置里 key 明明
+	// 在——查了很久才定位到。有这一行就是一眼的事。
+	log.Printf("aigen: enabled=%v", srv.AIGen.Enabled())
 	if pk, err := passkey.New(gdb, rpIDFor(cfg.PublicBaseURL), "OpenIMG", cfg.PublicBaseURL); err == nil {
 		srv.Passkey = pk
 	} else {

@@ -180,6 +180,10 @@ func (s *Server) handleAIGenerations(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"generations": list, "images": images})
 }
 
+// queueAIPoll 用会丢的 Submit 而不是 SubmitWait,是有意的分工:主路径要快,
+// 不能因为队列满了就把 HTTP 请求挂在那里;而丢掉的那一条由对账器在下一轮
+// 巡检时捡回来(见 aigen_reconcile.go)。代价是极端情况下用户要多等一会儿才
+// 看到进度,换来的是队列拥塞时接口仍然响应。
 func (s *Server) queueAIPoll(id uuid.UUID) {
 	if s.Queue == nil {
 		return

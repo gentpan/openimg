@@ -83,6 +83,8 @@ var zh = map[string]string{
 	"ai.daily_limit":       "今天的生成次数已用完，明天再来",
 	"ai.no_credits":        "本月生成次数已用完，签到可以再领",
 	"ai.submit_failed":     "提交生成失败：%s",
+	"ai.abandoned":         "这次生成没能递交出去，次数已退回",
+	"ai.timed_out":         "等待上游超时，次数已退回",
 	"otp.purpose.register": "注册",
 	"otp.purpose.login":    "登录",
 

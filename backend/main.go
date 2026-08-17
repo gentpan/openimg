@@ -146,6 +146,7 @@ func main() {
 	srv.RegisterJobs()
 	queue.Start(ctx, cfg.WorkerCount)
 	srv.RequeuePendingJobs()
+	srv.StartAIReconciler(ctx)
 	r := srv.Router()
 
 	log.Printf("listening on %s (workers=%d max-upload=%dMiB)",

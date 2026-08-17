@@ -60,6 +60,11 @@ func (s *Server) RequeuePendingJobs() {
 	if n := len(pending) + len(orphaned); n > 0 {
 		log.Printf("scheduler: requeued %d pending job(s)", n)
 	}
+
+	// AI 生成同理:队列在内存里,重启时正在轮询的那些会原地不动,而它们的
+	// 额度已经扣了。这里只捡启动这一刻的存量,运行期间丢掉的由 StartAIReconciler
+	// 的巡检兜住。
+	s.reconcileAIGenerations(context.Background())
 }
 
 // jobTranscode generates an AVIF derivative alongside the primary. 转换语义

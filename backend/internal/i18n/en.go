@@ -69,6 +69,8 @@ var en = map[string]string{
 	"ai.prompt_required":   "Describe the image you want first",
 	"ai.prompt_too_long":   "That description is too long — keep it under 1000 characters",
 	"ai.daily_limit":       "You've used today's generations — try again tomorrow",
+	"ai.abandoned":         "This generation never reached the provider — your credit was returned",
+	"ai.timed_out":         "The provider took too long — your credit was returned",
 	"ai.no_credits":        "You're out of generations this month; daily check-in grants more",
 	"ai.submit_failed":     "Could not submit the generation: %s",
 	"otp.purpose.register": "sign up",

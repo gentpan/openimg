@@ -6,10 +6,17 @@ import Nav from "../components/Nav";
 import ImageDetail from "../components/ImageDetail";
 import { RingSpinner } from "../components/Spinner";
 import SourceImages from "../components/ai/SourceImages";
-import { Center, GenerationHistory, OptionPicker, QuotaCard } from "../components/ai/parts";
+import {
+  Center,
+  GenerationHistory,
+  OptionPicker,
+  QuotaInline,
+  QuotaNotice,
+} from "../components/ai/parts";
 import {
   MAX_PROMPT,
   MAX_SOURCES,
+  canSpend,
   genSources,
   useGenerations,
   useKnownImages,
@@ -37,7 +44,7 @@ import type { Image } from "../types";
  * Everything after submission is polled: the POST returns a `pending` record,
  * and the history below is refetched until that record settles. Polling stops
  * the moment nothing is in flight, so an idle page is silent. That machinery,
- * the allowance card and the history list are shared with the retouch page —
+ * the allowance readout and the history list are shared with the retouch page —
  * see components/ai/shared; what stays here is the composer, which is the only
  * part the two pages do differently.
  */
@@ -137,10 +144,9 @@ export default function GeneratePage() {
   if (!status || !status.enabled) return <Navigate to="/dashboard" replace />;
 
   // 本地额度见底不等于不能生成:关联了 pic.bi 且那边还有钱时,后端会自动
-  // 接管。只看 remaining 会把提交按钮封死在"pic.bi 正该出场"的那一刻,
-  // 整条付费路径永远走不到。
-  const picbiLeft = status.picbi_linked ? (status.picbi_credits ?? 0) : 0;
-  const blocked = status.remaining <= 0 && picbiLeft <= 0;
+  // 接管。这个判断只有一处(canSpend),额度提示条也问同一处——两边各算一遍
+  // 迟早会算出两个答案,变成"按钮是灰的,旁边写着还有余额"。
+  const blocked = !canSpend(status);
   const overLimit = prompt.length > MAX_PROMPT;
   const canSubmit =
     !busy && prompt.trim().length > 0 && !overLimit && !blocked && user.email_verified;
@@ -204,94 +210,96 @@ export default function GeneratePage() {
           onOpenDetail={setDetail}
         />
 
-        <div className="grid lg:grid-cols-3 gap-3">
-          {/* Composer */}
-          <div className="lg:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
-            <div className="mb-1.5 flex items-baseline justify-between">
-              <label htmlFor="ai-prompt" className="text-xs text-neutral-300">
-                {t.generate.promptLabel}
-              </label>
-              <span
-                className={`text-[10px] tabular-nums ${overLimit ? "text-red-400" : "text-neutral-600"}`}
-              >
-                {t.generate.promptCounter(prompt.length, MAX_PROMPT)}
-              </span>
-            </div>
-            <textarea
-              id="ai-prompt"
-              ref={promptRef}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              rows={5}
-              placeholder={t.generate.promptPlaceholder}
-              className={`w-full rounded-xl bg-neutral-950 border px-3 py-2.5 text-xs leading-relaxed outline-none transition resize-y placeholder-faint ${
-                overLimit ? "border-red-500/60" : "border-neutral-800 focus:border-brand-500"
-              }`}
+        {/* 用完了才出现,平时不占版面——数字已经在输入区底排说清了。 */}
+        <QuotaNotice status={status} />
+
+        {/* Composer */}
+        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
+          <div className="mb-1.5 flex items-baseline justify-between">
+            <label htmlFor="ai-prompt" className="text-xs text-neutral-300">
+              {t.generate.promptLabel}
+            </label>
+            <span
+              className={`text-[10px] tabular-nums ${overLimit ? "text-red-400" : "text-neutral-600"}`}
+            >
+              {t.generate.promptCounter(prompt.length, MAX_PROMPT)}
+            </span>
+          </div>
+          <textarea
+            id="ai-prompt"
+            ref={promptRef}
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            rows={5}
+            placeholder={t.generate.promptPlaceholder}
+            className={`w-full rounded-xl bg-neutral-950 border px-3 py-2.5 text-xs leading-relaxed outline-none transition resize-y placeholder-faint ${
+              overLimit ? "border-red-500/60" : "border-neutral-800 focus:border-brand-500"
+            }`}
+          />
+
+          {/* After the prompt, not before it: the words are what this page is
+              for, and most generations never attach a picture. Empty, this is
+              one line. */}
+          <div className="mt-4">
+            <SourceImages
+              value={refs}
+              onChange={pickRefs}
+              max={MAX_SOURCES}
+              variant="optional"
+              onUploaded={() => refresh()}
             />
-
-            {/* After the prompt, not before it: the words are what this page is
-                for, and most generations never attach a picture. Empty, this is
-                one line. */}
-            <div className="mt-4">
-              <SourceImages
-                value={refs}
-                onChange={pickRefs}
-                max={MAX_SOURCES}
-                variant="optional"
-                onUploaded={() => refresh()}
-              />
-            </div>
-
-            <div className="mt-4">
-              <OptionPicker
-                label={t.generate.sizeLabel}
-                options={sizes}
-                value={activeSize}
-                onChange={setSize}
-                ratio
-              />
-            </div>
-
-            <div className="mt-3">
-              <OptionPicker
-                label={t.generate.resolutionLabel}
-                options={resolutions}
-                value={activeResolution}
-                onChange={setResolution}
-                uppercase
-              />
-            </div>
-
-            {err && <div className="mt-3 text-[11px] text-red-400">{err}</div>}
-
-            <div className="mt-4 flex items-center gap-3">
-              <span className="text-[11px] text-neutral-600">
-                {refs.length > 0 ? t.generate.withRefHint(refs.length) : t.generate.costHint(1)}
-              </span>
-              <div className="flex-1" />
-              <button
-                onClick={submit}
-                disabled={!canSubmit}
-                className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition whitespace-nowrap"
-              >
-                {busy ? (
-                  <>
-                    <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px] mr-1.5" />
-                    {t.generate.submitBusy}
-                  </>
-                ) : (
-                  <>
-                    <i className="fa-solid fa-wand-magic-sparkles mr-1.5 text-xs" />
-                    {/* The label follows the request rather than announcing a
-                        mode: it is still one button doing one thing. */}
-                    {refs.length > 0 ? t.generate.submitWithRef : t.generate.submit}
-                  </>
-                )}
-              </button>
-            </div>
           </div>
 
-          <QuotaCard status={status} availableBytes={user.available_bytes} />
+          <div className="mt-4">
+            <OptionPicker
+              label={t.generate.sizeLabel}
+              options={sizes}
+              value={activeSize}
+              onChange={setSize}
+              ratio
+            />
+          </div>
+
+          <div className="mt-3">
+            <OptionPicker
+              label={t.generate.resolutionLabel}
+              options={resolutions}
+              value={activeResolution}
+              onChange={setResolution}
+              uppercase
+            />
+          </div>
+
+          {err && <div className="mt-3 text-[11px] text-red-400">{err}</div>}
+
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="text-[11px] text-neutral-600">
+              {refs.length > 0 ? t.generate.withRefHint(refs.length) : t.generate.costHint(1)}
+            </span>
+            <div className="flex-1" />
+            {/* 底排本来空着一大片,而「还剩几次」正是按下生成之前最后要确认
+                的事——放在按钮边上比放在旁边一张卡里更该看见。 */}
+            <QuotaInline status={status} />
+            <button
+              onClick={submit}
+              disabled={!canSubmit}
+              className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition whitespace-nowrap"
+            >
+              {busy ? (
+                <>
+                  <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px] mr-1.5" />
+                  {t.generate.submitBusy}
+                </>
+              ) : (
+                <>
+                  <i className="fa-solid fa-wand-magic-sparkles mr-1.5 text-xs" />
+                  {/* The label follows the request rather than announcing a
+                      mode: it is still one button doing one thing. */}
+                  {refs.length > 0 ? t.generate.submitWithRef : t.generate.submit}
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 

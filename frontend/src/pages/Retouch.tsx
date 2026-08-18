@@ -6,10 +6,17 @@ import Nav from "../components/Nav";
 import ImageDetail from "../components/ImageDetail";
 import { RingSpinner } from "../components/Spinner";
 import SourceImages from "../components/ai/SourceImages";
-import { Center, GenerationHistory, OptionPicker, QuotaCard } from "../components/ai/parts";
+import {
+  Center,
+  GenerationHistory,
+  OptionPicker,
+  QuotaInline,
+  QuotaNotice,
+} from "../components/ai/parts";
 import {
   MAX_PROMPT,
   MAX_SOURCES,
+  canSpend,
   genSources,
   useGenerations,
   useKnownImages,
@@ -25,10 +32,21 @@ import type { Image } from "../types";
  *
  * The prompt text is English and fixed in this file rather than in the
  * dictionary, because it is not interface copy — it is an instruction to the
- * model, and the model reads these five better in English than in either
- * language's translation of them. What is translated is the label on the
- * button. The text lands in the box editable, so it reads as a first draft
- * rather than a mode the user has switched into.
+ * model, and the model reads these better in English than in either language's
+ * translation of them. What is translated is the label on the button. The text
+ * lands in the box editable, so it reads as a first draft rather than a mode
+ * the user has switched into.
+ *
+ * Every sentence ends by naming what must not change. Without that the model
+ * treats the request as licence to repaint the whole picture, and someone who
+ * asked for a watermark to go gets a different photograph back. Two of them
+ * carry a further constraint that is easy to mistake for padding: the portrait
+ * one forbids reshaping the face (skin retouching slides into a new person
+ * otherwise), and the extend one forbids touching what is already there
+ * (otherwise "extend" quietly becomes "redraw, wider").
+ *
+ * 这 11 条与 macOS 端 RetouchPrompts 逐字相同,改这里要连那边一起改——同一个
+ * 按钮在两端发出不同的指令,就是同一个按钮出两种图。
  */
 const PRESETS = [
   {
@@ -60,12 +78,48 @@ const PRESETS = [
     icon: "fa-wand-sparkles",
     prompt: "Enhance the sharpness and detail of this image without changing its content.",
   },
+  {
+    key: "text" as const,
+    icon: "fa-text-slash",
+    prompt:
+      "Remove all text, captions and subtitles from this image. Reconstruct what was behind them; keep everything else unchanged.",
+  },
+  {
+    key: "whitebg" as const,
+    icon: "fa-square",
+    prompt:
+      "Cut out the product and place it on a pure white background, centered, with soft even lighting and a natural contact shadow.",
+  },
+  {
+    key: "colorize" as const,
+    icon: "fa-palette",
+    prompt:
+      "Colorize this black and white photo with natural, period-accurate colors. Keep the original composition and details.",
+  },
+  {
+    key: "portrait" as const,
+    icon: "fa-face-smile",
+    prompt:
+      "Retouch this portrait: even out skin tone, remove blemishes, brighten the eyes. Keep the person clearly recognizable — do not reshape the face.",
+  },
+  {
+    key: "cartoon" as const,
+    icon: "fa-paintbrush",
+    prompt:
+      "Redraw this image as a clean flat illustration with bold outlines and simple shading. Keep the subject and composition recognizable.",
+  },
+  {
+    key: "expand" as const,
+    icon: "fa-expand",
+    prompt:
+      "Extend this image outward, continuing the scene naturally on all sides. Keep the existing content untouched.",
+  },
 ];
 
 /**
  * AI retouching — the sister page to text-to-image.
  *
- * Same credits, same submission-then-poll shape, same allowance card and
+ * Same credits, same submission-then-poll shape, same allowance readout and
  * history list (all of it in components/ai/shared). The one difference is what
  * goes in: one to four pictures out of the user's own gallery. Dropping a local
  * file on the source row is a shortcut to the same place rather than a second
@@ -156,10 +210,9 @@ export default function RetouchPage() {
   if (!status || !status.enabled) return <Navigate to="/dashboard" replace />;
 
   // 本地额度见底不等于不能生成:关联了 pic.bi 且那边还有钱时,后端会自动
-  // 接管。只看 remaining 会把提交按钮封死在"pic.bi 正该出场"的那一刻,
-  // 整条付费路径永远走不到。
-  const picbiLeft = status.picbi_linked ? (status.picbi_credits ?? 0) : 0;
-  const blocked = status.remaining <= 0 && picbiLeft <= 0;
+  // 接管。这个判断只有一处(canSpend),额度提示条也问同一处——两边各算一遍
+  // 迟早会算出两个答案,变成"按钮是灰的,旁边写着还有余额"。
+  const blocked = !canSpend(status);
   const overLimit = prompt.length > MAX_PROMPT;
   const canSubmit =
     !busy &&
@@ -217,115 +270,140 @@ export default function RetouchPage() {
           resolveSource={resolveSource}
         />
 
-        <div className="grid lg:grid-cols-3 gap-3">
-          {/* Composer */}
-          <div className="lg:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
-            {/* Sources first: nothing below it means anything until there is a
-                picture to apply it to. */}
-            <SourceImages
-              value={sources}
-              onChange={pickSources}
-              max={MAX_SOURCES}
-              variant="required"
-              // An upload spent storage, and the figure sits on the card to
-              // the right of this one.
-              onUploaded={() => refresh()}
-            />
+        {/* 用完了才出现,平时不占版面——数字已经在输入区底排说清了。 */}
+        <QuotaNotice status={status} />
 
-            {/* Presets. Five things people actually come here to do, each one a
-                first draft in the box rather than a mode — the text stays
-                editable, and the button does not stay lit. */}
-            <div className="mt-4 mb-1.5 text-[10px] uppercase tracking-wider text-neutral-600">
-              {t.retouch.presetsLabel}
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {PRESETS.map((p) => (
+        {/* Composer */}
+        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
+          {/* Sources first: nothing below it means anything until there is a
+              picture to apply it to. */}
+          <SourceImages
+            value={sources}
+            onChange={pickSources}
+            max={MAX_SOURCES}
+            variant="required"
+            // An upload spent storage; the figure in the nav is the one that
+            // has to move.
+            onUploaded={() => refresh()}
+          />
+
+          {/* Presets: the eleven things people actually come here to do, each
+              one a first draft in the box rather than a mode — the text stays
+              editable after it lands.
+
+              Unselected chips carry a visible border. Without one they are a
+              row of grey words on a grey panel, and the thing a first-time
+              visitor most needs to discover here is that they are buttons at
+              all. The chosen one fills with the brand colour rather than
+              tinting, so at a glance it is obvious which sentence is currently
+              in the box — and clicking it again empties the box, because the
+              alternative for a mis-click is selecting the text by hand. */}
+          <div className="mt-4 mb-1.5 text-[10px] uppercase tracking-wider text-neutral-600">
+            {t.retouch.presetsLabel}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {PRESETS.map((p) => {
+              // Compared against the box, not stored: editing the text after
+              // picking a preset means it is no longer that preset, and the
+              // chip should stop claiming otherwise.
+              const active = prompt === p.prompt;
+              return (
                 <button
                   key={p.key}
+                  title={active ? t.retouch.presetClear : undefined}
                   onClick={() => {
-                    setPrompt(p.prompt);
+                    setPrompt(active ? "" : p.prompt);
                     promptRef.current?.focus();
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1.5 text-[11px] text-neutral-400 transition hover:border-neutral-700 hover:text-neutral-200"
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] transition ${
+                    active
+                      ? "border-brand-600 bg-brand-600 font-medium text-brand-ink"
+                      : "border-neutral-700 bg-neutral-900 text-neutral-400 hover:border-neutral-600 hover:text-neutral-200"
+                  }`}
                 >
-                  <i className={`fa-solid ${p.icon} text-[10px] text-neutral-600`} />
+                  <i
+                    className={`fa-solid ${p.icon} text-[10px] ${
+                      active ? "text-brand-ink/70" : "text-neutral-600"
+                    }`}
+                  />
                   {t.retouch.presets[p.key]}
                 </button>
-              ))}
-            </div>
-
-            <div className="mt-4 mb-1.5 flex items-baseline justify-between">
-              <label htmlFor="ai-edit-prompt" className="text-xs text-neutral-300">
-                {t.retouch.promptLabel}
-              </label>
-              <span
-                className={`text-[10px] tabular-nums ${overLimit ? "text-red-400" : "text-neutral-600"}`}
-              >
-                {t.generate.promptCounter(prompt.length, MAX_PROMPT)}
-              </span>
-            </div>
-            <textarea
-              id="ai-edit-prompt"
-              ref={promptRef}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              rows={4}
-              placeholder={t.retouch.promptPlaceholder}
-              className={`w-full rounded-xl bg-neutral-950 border px-3 py-2.5 text-xs leading-relaxed outline-none transition resize-y placeholder-faint ${
-                overLimit ? "border-red-500/60" : "border-neutral-800 focus:border-brand-500"
-              }`}
-            />
-
-            <div className="mt-4">
-              <OptionPicker
-                label={t.generate.sizeLabel}
-                options={sizes}
-                value={activeSize}
-                onChange={setSize}
-                autoLabel={t.retouch.matchSource}
-                autoTitle={t.retouch.matchSourceHint}
-                ratio
-              />
-            </div>
-
-            <div className="mt-3">
-              <OptionPicker
-                label={t.generate.resolutionLabel}
-                options={resolutions}
-                value={activeResolution}
-                onChange={setResolution}
-                uppercase
-              />
-            </div>
-
-            {err && <div className="mt-3 text-[11px] text-red-400">{err}</div>}
-
-            <div className="mt-4 flex items-center gap-3">
-              <span className="text-[11px] text-neutral-600">
-                {sources.length === 0 ? t.retouch.needSource : t.generate.costHint(1)}
-              </span>
-              <div className="flex-1" />
-              <button
-                onClick={submit}
-                disabled={!canSubmit}
-                className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition whitespace-nowrap"
-              >
-                {busy ? (
-                  <>
-                    <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px] mr-1.5" />
-                    {t.generate.submitBusy}
-                  </>
-                ) : (
-                  <>
-                    <i className="fa-solid fa-wand-magic mr-1.5 text-xs" />
-                    {t.retouch.submit}
-                  </>
-                )}
-              </button>
-            </div>
+              );
+            })}
           </div>
 
-          <QuotaCard status={status} availableBytes={user.available_bytes} />
+          <div className="mt-4 mb-1.5 flex items-baseline justify-between">
+            <label htmlFor="ai-edit-prompt" className="text-xs text-neutral-300">
+              {t.retouch.promptLabel}
+            </label>
+            <span
+              className={`text-[10px] tabular-nums ${overLimit ? "text-red-400" : "text-neutral-600"}`}
+            >
+              {t.generate.promptCounter(prompt.length, MAX_PROMPT)}
+            </span>
+          </div>
+          <textarea
+            id="ai-edit-prompt"
+            ref={promptRef}
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            rows={4}
+            placeholder={t.retouch.promptPlaceholder}
+            className={`w-full rounded-xl bg-neutral-950 border px-3 py-2.5 text-xs leading-relaxed outline-none transition resize-y placeholder-faint ${
+              overLimit ? "border-red-500/60" : "border-neutral-800 focus:border-brand-500"
+            }`}
+          />
+
+          <div className="mt-4">
+            <OptionPicker
+              label={t.generate.sizeLabel}
+              options={sizes}
+              value={activeSize}
+              onChange={setSize}
+              autoLabel={t.retouch.matchSource}
+              autoTitle={t.retouch.matchSourceHint}
+              ratio
+            />
+          </div>
+
+          <div className="mt-3">
+            <OptionPicker
+              label={t.generate.resolutionLabel}
+              options={resolutions}
+              value={activeResolution}
+              onChange={setResolution}
+              uppercase
+            />
+          </div>
+
+          {err && <div className="mt-3 text-[11px] text-red-400">{err}</div>}
+
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="text-[11px] text-neutral-600">
+              {sources.length === 0 ? t.retouch.needSource : t.generate.costHint(1)}
+            </span>
+            <div className="flex-1" />
+            {/* 底排本来空着一大片,而「还剩几次」正是按下按钮之前最后要确认
+                的事——放在按钮边上比放在旁边一张卡里更该看见。 */}
+            <QuotaInline status={status} />
+            <button
+              onClick={submit}
+              disabled={!canSubmit}
+              className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-600 transition whitespace-nowrap"
+            >
+              {busy ? (
+                <>
+                  <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px] mr-1.5" />
+                  {t.generate.submitBusy}
+                </>
+              ) : (
+                <>
+                  <i className="fa-solid fa-wand-magic mr-1.5 text-xs" />
+                  {t.retouch.submit}
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 

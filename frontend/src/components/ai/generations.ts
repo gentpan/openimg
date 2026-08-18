@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { aiApi } from "../../api";
 import { refreshAIStatus } from "../../aiStatus";
-import type { AIGenStatus, AIGeneration, Image } from "../../types";
+import type { AIGenStatus, AIGeneration, AIStatusOn, Image } from "../../types";
 
 /**
  * The half of the AI pages that is not a component.
@@ -41,6 +41,29 @@ export const MAX_SOURCES = 4;
  * corrected it.
  */
 export const inFlight = (s: AIGenStatus) => s !== "completed" && s !== "failed";
+
+/**
+ * The pic.bi balance this account can actually spend, as a number.
+ *
+ * Two fields have to agree before that balance is real: the link has to exist,
+ * and the lookup has to have answered. `picbi_credits` is absent both when the
+ * account is unlinked and when the upstream call failed, and reading it alone
+ * would turn a failed lookup into a confident zero.
+ */
+export function picbiRemaining(status: AIStatusOn): number {
+  return status.picbi_linked ? (status.picbi_credits ?? 0) : 0;
+}
+
+/**
+ * Whether a submission can go through at all.
+ *
+ * 本地额度见底不等于不能生成:关联了 pic.bi 且那边还有钱时,后端会自动接管。
+ * 只看 `remaining` 会把提交按钮封死在"pic.bi 正该出场"的那一刻,整条付费路径
+ * 永远走不到——所以这个问题只有一个答案来源,两页和额度提示条都问这里。
+ */
+export function canSpend(status: AIStatusOn): boolean {
+  return status.remaining > 0 || picbiRemaining(status) > 0;
+}
 
 export type GenKind = "generate" | "edit";
 

@@ -389,16 +389,20 @@ export const zh = {
     refsUnresolved: "这条记录的参考图不在本次会话中，请重新选择",
     submitWithRef: "按参考图生成",
 
+    /**
+     * 额度。原先是输入区旁边一整张卡（标题、大号数字、两行标签、一根进度条），
+     * 现在只剩两块：`inline` 是塞进输入区底排的那一行，`*Exhausted*` 是用完了
+     * 才出现的那一条。卡片上那些只为撑起版面的字（标题、量词、「每月重置」）
+     * 跟着卡片一起去掉了——没有地方再渲染它们。
+     */
     quota: {
-      title: "生成额度",
-      remaining: "现在还能生成",
-      /** 数字由组件单独渲染，这条只是紧跟其后的量词。 */
-      unit: (_n: number) => "次",
-      today: "今日已用",
-      todayValue: (used: number, limit: number) => `${used} / ${limit} 次`,
-      monthly: "本月剩余",
-      monthlyValue: (credits: number, monthly: number) => `${credits} / ${monthly} 次`,
-      resetNote: "每月重置，不累加到下个月",
+      inline: {
+        times: (n: number) => `${n} 次`,
+        today: (used: number, limit: number) => `今日 ${used}/${limit}`,
+        monthly: (credits: number, monthly: number) => `本月 ${credits}/${monthly}`,
+        /** 关联 pic.bi 之后多出来的那一份余额，本站的用完了就接着扣它。 */
+        picbi: (n: number) => `pic.bi ${n} 次`,
+      },
       /** 两种「用完了」的解法不同：一个等明天，一个靠签到。 */
       dailyExhausted: "今天的次数用完了",
       dailyExhaustedHint: (limit: number) => `每天最多 ${limit} 次，明天恢复`,
@@ -471,13 +475,25 @@ export const zh = {
     subtitle: "挑 1–4 张图（图库里选或直接上传），写一句要改什么，改完的图直接进你的图库",
 
     presetsLabel: "常用改法",
+    /**
+     * 按钮上的字。给模型的那句提示词不在这里——它是指令不是文案，只有一份英文，
+     * 写死在 pages/Retouch.tsx 里，两端逐字相同。
+     */
     presets: {
       watermark: "去水印",
-      declutter: "去除路人杂物",
+      declutter: "去除路人 / 杂物",
       background: "换背景",
       restore: "修复老照片",
       sharpen: "提升清晰度",
+      text: "去文字",
+      whitebg: "白底商品图",
+      colorize: "黑白上色",
+      portrait: "人像精修",
+      cartoon: "卡通风格",
+      expand: "扩展画面",
     },
+    /** 点中的那一条再点一次就取消，按钮上挂个说明，省得用户去输入框里手删。 */
+    presetClear: "再点一次取消",
 
     promptLabel: "要改成什么样",
     promptPlaceholder: "说清楚改哪里、改成什么样，以及哪些地方不要动",

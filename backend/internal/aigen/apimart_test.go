@@ -3,6 +3,7 @@ package aigen
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -35,6 +36,19 @@ func TestSubmitPayload(t *testing.T) {
 			want: map[string]any{
 				"model": "m", "prompt": "换成夜景", "n": 1.0, "resolution": "2k",
 				"image_urls": []any{"https://cdn/a.png", "https://cdn/b.png"},
+			},
+		},
+		{
+			// 透明底那条路:模型必须换成认这两个键的那个,而且两个一起给。
+			// 少了 output_format,alpha 会被输出格式吃掉。
+			name: "透明底带上 background 与 output_format",
+			req: Req{Prompt: "一枚圆形 logo", Model: TransparentModel,
+				Size: "1:1", Resolution: "1k",
+				Background: "transparent", OutputFormat: "png"},
+			want: map[string]any{
+				"model": TransparentModel, "prompt": "一枚圆形 logo", "n": 1.0,
+				"size": "1:1", "resolution": "1k",
+				"background": "transparent", "output_format": "png",
 			},
 		},
 	}
@@ -71,4 +85,42 @@ func TestSubmitPayload(t *testing.T) {
 func toJSON(v any) string {
 	b, _ := json.Marshal(v)
 	return string(b)
+}
+
+// 上游对不认得的参数是静默忽略,不是报错。所以"用默认模型要透明底"这件事
+// 必须在发出去之前就失败——否则调用方会拿到一张不透明的图,而全程没有一处
+// 报过错,直到那枚"水印"贴到照片上变成一个白方块。
+func TestSubmitRejectsTransparentOnUnsupportedModel(t *testing.T) {
+	var called bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		_, _ = w.Write([]byte(`{"code":0,"data":[{"task_id":"t1"}]}`))
+	}))
+	defer srv.Close()
+
+	c := New("k", srv.URL)
+	for _, req := range []Req{
+		{Prompt: "p", Model: DefaultModel, Background: "transparent", OutputFormat: "png"},
+		// 只给一个也算要了透明底:漏掉另一个是最容易犯的错,不该被放行。
+		{Prompt: "p", Model: DefaultModel, Background: "transparent"},
+		{Prompt: "p", Model: DefaultModel, OutputFormat: "png"},
+	} {
+		if _, err := c.Submit(context.Background(), req); !errors.Is(err, ErrTransparentUnsupported) {
+			t.Errorf("model=%s background=%q output_format=%q 的错误 = %v, 期望 ErrTransparentUnsupported",
+				req.Model, req.Background, req.OutputFormat, err)
+		}
+	}
+	if called {
+		t.Error("请求不该被发出去")
+	}
+
+	// 认得这两个键的模型必须放行,否则这道闸就把功能本身挡死了。
+	for _, m := range []string{"gpt-image-1", "gpt-image-1-official"} {
+		if !SupportsTransparent(m) {
+			t.Errorf("%s 应当支持透明背景", m)
+		}
+	}
+	if SupportsTransparent(DefaultModel) {
+		t.Errorf("%s 不该被当成支持透明背景", DefaultModel)
+	}
 }

@@ -20,8 +20,34 @@ const (
 	defaultBase = "https://api.apimart.ai"
 	// DefaultModel 与 docs.apimart.ai 的 gpt-image-2 对齐。
 	DefaultModel = "gpt-image-2"
-	httpTimeout  = 60 * time.Second
+	// TransparentModel 是要透明背景时该用的那个模型。
+	//
+	// 单独一个常量而不是让调用方写字符串:`background`/`output_format` 这
+	// 两个参数只有 gpt-image-1 家族认得,而上游对不认得的参数是**静默忽略**
+	// 而不是报错。用默认模型去要透明底,拿回来的是一张白底图,谁都不会收到
+	// 一句提示——直到那张"水印"贴到别人的照片上变成一个白方块。
+	TransparentModel = "gpt-image-1"
+	httpTimeout      = 60 * time.Second
 )
+
+// transparentModels 是认得 background/output_format 的那几个模型。
+//
+// 白名单而不是前缀匹配:上游随时会加新模型,而"名字里带 gpt-image-1"并不
+// 保证参数兼容。宁可新模型上线时来这里加一行,也不要让一个没验证过的名字
+// 悄悄走上要透明底的那条路。
+var transparentModels = map[string]bool{
+	"gpt-image-1":          true,
+	"gpt-image-1-official": true,
+}
+
+// SupportsTransparent 回答"这个模型能不能出透明底"。
+func SupportsTransparent(model string) bool { return transparentModels[model] }
+
+// ErrTransparentUnsupported:要了透明底,给的模型却不认这套参数。
+//
+// 宁可在这里失败,也不要把请求发出去:上游会照常返回一张图,而那张图是不
+// 透明的。一次明确的 502 至少说得清哪里不对,一张假的透明图不会。
+var ErrTransparentUnsupported = errors.New("aigen: 这个模型不支持透明背景")
 
 // ErrNotConfigured 表示没有配 APIMART_API_KEY。调用方据此把功能整个藏起来,
 // 而不是让用户点一下再收到 401。
@@ -61,6 +87,13 @@ type Req struct {
 	// ImageURLs 是参考图的公开地址,空则是纯文生图。上游直接去取这些 URL,
 	// 所以不必也不该把图下载下来转 base64。
 	ImageURLs []string
+	// Background 与 OutputFormat 是透明底那条路专用的两个参数,留空即不传。
+	//
+	// 两个必须一起给:`background: transparent` 只是让上游不铺底色,而 alpha
+	// 要有地方存——输出成 JPEG/WebP 的话透明区会被压成黑色或白色,等于没要。
+	// 只有 transparentModels 里的模型认这两个键,Submit 会先挡一道。
+	Background   string
+	OutputFormat string
 }
 
 // Submit 递交一次生成,返回上游任务号。上游是异步的:这里只拿到受理回执,
@@ -82,6 +115,19 @@ func (c *Client) Submit(ctx context.Context, req Req) (string, error) {
 	}
 	if len(req.ImageURLs) > 0 {
 		payload["image_urls"] = req.ImageURLs
+	}
+	// 挡在编码之前:要了透明底却用了不认这套参数的模型,发出去只会换回一张
+	// 不透明的图,而调用方以为自己拿到了透明底。
+	if req.Background != "" || req.OutputFormat != "" {
+		if !SupportsTransparent(req.Model) {
+			return "", ErrTransparentUnsupported
+		}
+	}
+	if req.Background != "" {
+		payload["background"] = req.Background
+	}
+	if req.OutputFormat != "" {
+		payload["output_format"] = req.OutputFormat
 	}
 	body, _ := json.Marshal(payload)
 	var out struct {

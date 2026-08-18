@@ -1,15 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { formatBytes } from "../../api";
 import { useLang } from "../../LangContext";
 import { useToast } from "../../ToastContext";
 import { RingSpinner } from "../Spinner";
-import { genKind, genSources, inFlight } from "./generations";
+import { genKind, genSources, inFlight, picbiRemaining } from "./generations";
 import type { AIGeneration, AIStatusOn, Image } from "../../types";
 
 /**
- * The pieces both AI pages draw with: the allowance card, the option chips and
- * the polled history list.
+ * The pieces both AI pages draw with: the allowance readout, the option chips
+ * and the polled history list.
  *
  * They were lifted out of pages/Generate.tsx unchanged in behaviour, comments
  * included, and the retouch page reuses them rather than owning a second copy
@@ -18,93 +17,83 @@ import type { AIGeneration, AIStatusOn, Image } from "../../types";
  */
 
 /**
- * The allowance card. Identical on both pages because it is the same
- * allowance — retouching and generating draw on one pool of credits.
+ * The allowance, compact: one line of text for the composer's bottom row.
+ *
+ * It used to be a card of its own beside the composer — a heading, a 3xl
+ * number, two rows of labels and a progress bar, all for three figures. The
+ * bottom row (between the resolution chips and the submit button) was empty at
+ * the same time, and "how many do I have left" is the last thing anyone checks
+ * before pressing generate, so the figures moved to where that question gets
+ * asked. The bar went with the card: `0 / 5` already says what the bar was
+ * approximating, and more precisely.
+ *
+ * Nothing is drawn when there is nothing left to spend — that case is not a
+ * number, it is a thing to do about it, and AIQuotaNotice says which.
  */
-export function QuotaCard({
-  status,
-  availableBytes,
-}: {
-  status: AIStatusOn;
-  availableBytes: number;
-}) {
+export function QuotaInline({ status }: { status: AIStatusOn }) {
   const { t } = useLang();
+  const q = t.generate.quota.inline;
 
-  // Which wall you hit decides what to do about it, so the two are never
-  // collapsed into one "out of quota". They are also not exclusive: spending
-  // the last of the month on the same day as the fifth of the day hits both,
-  // and showing only one of them would send someone off to check in for
-  // credits they still could not spend until tomorrow. So each is asked
-  // separately, and both notices appear when both are true.
-  const blocked = status.remaining <= 0;
-  const monthlySpent = status.credits <= 0;
-  const dailySpent = status.used_today >= status.daily_limit;
+  const picbi = picbiRemaining(status);
+  const local = status.remaining;
+  if (local <= 0 && picbi <= 0) return null;
+
+  // The lead figure is whatever the next generation will actually be drawn
+  // from. Once the free allowance is spent the pic.bi balance is the pool in
+  // use, and showing a brand-coloured "0 次" above a button that still works
+  // would be describing a wall that is not there.
+  const lead = local > 0 ? q.times(local) : q.picbi(picbi);
 
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
-      <div className="text-[10px] uppercase tracking-wider text-neutral-600 mb-3">
-        {t.generate.quota.title}
-      </div>
-      <div className="text-3xl font-brand text-neutral-100 tabular-nums">
-        {status.remaining}
-        <span className="text-xs text-neutral-500 ml-1.5">{t.generate.quota.unit(status.remaining)}</span>
-      </div>
-      <div className="text-xs text-neutral-600 mt-1 mb-4">{t.generate.quota.remaining}</div>
-
-      <dl className="space-y-1 text-[11px]">
-        <Row
-          label={t.generate.quota.today}
-          value={t.generate.quota.todayValue(status.used_today, status.daily_limit)}
-        />
-        <Row
-          label={t.generate.quota.monthly}
-          value={t.generate.quota.monthlyValue(status.credits, status.monthly)}
-        />
-      </dl>
-
-      <div className="mt-3 h-1 rounded-full bg-neutral-800 overflow-hidden">
-        <div
-          className="h-full bg-brand-600 transition-all"
-          style={{
-            width: `${status.monthly > 0 ? Math.min(100, (status.credits / status.monthly) * 100) : 0}%`,
-          }}
-        />
-      </div>
-      <div className="mt-1.5 text-[10px] text-faint">{t.generate.quota.resetNote}</div>
-
-      {/* Monthly first when both are up: its remedy is the one that takes
-          a day to act on, so it is the one to start on. */}
-      {blocked && monthlySpent && (
-        <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-950/20 px-3 py-2.5 text-[11px] text-amber-200">
-          <div>
-            <i className="fa-solid fa-hourglass-end mr-1.5" />
-            {t.generate.quota.monthlyExhausted}
-          </div>
-          <div className="mt-1 text-amber-200/70">{t.generate.quota.monthlyExhaustedHint}</div>
-          <Link to="/space" className="mt-1.5 inline-block text-brand-400 hover:underline">
-            {t.generate.quota.checkinLink}
-          </Link>
-        </div>
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] tabular-nums">
+      <span className="font-medium text-brand-300">{lead}</span>
+      <span className="text-neutral-700">·</span>
+      <span className="text-neutral-500">{q.today(status.used_today, status.daily_limit)}</span>
+      <span className="text-neutral-700">·</span>
+      <span className="text-neutral-500">{q.monthly(status.credits, status.monthly)}</span>
+      {/* Only worth a fourth segment while the free pool is still the one in
+          use; once it is not, the pic.bi figure is already the lead. */}
+      {local > 0 && picbi > 0 && (
+        <>
+          <span className="text-neutral-700">·</span>
+          <span className="text-neutral-500">{q.picbi(picbi)}</span>
+        </>
       )}
-      {blocked && dailySpent && (
-        <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-950/20 px-3 py-2.5 text-[11px] text-amber-200">
-          <div>
-            <i className="fa-solid fa-clock mr-1.5" />
-            {t.generate.quota.dailyExhausted}
-          </div>
-          <div className="mt-1 text-amber-200/70">
-            {t.generate.quota.dailyExhaustedHint(status.daily_limit)}
-          </div>
-        </div>
-      )}
-      {/* Storage is the other thing a generated picture spends, and it is
-          not on this card anywhere else. */}
-      <div className="mt-4 flex items-center justify-between text-[11px]">
-        <span className="text-neutral-600">{t.common.availableStorage}</span>
-        <Link to="/space" className="text-neutral-300 hover:text-brand-300 transition">
-          {formatBytes(availableBytes)}
+    </div>
+  );
+}
+
+/**
+ * The one line that appears only when nothing can be spent.
+ *
+ * Which wall you hit decides what to do about it, so the two are never
+ * collapsed into one "out of quota" — but only one of them is ever shown, and
+ * the monthly one wins. A month at zero is a month at zero tomorrow as well,
+ * so "come back tomorrow" there is a sentence that costs the reader a day;
+ * "check in for more" is the only one of the two that is still actionable.
+ *
+ * A linked pic.bi with credits on it means neither wall is up — the server
+ * falls through to that ledger — so this renders nothing at all.
+ */
+export function QuotaNotice({ status }: { status: AIStatusOn }) {
+  const { t } = useLang();
+  const q = t.generate.quota;
+
+  if (status.remaining > 0 || picbiRemaining(status) > 0) return null;
+  const monthly = status.credits <= 0;
+
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-amber-500/30 bg-amber-950/20 px-3.5 py-2.5 text-[11px] text-amber-200">
+      <i className={`fa-solid ${monthly ? "fa-hourglass-end" : "fa-clock"} mr-0.5`} />
+      <span>{monthly ? q.monthlyExhausted : q.dailyExhausted}</span>
+      <span className="text-amber-200/70">
+        {monthly ? q.monthlyExhaustedHint : q.dailyExhaustedHint(status.daily_limit)}
+      </span>
+      {monthly && (
+        <Link to="/space" className="text-brand-400 hover:underline">
+          {q.checkinLink}
         </Link>
-      </div>
+      )}
     </div>
   );
 }
@@ -450,15 +439,6 @@ function Thumb({
       ) : (
         <RingSpinner className="h-4 w-4 text-brand-500" />
       )}
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <dt className="text-neutral-600">{label}</dt>
-      <dd className="text-neutral-300">{value}</dd>
     </div>
   );
 }

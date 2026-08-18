@@ -143,6 +143,60 @@ type aiGenerateReq struct {
 	Prompt     string `json:"prompt" binding:"required"`
 	Size       string `json:"size"`
 	Resolution string `json:"resolution"`
+	// Purpose 说明这次生成要拿来做什么。空值是普通的文生图。
+	//
+	// 为什么是"用途"而不是让客户端自己传 model/background/output_format:
+	// 那三个参数之间有硬约束(见 aiWatermarkPlan),而且其中两个是上游的
+	// 实现细节。让客户端拼这三个值,等于把"哪个模型认哪个参数"这条会随上游
+	// 变的知识复制到每一个客户端里,而其中一份拼错的表现是拿到一张不透明的
+	// 图、没有任何报错。
+	Purpose string `json:"purpose"`
+}
+
+// aiPurposeWatermark 是"给我画一枚水印"。
+const aiPurposeWatermark = "watermark"
+
+// aiGenPlan 是一次生成的全部参数决定,由用途一次算出。
+type aiGenPlan struct {
+	Model        string
+	Size         string
+	Resolution   string
+	Background   string
+	OutputFormat string
+}
+
+// aiWatermarkPlan 把水印这个用途要的五个参数写在一处。每一条都有理由:
+//
+//   - 模型换成 gpt-image-1:只有这个家族认 background/output_format。默认的
+//     gpt-image-2 收下这两个键也只是忽略,回来一张不透明的图——而一枚不透明
+//     的水印贴上去就是个白方块。
+//   - transparent 与 png 一起给:JPEG/WebP 存不下 alpha,只要前者等于没要。
+//   - 1:1 写死:水印是一枚角标,不是一幅画;非方形的比例只会在合成时留下
+//     一条谁都不想要的长边。
+//   - 1k 写死:水印最终按画面宽度的百分之十几渲染,一张 4k 的 logo 缩到那个
+//     尺寸,多出来的像素一个都用不上——而 4k 恰恰是最贵的一档。
+//
+// 1k 同时也是免费档,所以这条路不必过 pickResolution:那道闸拦的是"传了一个
+// 自己没资格用的档位",而这里的档位根本不由客户端决定。
+func aiWatermarkPlan() aiGenPlan {
+	return aiGenPlan{
+		Model:        aigen.TransparentModel,
+		Size:         "1:1",
+		Resolution:   "1k",
+		Background:   "transparent",
+		OutputFormat: "png",
+	}
+}
+
+// aiSubmitOpts 是递交给上游、却不进数据库的那几个参数。
+//
+// 不落库是因为没有任何路径会重新递交:提交只发生在 handler 里,对账器和
+// 轮询拿着任务号问上游,不需要原始请求体。多开三列存的是一份永远不会被读的
+// 拷贝,外加一次迁移。
+type aiSubmitOpts struct {
+	ImageURLs    []string
+	Background   string
+	OutputFormat string
 }
 
 type aiEditReq struct {
@@ -223,22 +277,37 @@ func (s *Server) handleAIGenerate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "ai.prompt_too_long")})
 		return
 	}
-	size := req.Size
-	if !aiAllowedSizes[size] {
-		size = "1:1"
-	}
-	resolution, ok := s.pickResolution(c, u, req.Resolution)
-	if !ok {
+	// 认不出的用途一律拒绝,绝不当成普通生成。静默忽略的下场是:客户端以为
+	// 自己要到了一张透明底的水印,拿回来的却是一张不透明的方图,而没有任何
+	// 一处报过错。
+	purpose := strings.TrimSpace(req.Purpose)
+	if purpose != "" && purpose != aiPurposeWatermark {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": i18n.T(c, "ai.purpose_unknown"), "code": "purpose_unknown"})
 		return
+	}
+
+	plan := aiGenPlan{Model: aigen.DefaultModel, Size: req.Size}
+	if purpose == aiPurposeWatermark {
+		plan = aiWatermarkPlan()
+	} else {
+		if !aiAllowedSizes[plan.Size] {
+			plan.Size = "1:1"
+		}
+		r, ok := s.pickResolution(c, u, req.Resolution)
+		if !ok {
+			return
+		}
+		plan.Resolution = r
 	}
 
 	g := s.groupFor(u)
 	gen := models.AIGeneration{
 		Kind:       models.AIGenKindGenerate,
 		Prompt:     prompt,
-		Model:      aigen.DefaultModel,
-		Size:       size,
-		Resolution: resolution,
+		Model:      plan.Model,
+		Size:       plan.Size,
+		Resolution: plan.Resolution,
 		Credits:    1,
 	}
 	// 数今日、扣额度、落记录三步在一个事务里完成,理由见 aigen.Begin:
@@ -248,7 +317,10 @@ func (s *Server) handleAIGenerate(c *gin.Context) {
 		return
 	}
 
-	s.submitAIGen(c, &gen, nil)
+	s.submitAIGen(c, &gen, aiSubmitOpts{
+		Background:   plan.Background,
+		OutputFormat: plan.OutputFormat,
+	})
 }
 
 // POST /api/ai/edit — 拿自己图库里的图去改。
@@ -322,7 +394,7 @@ func (s *Server) handleAIEdit(c *gin.Context) {
 		return
 	}
 
-	s.submitAIGen(c, &gen, urls)
+	s.submitAIGen(c, &gen, aiSubmitOpts{ImageURLs: urls})
 }
 
 // aiEditMaxSources 是一次修图能带几张源图。上游允许 16 张,这里收到 4:一次
@@ -402,15 +474,21 @@ var errAISourceMissing = errors.New("ai: 源图不存在或不属于此用户")
 //
 // gen 必须已经过 aigen.Begin(额度已扣、记录已落库)。失败一律走 failAIGen,
 // 退款与状态落库因此只有一条路径,不会因为多一个入口就多一份要维护的退款逻辑。
-func (s *Server) submitAIGen(c *gin.Context, gen *models.AIGeneration, imageURLs []string) {
+//
+// opts 里是那些不进数据库的上游参数(参考图地址、透明底)。它们由调用方算好
+// 传进来,这里不再猜:同样是 gpt-image-1,一次普通生成和一次水印生成要的
+// background 并不一样,从 gen.Model 反推只会推错一半。
+func (s *Server) submitAIGen(c *gin.Context, gen *models.AIGeneration, opts aiSubmitOpts) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
 	taskID, err := s.AIGen.Submit(ctx, aigen.Req{
-		Prompt:     gen.Prompt,
-		Model:      gen.Model,
-		Size:       gen.Size,
-		Resolution: gen.Resolution,
-		ImageURLs:  imageURLs,
+		Prompt:       gen.Prompt,
+		Model:        gen.Model,
+		Size:         gen.Size,
+		Resolution:   gen.Resolution,
+		ImageURLs:    opts.ImageURLs,
+		Background:   opts.Background,
+		OutputFormat: opts.OutputFormat,
 	})
 	if err != nil {
 		// 没递交成功就没花上游的钱。走统一的失败路径,让退款和状态落库

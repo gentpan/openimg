@@ -36,14 +36,42 @@ type AIGeneration struct {
 	Resolution string `gorm:"size:8;not null" json:"resolution"`
 
 	// TaskID 是上游返回的任务号。轮询靠它,重启后恢复也靠它。
-	TaskID string       `gorm:"size:128;index" json:"-"`
-	Status AIGenStatus  `gorm:"size:16;index;not null" json:"status"`
-	Error  string       `gorm:"type:text" json:"error,omitempty"`
+	TaskID  string      `gorm:"size:128;index" json:"-"`
+	Status  AIGenStatus `gorm:"size:16;index;not null" json:"status"`
+	Error   string      `gorm:"type:text" json:"error,omitempty"`
 	ImageID *uuid.UUID  `gorm:"type:uuid;index" json:"image_id,omitempty"`
 
 	// Credits 记录这次实际扣了几点。失败退还时按这个数退,而不是假定扣了 1
-	// ——将来支持一次多张时这里就是 n。
+	// ——将来支持一次多张时这里就是 n。走 pic.bi 的记录里它是对端算出来并
+	// 返回的价钱(1k/2k/4k = 1/2/4),不是本地写死的常数。
 	Credits int `gorm:"not null;default:1" json:"credits"`
+
+	// 账本归属。这三列在扣费那一刻写死,之后只读不改。
+	//
+	// 为什么不在退款时现查用户绑没绑 pic.bi:那条路上有一个能把真钱换成免费
+	// 额度的洞。绑定 → 提交生成(扣了 pic.bi 的真钱)→ 立刻解绑 → 让生成失败,
+	// 退款如果去看"当前绑定状态",会认为这是一笔本地扣费,把钱退进本地的
+	// 免费次数里。而解绑接口在机器组,一个 API token 就能调。
+	//
+	// 所以退款只认这里:Ledger 决定退到哪边,SpendOpID 决定退哪一笔,金额由
+	// pic.bi 从原流水里读。
+	//
+	// 存量记录这一列是空的,按 local 读(见 AfterFind)——存量本来也全是本地
+	// 账本。注意按账本筛选时要写 ledger <> 'picbi' 而不是 ledger = 'local',
+	// 空串才落得进去。
+	Ledger      string `gorm:"size:16;not null;default:'local'" json:"ledger"`
+	PicbiUserID string `gorm:"size:64;index" json:"-"`
+	// SpendOpID 是 pic.bi 那笔扣费流水的号。空表示扣费那一步没走完——可能
+	// 压根没扣,也可能扣成了但回执没回来,两者在这里分不出来,由退款那一侧
+	// 用同一个幂等键重放去问。
+	SpendOpID string `gorm:"size:64;index" json:"-"`
+	// RefundedAt 是"这条失败记录的钱已经还回去了"的凭据。
+	//
+	// 它存在是因为远程退款会真的失败(网络抖一下就够了),而记录一旦落成
+	// failed 就是终态、再没有人回来看它。只打一行日志的话,丢的是用户充值的
+	// 真钱。有了这一列,对账器才能把没退成的挑出来重试——重试安全,因为
+	// 退款的幂等键是由记录 ID 算出来的,同一笔退两次在 pic.bi 那边是一次。
+	RefundedAt *time.Time `gorm:"index" json:"-"`
 
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"-"`
@@ -54,6 +82,12 @@ type AIGeneration struct {
 const (
 	AIGenKindGenerate = "generate"
 	AIGenKindEdit     = "edit"
+)
+
+// AIGeneration.Ledger 的取值:这次的额度记在谁家账上。
+const (
+	AIGenLedgerLocal = "local"
+	AIGenLedgerPicbi = "picbi"
 )
 
 type AIGenStatus string
@@ -89,6 +123,9 @@ func (g *AIGeneration) BeforeCreate(tx *gorm.DB) error {
 func (g *AIGeneration) AfterFind(tx *gorm.DB) error {
 	if g.Kind == "" {
 		g.Kind = AIGenKindGenerate
+	}
+	if g.Ledger == "" {
+		g.Ledger = AIGenLedgerLocal
 	}
 	return nil
 }

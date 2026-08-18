@@ -37,8 +37,21 @@ type User struct {
 	GroupID      *uuid.UUID `gorm:"type:uuid;index" json:"group_id,omitempty"`
 
 	// OAuth linkage (one user can be linked to multiple providers)
-	GoogleSub string `gorm:"size:64;index" json:"-"`
-	GithubID  string `gorm:"size:64;index" json:"-"`
+	//
+	// 部分唯一索引,不是普通索引:linkProviderToUser 是"先查有没有别人占用、
+	// 再写"的两步,两个并发请求可以同时查到空、同时写进去,于是一个第三方
+	// 身份挂在了两个账号上。数据库这一层的唯一约束是唯一能关掉那个窗口的
+	// 东西。条件是 <> '' —— 没绑过的人这一列是空串,空串在这张表里遍地都是,
+	// 普通唯一索引第一天就会炸。
+	//
+	// 索引名刻意与 GORM 给普通索引起的默认名不同(多了 _uniq):同名的话
+	// AutoMigrate 看到旧索引已存在就直接跳过,新的唯一约束永远建不出来。
+	GoogleSub string `gorm:"size:64;index:idx_users_google_sub_uniq,unique,where:google_sub <> ''" json:"-"`
+	GithubID  string `gorm:"size:64;index:idx_users_github_id_uniq,unique,where:github_id <> ''" json:"-"`
+	// PicbiID 是这个账号在 pic.bi 那边的 sub。关联而非合并:两边各自保留
+	// 账号,只有这一条外键相连,所以它和 GoogleSub/GithubID 并列,而不是
+	// 替换掉本地身份。有值即表示"这个人的 AI 额度可以从 pic.bi 扣"。
+	PicbiID string `gorm:"size:64;index:idx_users_picbi_id_uniq,unique,where:picbi_id <> ''" json:"-"`
 
 	// Storage quota, in bytes. Both are denormalised counters — the canonical
 	// history lives in quota_transactions and can be replayed to rebuild them.

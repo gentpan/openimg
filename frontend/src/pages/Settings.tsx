@@ -16,6 +16,14 @@ import DeleteAccount from "../components/DeleteAccount";
 import StorageProfiles from "../components/StorageProfiles";
 import { useLang } from "../LangContext";
 import { useDialog } from "../DialogContext";
+import { refreshAIStatus } from "../aiStatus";
+
+/** 界面上印的名字，跟 URL 里那个小写标识分开。 */
+const PROVIDER_NAMES: Record<string, string> = {
+  google: "Google",
+  github: "GitHub",
+  picbi: "pic.bi",
+};
 
 export default function SettingsPage() {
   const dialog = useDialog();
@@ -30,10 +38,13 @@ export default function SettingsPage() {
   // pick up callback flash messages from ?linked=google or ?error=...
   useEffect(() => {
     if (params.get("linked")) {
-      setInfo(t.settings.oauth.linked(params.get("linked") ?? ""));
+      const p = params.get("linked") ?? "";
+      setInfo(p === "picbi" ? t.settings.picbi.linkedTip : t.settings.oauth.linked(PROVIDER_NAMES[p] ?? p));
       params.delete("linked");
       setParams(params, { replace: true });
       refresh();
+      // 刚关联上就多一档 4K —— 缓存里那份 status 是关联前问的。
+      if (p === "picbi") refreshAIStatus();
     }
     if (params.get("error")) {
       setErr(decodeURIComponent(params.get("error") || ""));
@@ -50,9 +61,12 @@ export default function SettingsPage() {
     );
   }
 
-  async function unlink(provider: "google" | "github") {
+  async function unlink(provider: "google" | "github" | "picbi") {
     const ok = await dialog.confirm({
-      title: t.settings.oauth.unlinkConfirm(provider),
+      title:
+        provider === "picbi"
+          ? t.settings.picbi.unlinkConfirm
+          : t.settings.oauth.unlinkConfirm(PROVIDER_NAMES[provider] ?? provider),
       danger: true,
     });
     if (!ok) return;
@@ -62,7 +76,14 @@ export default function SettingsPage() {
     try {
       await authApi.unlinkOAuth(provider);
       await refresh();
-      setInfo(t.settings.oauth.unlinked(provider));
+      // 关联状态决定 4K 那一档在不在,而 AI 状态是跨页缓存的:不重取的话
+      // 解绑后生成页还留着一个已经会被服务器 403 的清晰度。
+      if (provider === "picbi") await refreshAIStatus();
+      setInfo(
+        provider === "picbi"
+          ? t.settings.picbi.unlinkedTip
+          : t.settings.oauth.unlinked(PROVIDER_NAMES[provider] ?? provider),
+      );
     } catch (e) {
       setErr(String(e instanceof Error ? e.message : e));
     } finally {
@@ -175,6 +196,25 @@ export default function SettingsPage() {
             onAction={() => {
               if (user.github_connected) unlink("github");
               else window.location.href = "/auth/github/link-start";
+            }}
+          />
+        </Section>
+
+        {/* 账号关联 —— 与上面那组分开是有意的:pic.bi 打通的是额度,
+            它不能用来登录本站,混进「登录方式」会读成又一个登录入口。 */}
+        <Section icon="fa-link" title={t.settings.picbi.title} subtitle={t.settings.picbi.subtitle}>
+          <ConnectionRow
+            icon={<PicbiIcon />}
+            label="pic.bi"
+            connected={user.picbi_connected}
+            connectedLabel={t.settings.picbi.connected}
+            note={user.picbi_connected ? t.settings.picbi.connectedNote : t.settings.picbi.note}
+            actionBusy={busy === "picbi"}
+            actionLabel={user.picbi_connected ? t.settings.picbi.unlink : t.settings.picbi.link}
+            danger={user.picbi_connected}
+            onAction={() => {
+              if (user.picbi_connected) unlink("picbi");
+              else window.location.href = "/auth/picbi/link-start";
             }}
           />
         </Section>
@@ -601,6 +641,18 @@ function GithubIcon() {
   return (
     <svg viewBox="0 0 16 16" className="h-5 w-5 fill-current" aria-hidden>
       <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+    </svg>
+  );
+}
+
+/** pic.bi 的标记:不借用它的商标,画一张图片+一条链,说的是"图站关联"。 */
+function PicbiIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3" y="4" width="14" height="12" rx="1.5" />
+      <path d="M3 13l3.5-3 3 2.5L13 9l4 4" />
+      <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none" />
+      <path d="M14.5 19h2a3 3 0 0 0 0-6h-.5M12 19h-2a3 3 0 0 1 0-6h.5M11 16h4" />
     </svg>
   );
 }

@@ -30,9 +30,114 @@ var aiAllowedSizes = map[string]bool{
 	"16:9": true, "9:16": true, "2:1": true, "1:2": true,
 }
 
-// aiAllowedResolutions 只放开 1k/2k。4k 在上游是最贵的档,而这里是免费额度
-// ——放开它等于让每个用户每月按最高价烧 50 次。
-var aiAllowedResolutions = map[string]bool{"1k": true, "2k": true}
+// aiKnownResolutions 是上游认识的全部档位。它和"这个用户能用哪些"是两件事:
+// 前者不认识 → 客户端拼错了,400;认识但没资格 → 403。混成一件事就只能笼统
+// 报错,客户端分不清该改参数还是该去关联账号。
+var aiKnownResolutions = map[string]bool{"1k": true, "2k": true, "4k": true}
+
+// aiFreeResolutions 是没关联 pic.bi 时能用的档位。
+//
+// 不放 4k:它在上游是最贵的一档,而这里发的是免费额度——放开等于让每个用户
+// 每月按最高价烧 50 次。
+var aiFreeResolutions = []string{"1k", "2k"}
+
+// aiLinkedResolutions 是关联了 pic.bi 之后的档位。4k 在这里放开,因为花的
+// 是用户自己在 pic.bi 充的钱,而 pic.bi 会按档位算真实价钱(1k/2k/4k =
+// 1/2/4 分),没有理由替他省。
+var aiLinkedResolutions = []string{"1k", "2k", "4k"}
+
+// allowedResolutionsFor 是"这个用户能用哪些档位"的唯一答案。
+//
+// 唯一这件事是重点:/api/ai/status 报出去的清单、/generate 与 /edit 收进来的
+// 校验,必须读同一个函数。分成两处的下场是界面上不给选 4k,而直接 POST
+// resolution=4k 就能绕过去——原来的代码正是这样(校验不过就静默回落 1k,
+// 等于永远不会拒绝)。
+func allowedResolutionsFor(u *models.User) []string {
+	if picbiLinked(u) {
+		return aiLinkedResolutions
+	}
+	return aiFreeResolutions
+}
+
+// picbiLinked:这个人的额度能不能从 pic.bi 扣。两个条件都要——用户绑了,
+// 且这个部署确实配了 partner 凭据。
+func picbiLinked(u *models.User) bool {
+	return u != nil && u.PicbiID != "" && aigen.RemoteEnabled()
+}
+
+// freeRes 与 aigen.freeResolution 同义,重复一份是因为 api 不该 import 那个
+// 私有函数;两处都改才算改对(账本那一层才是真闸门)。
+func freeRes(r string) bool {
+	for _, x := range aiFreeResolutions {
+		if x == r {
+			return true
+		}
+	}
+	return false
+}
+
+func resolutionAllowed(u *models.User, r string) bool {
+	for _, x := range allowedResolutionsFor(u) {
+		if x == r {
+			return true
+		}
+	}
+	return false
+}
+
+// pickResolution 校验档位,不合格就自己把错误写出去并返回 false。
+//
+// 空值仍然当 1k:客户端可以不传这个字段。但一个"传了却不被允许"的值绝不
+// 静默回落——回落会让越权请求以成功的样子返回,用户以为自己出了 4k 的图。
+func (s *Server) pickResolution(c *gin.Context, u *models.User, raw string) (string, bool) {
+	r := strings.TrimSpace(raw)
+	if r == "" {
+		return "1k", true
+	}
+	// API token 会话只能用免费档。理由见 aigen.Begin 的 localOnly:那种令牌
+	// 会被粘进第三方客户端,而解绑 pic.bi 只认网页会话——让它能花真钱、本人
+	// 又撤不回来,这个组合不能存在。
+	if auth.ViaToken(c) && !freeRes(r) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": i18n.T(c, "ai.resolution_needs_session"), "code": "resolution_needs_session"})
+		return "", false
+	}
+	if !aiKnownResolutions[r] {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": i18n.T(c, "ai.resolution_unknown"), "code": "resolution_unknown"})
+		return "", false
+	}
+	if !resolutionAllowed(u, r) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": i18n.T(c, "ai.resolution_denied"), "code": "resolution_denied"})
+		return "", false
+	}
+	return r, true
+}
+
+// aiBeginFailed 把 aigen.Begin 的错误翻成 HTTP。两个入口共用,免得一处补了
+// pic.bi 的分支另一处忘了。
+//
+// pic.bi 不可达是 503 而不是 402:这两者绝不能混。402 的含义是"你没钱了,
+// 去签到",而不可达的含义是"我们不知道你有没有钱"。把后者当前者报,下一步
+// 就是有人提议"那不如退回免费额度"——那正是 pic.bi 每抖一次全站免费刷 4k 的
+// 那个洞。
+func (s *Server) aiBeginFailed(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, aigen.ErrRemoteUnavailable):
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": i18n.T(c, "ai.picbi_unreachable"), "code": "picbi_unreachable"})
+	case errors.Is(err, aigen.ErrRemoteDenied):
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": i18n.T(c, "ai.picbi_denied"), "code": "picbi_denied"})
+	case errors.Is(err, aigen.ErrDailyLimit):
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": i18n.T(c, "ai.daily_limit")})
+	case errors.Is(err, aigen.ErrNoCredits):
+		c.JSON(http.StatusPaymentRequired, gin.H{"error": i18n.T(c, "ai.no_credits")})
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+}
 
 type aiGenerateReq struct {
 	Prompt     string `json:"prompt" binding:"required"`
@@ -61,7 +166,7 @@ func (s *Server) handleAIStatus(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	out := gin.H{
 		"enabled":     true,
 		"credits":     bal.Credits,
 		"used_today":  bal.UsedToday,
@@ -69,8 +174,23 @@ func (s *Server) handleAIStatus(c *gin.Context) {
 		"monthly":     bal.Monthly,
 		"remaining":   bal.Remaining(),
 		"sizes":       []string{"1:1", "3:2", "2:3", "4:3", "3:4", "16:9", "9:16"},
-		"resolutions": []string{"1k", "2k"},
-	})
+		// 与两个提交入口共用同一个函数。界面上能选什么,后端就收什么。
+		"resolutions":  allowedResolutionsFor(u),
+		"picbi_linked": picbiLinked(u),
+	}
+	// 关联之后本地额度用完不等于不能生成了,界面得知道那边还剩多少,否则
+	// remaining=0 会把入口整个藏掉。查不到就不报这个字段——它是锦上添花,
+	// 不该让 pic.bi 抖一下就把整个状态接口拖垮。
+	if picbiLinked(u) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+		defer cancel()
+		if n, err := aigen.RemoteBalance(ctx, u.PicbiID); err == nil {
+			out["picbi_credits"] = n
+		} else {
+			log.Printf("ai: 查 pic.bi 余额失败 user=%s: %v", u.ID, err)
+		}
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 // POST /api/ai/generate — 递交一次生成。
@@ -107,9 +227,9 @@ func (s *Server) handleAIGenerate(c *gin.Context) {
 	if !aiAllowedSizes[size] {
 		size = "1:1"
 	}
-	resolution := req.Resolution
-	if !aiAllowedResolutions[resolution] {
-		resolution = "1k"
+	resolution, ok := s.pickResolution(c, u, req.Resolution)
+	if !ok {
+		return
 	}
 
 	g := s.groupFor(u)
@@ -123,15 +243,8 @@ func (s *Server) handleAIGenerate(c *gin.Context) {
 	}
 	// 数今日、扣额度、落记录三步在一个事务里完成,理由见 aigen.Begin:
 	// 记录不落库,日限就没有计数依据,并发提交会全部放行。
-	if err := aigen.Begin(s.DB, u, g, &gen); err != nil {
-		switch {
-		case errors.Is(err, aigen.ErrDailyLimit):
-			c.JSON(http.StatusTooManyRequests, gin.H{"error": i18n.T(c, "ai.daily_limit")})
-		case errors.Is(err, aigen.ErrNoCredits):
-			c.JSON(http.StatusPaymentRequired, gin.H{"error": i18n.T(c, "ai.no_credits")})
-		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
+	if err := aigen.Begin(s.DB, u, g, &gen, auth.ViaToken(c)); err != nil {
+		s.aiBeginFailed(c, err)
 		return
 	}
 
@@ -189,9 +302,9 @@ func (s *Server) handleAIEdit(c *gin.Context) {
 	if !aiAllowedSizes[size] {
 		size = ""
 	}
-	resolution := req.Resolution
-	if !aiAllowedResolutions[resolution] {
-		resolution = "1k"
+	resolution, ok2 := s.pickResolution(c, u, req.Resolution)
+	if !ok2 {
+		return
 	}
 
 	g := s.groupFor(u)
@@ -204,15 +317,8 @@ func (s *Server) handleAIEdit(c *gin.Context) {
 		Resolution: resolution,
 		Credits:    1,
 	}
-	if err := aigen.Begin(s.DB, u, g, &gen); err != nil {
-		switch {
-		case errors.Is(err, aigen.ErrDailyLimit):
-			c.JSON(http.StatusTooManyRequests, gin.H{"error": i18n.T(c, "ai.daily_limit")})
-		case errors.Is(err, aigen.ErrNoCredits):
-			c.JSON(http.StatusPaymentRequired, gin.H{"error": i18n.T(c, "ai.no_credits")})
-		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
+	if err := aigen.Begin(s.DB, u, g, &gen, auth.ViaToken(c)); err != nil {
+		s.aiBeginFailed(c, err)
 		return
 	}
 
@@ -440,11 +546,14 @@ func (s *Server) failAIGen(gen *models.AIGeneration, msg string) error {
 	if res.RowsAffected == 0 {
 		return nil // 已经被别的路径终结过了
 	}
-	if err := aigen.Refund(s.DB, gen.UserID, gen.Credits); err != nil {
+	// 传整条记录,不是 (userID, credits):退到哪本账、退哪一笔,由扣费那一刻
+	// 写死在这条记录上的 Ledger/SpendOpID 决定,而不是由用户此刻还绑没绑
+	// pic.bi 决定。见 models.AIGeneration 上那几列的注释。
+	if err := aigen.Refund(s.DB, gen); err != nil {
 		// 本地账本下这是一次几乎不会失败的 UPDATE,但错误绝不能吞:接上
 		// pic.bi 之后退款失败会变成常态,而那时丢掉的是用户充值的真钱。
-		log.Printf("ai: 退款失败 gen=%s user=%s credits=%d: %v",
-			gen.ID, gen.UserID, gen.Credits, err)
+		log.Printf("ai: 退款失败 gen=%s user=%s ledger=%s op=%s credits=%d: %v",
+			gen.ID, gen.UserID, gen.Ledger, gen.SpendOpID, gen.Credits, err)
 	}
 	gen.Status = models.AIGenFailed
 	return nil

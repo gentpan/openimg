@@ -28,9 +28,9 @@ type Config struct {
 	// AppleAppID is "TEAMID.bundleid" for the Mac app. Set it to serve the
 	// associated-domains document that lets the app use a passkey natively
 	// instead of through a web sheet. Unset, the document is not served.
-	AppleAppID string
-	CookieDomain  string
-	CookieSecure  bool
+	AppleAppID   string
+	CookieDomain string
+	CookieSecure bool
 
 	JWTSecret string
 	// StorageMasterKey (base64, 32 bytes) encrypts user-supplied bucket
@@ -41,6 +41,22 @@ type Config struct {
 	GoogleClientSecret string
 	GithubClientID     string
 	GithubClientSecret string
+
+	// pic.bi 关联。两套凭据,用途完全不同,不要合并:
+	//
+	//   - OAuth 那对(ClientID/Secret)是"让用户把两个账号连起来",走浏览器
+	//     重定向,用户看得见同意页。
+	//   - partner 那对(PartnerID/Secret)是服务端到服务端的 HMAC 共享密钥,
+	//     用来查余额和扣费,用户永远看不到。
+	//
+	// 任何一组留空,对应的能力就整个关掉:没有 OAuth 就没人能关联,没有
+	// partner 密钥就没人能被扣费(4K 档也随之关闭)。半配置状态下的表现是
+	// 每次调用都被对端拒绝,而那看起来像"pic.bi 坏了"。
+	PicbiBaseURL       string
+	PicbiClientID      string
+	PicbiClientSecret  string
+	PicbiPartnerID     string
+	PicbiPartnerSecret string
 
 	// Email. EmailProvider selects the backend: "cloudflare" | "sendflare" |
 	// "" (auto — whichever has credentials, Cloudflare first).
@@ -82,8 +98,8 @@ func Load() Config {
 	requireVerified, _ := strconv.ParseBool(getenv("REQUIRE_EMAIL_VERIFIED", "true"))
 
 	cfg := Config{
-		APIMartKey:  getenv("APIMART_API_KEY", ""),
-		APIMartBase: getenv("APIMART_BASE_URL", ""),
+		APIMartKey:    getenv("APIMART_API_KEY", ""),
+		APIMartBase:   getenv("APIMART_BASE_URL", ""),
 		ListenAddr:    getenv("LISTEN_ADDR", "127.0.0.1:8080"),
 		DatabaseURL:   mustGet("DATABASE_URL"),
 		StorageDir:    getenv("STORAGE_DIR", "/opt/openimg/storage"),
@@ -102,6 +118,12 @@ func Load() Config {
 		GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
 		GithubClientID:     os.Getenv("GITHUB_CLIENT_ID"),
 		GithubClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
+
+		PicbiBaseURL:       strings.TrimRight(strings.TrimSpace(os.Getenv("PICBI_BASE_URL")), "/"),
+		PicbiClientID:      os.Getenv("PICBI_CLIENT_ID"),
+		PicbiClientSecret:  os.Getenv("PICBI_CLIENT_SECRET"),
+		PicbiPartnerID:     os.Getenv("PICBI_PARTNER_ID"),
+		PicbiPartnerSecret: os.Getenv("PICBI_PARTNER_SECRET"),
 
 		EmailProvider:       strings.ToLower(strings.TrimSpace(os.Getenv("EMAIL_PROVIDER"))),
 		EmailFrom:           getenv("EMAIL_FROM", "noreply@openimg.io"),

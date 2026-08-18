@@ -689,6 +689,20 @@ export const zh = {
       unlinkConfirm: (provider: string) =>
         `确定要解绑 ${provider}？解绑后这个 ${provider} 账号不能再用来登录。`,
     },
+    // 关联不是登录：pic.bi 账号打通的是积分，不能拿来登录本站，所以
+    // 它自己一张卡片，措辞也和上面那组「登录方式」分开。
+    picbi: {
+      title: "账号关联",
+      subtitle: "两边账号各自独立，关联只是把额度打通",
+      link: "关联",
+      unlink: "取消关联",
+      connected: "已关联",
+      note: "关联 pic.bi 后，AI 生成会多出 4K 清晰度",
+      connectedNote: "AI 生成先用本站的免费次数，用完才扣 pic.bi 的积分",
+      linkedTip: "已关联 pic.bi",
+      unlinkedTip: "已取消关联 pic.bi",
+      unlinkConfirm: "取消关联 pic.bi？之后 AI 生成不再能使用 pic.bi 的积分，4K 清晰度也会收起。",
+    },
     password: {
       updated: "密码已更新",
       updatedDetail: "下次登录请使用新密码",

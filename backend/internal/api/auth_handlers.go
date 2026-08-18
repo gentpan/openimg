@@ -44,11 +44,14 @@ type publicUser struct {
 	EmailVerified  bool   `json:"email_verified"`
 	Google         bool   `json:"google_connected"`
 	Github         bool   `json:"github_connected"`
-	AvatarURL      string `json:"avatar_url,omitempty"`
-	ReferralCode   string `json:"referral_code,omitempty"`
-	UploadMode     string `json:"upload_mode"`
-	VariantFormat  string `json:"variant_format"`
-	MaxImageWidth  int    `json:"max_image_width"`
+	// Picbi 不是登录方式,是"额度从 pic.bi 扣"的关联。前端据此决定要不要
+	// 显示 4K 档与那边的余额。
+	Picbi         bool   `json:"picbi_connected"`
+	AvatarURL     string `json:"avatar_url,omitempty"`
+	ReferralCode  string `json:"referral_code,omitempty"`
+	UploadMode    string `json:"upload_mode"`
+	VariantFormat string `json:"variant_format"`
+	MaxImageWidth int    `json:"max_image_width"`
 }
 
 func toPublic(u *models.User, group *models.UserGroup) publicUser {
@@ -66,6 +69,7 @@ func toPublic(u *models.User, group *models.UserGroup) publicUser {
 		EmailVerified:  u.EmailVerified,
 		Google:         u.GoogleSub != "",
 		Github:         u.GithubID != "",
+		Picbi:          u.PicbiID != "",
 		AvatarURL:      u.AvatarURL,
 		ReferralCode:   u.ReferralCode,
 		UploadMode:     u.UploadMode,

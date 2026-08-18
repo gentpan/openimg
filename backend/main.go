@@ -17,6 +17,7 @@ import (
 	"github.com/gentpan/openimg/backend/internal/email"
 	"github.com/gentpan/openimg/backend/internal/imageproc"
 	"github.com/gentpan/openimg/backend/internal/passkey"
+	"github.com/gentpan/openimg/backend/internal/picbi"
 	"github.com/gentpan/openimg/backend/internal/quota"
 	"github.com/gentpan/openimg/backend/internal/referral"
 	"github.com/gentpan/openimg/backend/internal/scheduler"
@@ -137,8 +138,20 @@ func main() {
 		GoogleClientSecret: cfg.GoogleClientSecret,
 		GithubClientID:     cfg.GithubClientID,
 		GithubClientSecret: cfg.GithubClientSecret,
+		PicbiBaseURL:       cfg.PicbiBaseURL,
+		PicbiClientID:      cfg.PicbiClientID,
+		PicbiClientSecret:  cfg.PicbiClientSecret,
 		BaseURL:            cfg.PublicBaseURL,
 	}
+	// pic.bi 的额度实现装进 aigen 包里,而不是从 handler 传进去:走哪本账
+	// 是 aigen 内部的分流,调用点只说"开一次生成"。没配就是 nil,所有人
+	// 照旧只用本地免费额度。
+	picbiClient := picbi.New(cfg.PicbiBaseURL, cfg.PicbiPartnerID, cfg.PicbiPartnerSecret)
+	aigen.SetRemote(picbiClient)
+	// 和 aigen/email 那两行同一个用意:接没接上 pic.bi 要在启动日志里一眼
+	// 看得见。这两个开关是分开的——只配 OAuth 的话用户能关联却扣不了费。
+	log.Printf("picbi: partner=%v oauth=%v base=%q",
+		picbiClient.Enabled(), cfg.PicbiClientID != "" && cfg.PicbiBaseURL != "", cfg.PicbiBaseURL)
 	srv.Email = pickEmailSender(cfg)
 	log.Printf("email: provider=%s from=%s configured=%v",
 		srv.Email.Name(), cfg.EmailFrom, srv.Email.Configured())

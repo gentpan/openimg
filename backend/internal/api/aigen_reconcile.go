@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/gentpan/openimg/backend/internal/aigen"
 	"github.com/gentpan/openimg/backend/internal/i18n"
 	"github.com/gentpan/openimg/backend/internal/models"
 	"github.com/gentpan/openimg/backend/internal/scheduler"
@@ -23,6 +24,11 @@ const (
 	aiGiveUp     = time.Hour
 	aiSweepEvery = 10 * time.Minute
 	aiSweepLimit = 500
+	// 退款重试的窗口与批量。七天之外就别再敲了:那时候要么是对端账本出了
+	// 需要人介入的问题,要么是这条记录本来就退不了,继续每十分钟打一次
+	// 只会把日志淹掉。
+	aiRefundRetryWindow = 7 * 24 * time.Hour
+	aiRefundRetryLimit  = 200
 )
 
 // StartAIReconciler 定期回收卡住的生成记录。
@@ -44,6 +50,7 @@ func (s *Server) StartAIReconciler(ctx context.Context) {
 				return
 			case <-t.C:
 				s.reconcileAIGenerations(ctx)
+				s.retryFailedRefunds(ctx)
 			}
 		}
 	}()
@@ -67,6 +74,10 @@ func (s *Server) reconcileAIGenerations(ctx context.Context) {
 		switch {
 		// 没有任务号说明扣了费却没递交出去(进程在这两步之间死了,或者提交
 		// 那一步报错后连状态都没写成)。上游没有东西可查,直接退款了结。
+		//
+		// 走 pic.bi 的记录也落在这一支:beginRemote 在"扣费结果未知"时刻意
+		// 把行留在 charging,等的就是这里。failAIGen 里的退款会用同一个幂等
+		// 键把丢掉的流水号问回来,再原路退。
 		case gen.TaskID == "":
 			if err := s.failAIGen(gen, i18n.TCtx(ctx, "ai.abandoned")); err != nil {
 				log.Printf("ai: 了结 %s 失败: %v", gen.ID, err)
@@ -91,5 +102,43 @@ func (s *Server) reconcileAIGenerations(ctx context.Context) {
 	}
 	if requeued+closed > 0 {
 		log.Printf("ai: 对账重投 %d 条、了结 %d 条", requeued, closed)
+	}
+}
+
+// retryFailedRefunds 把没退成的远程扣费再退一遍。
+//
+// 只针对 pic.bi 账本:本地退款是一条几乎不会失败的 UPDATE,而远程退款隔着
+// 一次跨服务调用,网络抖一下就会失败——而记录那时已经是 failed 终态,再没有
+// 任何路径会回来看它。少了这一趟,用户充值的真钱就停在对端不回来了,现场
+// 只剩一行日志。
+//
+// 重试是安全的:退款的幂等键由记录 ID 算出,同一笔退两次在 pic.bi 那边只
+// 执行一次;而 RefundedAt 一旦盖上,这里就再也选不中它。
+func (s *Server) retryFailedRefunds(ctx context.Context) {
+	var rows []models.AIGeneration
+	if err := s.DB.
+		Where("status = ? AND ledger = ? AND refunded_at IS NULL AND created_at > ?",
+			models.AIGenFailed, models.AIGenLedgerPicbi, time.Now().Add(-aiRefundRetryWindow)).
+		Limit(aiRefundRetryLimit).Find(&rows).Error; err != nil {
+		log.Printf("ai: 退款重试查询失败: %v", err)
+		return
+	}
+	var ok int
+	for i := range rows {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		gen := &rows[i]
+		if err := aigen.Refund(s.DB, gen); err != nil {
+			log.Printf("ai: 退款重试仍失败 gen=%s user=%s picbi_user=%s op=%s credits=%d: %v",
+				gen.ID, gen.UserID, gen.PicbiUserID, gen.SpendOpID, gen.Credits, err)
+			continue
+		}
+		ok++
+	}
+	if ok > 0 {
+		log.Printf("ai: 补退 %d 条 pic.bi 扣费", ok)
 	}
 }

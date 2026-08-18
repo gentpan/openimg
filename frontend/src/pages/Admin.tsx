@@ -7,6 +7,7 @@ import LoginMethods from "./admin/LoginMethods";
 import UploadSettings from "./admin/UploadSettings";
 import { adminApi, formatBytes, imageApi, reportCategoryLabel } from "../api";
 import type { AdminImage, AdminQuotaTx, AdminUser, Report, UserGroup } from "../types";
+import PicbiBadge from "../components/PicbiBadge";
 import Pager from "../components/Pager";
 import PageSizeMenu from "../components/PageSizeMenu";
 import { useDialog } from "../DialogContext";
@@ -189,7 +190,12 @@ function UsersTab() {
               <tr key={u.id} className="text-neutral-400">
                 <td className="py-2 pr-3">
                   <div className="text-neutral-200">{u.email}</div>
-                  {u.role === "admin" && <span className="text-[9px] text-brand-400">管理员</span>}
+                  {/* 身份相关的标记都挂在邮箱下面，而不是各占一列：这张表已经
+                      八列宽，再加一列只为大多数行留白。 */}
+                  <div className="flex items-center gap-1.5">
+                    {u.role === "admin" && <span className="text-[9px] text-brand-400">管理员</span>}
+                    {u.picbi_connected && <PicbiBadge compact />}
+                  </div>
                 </td>
                 <td className="py-2 pr-3">
                   <select

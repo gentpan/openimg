@@ -13,6 +13,8 @@ export interface User {
   email_verified: boolean;
   google_connected: boolean;
   github_connected: boolean;
+  /** 与 pic.bi 账号关联(积分互通),不是一种登录方式。 */
+  picbi_connected: boolean;
   avatar_url?: string;
   referral_code?: string;
   default_profile_id?: string;
@@ -295,6 +297,7 @@ export interface AdminUser {
   image_count: number;
   quota_bytes: number;
   used_bytes: number;
+  picbi_connected: boolean;
 }
 
 export interface UserGroup {
@@ -433,8 +436,12 @@ export interface AIStatusOn {
   remaining: number;
   /** Aspect ratios the server accepts, e.g. "16:9". */
   sizes: string[];
-  /** Billing tiers, not pixel sizes: "1k" / "2k". */
+  /** Billing tiers, not pixel sizes: "1k" / "2k" / "4k" once linked. */
   resolutions: string[];
+  /** Whether this account draws on pic.bi's ledger once the free tier runs dry. */
+  picbi_linked?: boolean;
+  /** pic.bi balance. Absent when unlinked, or when that lookup failed. */
+  picbi_credits?: number;
 }
 
 export type AIStatus = AIStatusOff | AIStatusOn;

@@ -155,7 +155,11 @@ export default function RetouchPage() {
   if (statusLoading) return <Center>{t.common.loading}</Center>;
   if (!status || !status.enabled) return <Navigate to="/dashboard" replace />;
 
-  const blocked = status.remaining <= 0;
+  // 本地额度见底不等于不能生成:关联了 pic.bi 且那边还有钱时,后端会自动
+  // 接管。只看 remaining 会把提交按钮封死在"pic.bi 正该出场"的那一刻,
+  // 整条付费路径永远走不到。
+  const picbiLeft = status.picbi_linked ? (status.picbi_credits ?? 0) : 0;
+  const blocked = status.remaining <= 0 && picbiLeft <= 0;
   const overLimit = prompt.length > MAX_PROMPT;
   const canSubmit =
     !busy &&

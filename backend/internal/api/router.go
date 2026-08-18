@@ -41,8 +41,8 @@ type Server struct {
 	ReactionSalt string
 	// AIGen 是文生图上游。没配 APIMART_API_KEY 时它是禁用态,相关接口
 	// 一律回"未开启",界面据此把入口藏起来——而不是让用户点一下才收到 401。
-	AIGen *aigen.Client
-	Cipher       *crypto.Cipher
+	AIGen  *aigen.Client
+	Cipher *crypto.Cipher
 
 	StorageDir string
 	// PublicBaseURL is this site's own origin, used to absolutise object URLs
@@ -140,6 +140,7 @@ func (s *Server) Router() *gin.Engine {
 	callbackGroup := r.Group("", s.Auth.Middleware(false))
 	callbackGroup.GET("/auth/google/callback", s.handleOAuthCallback("google"))
 	callbackGroup.GET("/auth/github/callback", s.handleOAuthCallback("github"))
+	callbackGroup.GET("/auth/picbi/callback", s.handleOAuthCallback("picbi"))
 	r.POST("/auth/password/reset/request", s.handleResetRequest)
 	r.POST("/auth/password/reset", s.handleResetConfirm)
 	r.POST("/auth/email/request-otp", s.handleRequestOTP)
@@ -151,6 +152,17 @@ func (s *Server) Router() *gin.Engine {
 	authed.POST("/auth/logout", s.handleLogout)
 	authed.GET("/auth/google/link-start", s.handleOAuthStart("google", "link"))
 	authed.GET("/auth/github/link-start", s.handleOAuthStart("github", "link"))
+	// pic.bi 只注册 link-start / callback / unlink 三条,没有 /auth/picbi/start。
+	//
+	// 它不是一种登录方式,是一条"这个账号的 AI 额度从 pic.bi 扣"的关联。放开
+	// 登录入口就等于放开 upsertOAuthUser 那条按已验证邮箱合并账号的路——在
+	// pic.bi 上注册一个同邮箱的账号就能接管别人的 openimg 账号。handleListProviders
+	// 也因此不报 picbi:那个列表驱动登录页上的圆按钮。
+	authed.GET("/auth/picbi/link-start", s.handleOAuthStart("picbi", "link"))
+	// 解绑放在 cookie 组而不是机器组。google/github 的解绑在机器组是因为
+	// "拿走一种登录方式"最坏也只是让人少一条路进来;而解绑 pic.bi 动的是
+	// 钱那一侧的关联,不该让一个图床上传 token 能碰。
+	authed.POST("/auth/picbi/unlink", s.handleOAuthUnlink("picbi"))
 	authed.GET("/api/referral/me", s.handleReferralMe)
 	authed.GET("/api/referral/list", s.handleReferralList)
 	r.GET("/api/referral/lookup", s.handleReferralLookup)

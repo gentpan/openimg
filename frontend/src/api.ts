@@ -86,7 +86,8 @@ export const authApi = {
     }),
   verifyOtp: (email: string, code: string, name?: string, ref?: string) =>
     jfetch<User>("/auth/email/verify", { method: "POST", body: JSON.stringify({ email, code, name, ref }) }),
-  unlinkOAuth: (provider: "google" | "github") =>
+  /** picbi 只解绑,不登录:它没有 /auth/picbi/start,也不在 providers 列表里。 */
+  unlinkOAuth: (provider: "google" | "github" | "picbi") =>
     jfetch<{ ok: boolean }>(`/auth/${provider}/unlink`, { method: "POST" }),
 
   passkeyList: () =>

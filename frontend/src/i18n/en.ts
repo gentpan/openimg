@@ -675,6 +675,18 @@ export const en: Dict = {
       unlinkConfirm: (provider: string) =>
         `Unlink ${provider}? This ${provider} account will no longer be able to sign in.`,
     },
+    picbi: {
+      title: "Connected account",
+      subtitle: "The two accounts stay separate — connecting only shares the allowance",
+      link: "Connect",
+      unlink: "Disconnect",
+      connected: "Connected",
+      note: "Connect pic.bi to unlock 4K detail in AI generation",
+      connectedNote: "AI generation uses this site's free runs first, then pic.bi credits",
+      linkedTip: "pic.bi connected",
+      unlinkedTip: "pic.bi disconnected",
+      unlinkConfirm: "Disconnect pic.bi? AI generation will no longer draw on pic.bi credits, and 4K detail goes away.",
+    },
     password: {
       updated: "Password updated",
       updatedDetail: "Use the new password next time you sign in",

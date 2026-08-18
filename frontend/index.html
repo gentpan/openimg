@@ -59,11 +59,16 @@
     <link rel="preconnect" href="https://gstatic.bluecdn.com" crossorigin />
     <link rel="preconnect" href="https://static.giantaccel.com" crossorigin />
     <link rel="preconnect" href="https://tongji.giantaccel.com" crossorigin />
+    <link rel="preconnect" href="https://static.cloudflareinsights.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.bluecdn.com/css2?family=Ubuntu:wght@400;500;700&display=swap" />
     <link rel="stylesheet" href="https://static.giantaccel.com/libs/fontawesome/7.2.0/css/all.min.css" />
     <title>Openimg — 免费图床 | 图片外链 · WebP/AVIF 压缩 · CDN 加速</title>
     <script defer src="https://tongji.giantaccel.com/script.js" data-website-id="9a9ad5b3-521f-409c-9802-f1612c916384"></script>
-      <script src="/static/litezoom.min.js?v=4" defer></script>
+    <!-- Cloudflare Web Analytics。与自建的 tongji 并存,不是替换:一个看自己的
+         口径,一个看 CDN 边缘的口径,两边对不上时才知道是不是被拦了。
+         属性用单引号是必须的——data-cf-beacon 的值是一段带双引号的 JSON。 -->
+    <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "cc7ad89d81f2457baa8aae10af04cb31"}'></script>
+    <script src="/static/litezoom.min.js?v=4" defer></script>
   </head>
   <body>
     <div id="root"></div>

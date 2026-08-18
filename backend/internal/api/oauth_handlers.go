@@ -87,7 +87,7 @@ func (s *Server) githubOAuth() *oauth2.Config {
 
 // picbiOAuth 是 pic.bi 那一侧的 OAuth 客户端配置。
 //
-// AuthStyleInParams 是明写的:pic.bi 的 /oauth/token 从请求体里读
+// AuthStyleInParams 是明写的:pic.bi 的 /api/oauth/token 从请求体里读
 // client_secret。让 x/oauth2 去"探测"授权风格会先发一次 Basic 认证的请求、
 // 失败后再重试,而那次失败在对端看起来就是一次密钥错误的告警。
 func (s *Server) picbiOAuth() *oauth2.Config {
@@ -101,8 +101,8 @@ func (s *Server) picbiOAuth() *oauth2.Config {
 		RedirectURL:  strings.TrimRight(s.OAuth.BaseURL, "/") + "/auth/picbi/callback",
 		Scopes:       strings.Fields(picbiScopes),
 		Endpoint: oauth2.Endpoint{
-			AuthURL:   base + "/oauth/authorize",
-			TokenURL:  base + "/oauth/token",
+			AuthURL:   base + "/api/oauth/authorize",
+			TokenURL:  base + "/api/oauth/token",
 			AuthStyle: oauth2.AuthStyleInParams,
 		},
 	}
@@ -436,13 +436,17 @@ func fetchGithubProfile(ctx context.Context, client *http.Client) (*oauthProfile
 	return out, nil
 }
 
-// fetchPicbiProfile 读 pic.bi 的 /oauth/userinfo。
+// fetchPicbiProfile 读 pic.bi 的 /api/oauth/userinfo。
+//
+// 路径带 /api 前缀是有原因的:pic.bi 的前端是静态站由 Cloudflare 直接发,
+// 只有 /api/* 与 /auth/* 转到它的后端。挂在 /oauth/* 的话,公网上拿到的是
+// 静态站的 SPA 兜底页而不是 404,排查起来格外费劲。
 //
 // 只取 sub 是硬要求,邮箱与头像是可有可无的装饰:关联靠的是 sub,而
 // openimg 这边的账号本来就有自己的邮箱。返回的邮箱在这条路上不会被用来
 // 合并账号——那条路已经在 callback 里堵死了。
 func fetchPicbiProfile(ctx context.Context, client *http.Client, base string) (*oauthProfile, error) {
-	endpoint := strings.TrimRight(strings.TrimSpace(base), "/") + "/oauth/userinfo"
+	endpoint := strings.TrimRight(strings.TrimSpace(base), "/") + "/api/oauth/userinfo"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err

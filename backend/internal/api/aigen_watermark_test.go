@@ -6,19 +6,15 @@ import (
 	"github.com/gentpan/openimg/backend/internal/aigen"
 )
 
-// 水印这个用途的五个参数彼此绑死,拆开任何一条都会得到一张"看起来生成成功
+// 水印这个用途的几个参数彼此绑死,拆开任何一条都会得到一张"看起来生成成功
 // 了、却用不了"的图。所以它们值得一条断言,而不是只活在注释里。
 func TestWatermarkPlan(t *testing.T) {
 	p := aiWatermarkPlan()
 
-	// 模型:只有这个家族认 background/output_format,默认模型收下也只是忽略。
-	if !aigen.SupportsTransparent(p.Model) {
-		t.Errorf("水印用的模型 %q 不支持透明背景", p.Model)
-	}
-	// 两个参数必须同时给:少了 output_format,alpha 会被输出格式吃掉。
-	if p.Background != "transparent" || p.OutputFormat != "png" {
-		t.Errorf("background/output_format = %q/%q, 期望 transparent/png",
-			p.Background, p.OutputFormat)
+	// 模型:全站只用这一个。上游那条"透明背景"的参数只有 gpt-image-1 家族
+	// 认,而我们不用它——透明底由客户端本机抠出来,不额外调一次上游。
+	if p.Model != aigen.DefaultModel {
+		t.Errorf("水印用的模型 %q,期望与全站一致", p.Model)
 	}
 	// 1:1:水印是一枚角标,非方形只会在合成时留下一条谁都不想要的长边。
 	if p.Size != "1:1" || !aiAllowedSizes[p.Size] {

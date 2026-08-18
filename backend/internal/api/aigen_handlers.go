@@ -158,21 +158,18 @@ const aiPurposeWatermark = "watermark"
 
 // aiGenPlan 是一次生成的全部参数决定,由用途一次算出。
 type aiGenPlan struct {
-	Model        string
-	Size         string
-	Resolution   string
-	Background   string
-	OutputFormat string
+	Model      string
+	Size       string
+	Resolution string
 }
 
-// aiWatermarkPlan 把水印这个用途要的五个参数写在一处。每一条都有理由:
+// aiWatermarkPlan 把水印这个用途要的参数写在一处。
 //
-//   - 模型换成 gpt-image-1:只有这个家族认 background/output_format。默认的
-//     gpt-image-2 收下这两个键也只是忽略,回来一张不透明的图——而一枚不透明
-//     的水印贴上去就是个白方块。
-//   - transparent 与 png 一起给:JPEG/WebP 存不下 alpha,只要前者等于没要。
-//   - 1:1 写死:水印是一枚角标,不是一幅画;非方形的比例只会在合成时留下
-//     一条谁都不想要的长边。
+//   - 模型不换:全站只用 gpt-image-2 这一个。它不认 background/output_format,
+//     所以上游给回来的是一张**不透明**的图——透明底由客户端本机抠出来
+//     (Vision 的前景分割,编辑器里那个"去背景"),不额外调一次上游、也不多花
+//     一份钱。提示词里明写"纯白背景",正是为了让抠图好抠。
+//   - 1:1 写死:水印是个角标,方形最好摆;非方形还要考虑锚点方向。
 //   - 1k 写死:水印最终按画面宽度的百分之十几渲染,一张 4k 的 logo 缩到那个
 //     尺寸,多出来的像素一个都用不上——而 4k 恰恰是最贵的一档。
 //
@@ -180,11 +177,9 @@ type aiGenPlan struct {
 // 自己没资格用的档位",而这里的档位根本不由客户端决定。
 func aiWatermarkPlan() aiGenPlan {
 	return aiGenPlan{
-		Model:        aigen.TransparentModel,
-		Size:         "1:1",
-		Resolution:   "1k",
-		Background:   "transparent",
-		OutputFormat: "png",
+		Model:      aigen.DefaultModel,
+		Size:       "1:1",
+		Resolution: "1k",
 	}
 }
 
@@ -195,8 +190,6 @@ func aiWatermarkPlan() aiGenPlan {
 // 拷贝,外加一次迁移。
 type aiSubmitOpts struct {
 	ImageURLs    []string
-	Background   string
-	OutputFormat string
 }
 
 type aiEditReq struct {
@@ -318,8 +311,6 @@ func (s *Server) handleAIGenerate(c *gin.Context) {
 	}
 
 	s.submitAIGen(c, &gen, aiSubmitOpts{
-		Background:   plan.Background,
-		OutputFormat: plan.OutputFormat,
 	})
 }
 
@@ -487,8 +478,6 @@ func (s *Server) submitAIGen(c *gin.Context, gen *models.AIGeneration, opts aiSu
 		Size:         gen.Size,
 		Resolution:   gen.Resolution,
 		ImageURLs:    opts.ImageURLs,
-		Background:   opts.Background,
-		OutputFormat: opts.OutputFormat,
 	})
 	if err != nil {
 		// 没递交成功就没花上游的钱。走统一的失败路径,让退款和状态落库

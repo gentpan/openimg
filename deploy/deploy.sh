@@ -133,10 +133,23 @@ code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://openimg.io/
 [[ "$code" == "200" ]] && ok "openimg.io  $code" || die "openimg.io  $code"
 # CDN 域名根路径设计为 301 回主站(否则 MinIO 会返回整个桶的对象列表),
 # 域名健康与否要看它跳得对不对,而不是 200
-for host in cdn.imgla.com cache.imgla.com; do
+for host in cdn.openimg.io cache.openimg.io; do
     code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://$host/")
     [[ "$code" == "301" ]] && ok "$host  301 →  openimg.io" || die "$host  $code(应为 301)"
 done
+# 根路径 301 只证明域名活着,不证明 MinIO 那条 rewrite 还对——换 CDN 域名时
+# 错的恰恰是后者,而它要等用户点开一张图才会暴露。
+#
+# 判据是"取一个不存在的对象要拿到 404"。404 说明请求真的走到了 MinIO 并被
+# 它拒绝,整条代理链是通的;502/503 说明后面没人接,而 200 说明拿到了桶列表
+# ——那是更糟的一种坏。不用真实对象键是为了不依赖任何接口或凭据。
+for host in cdn.openimg.io cache.openimg.io; do
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+           "https://$host/deploy-probe-does-not-exist-$$.png")
+    [[ "$code" == "404" ]] && ok "$host  对象链路通(404)" \
+        || die "$host  探测返回 $code(应为 404,502/503=代理断了,200=桶列表泄露)"
+done
+
 code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://www.openimg.io/")
 [[ "$code" == "301" ]] && ok "www.openimg.io  301 →  openimg.io" || die "www 跳转异常：$code"
 

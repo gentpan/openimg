@@ -39,7 +39,7 @@ openimg.io {
 # Image domain. Points at the bucket / CDN, not at the app — the app only ever
 # hands out URLs on this host, it never serves the bytes.
 #
-# imgla.com {
+# cdn.example.com {
 # 	reverse_proxy https://<your-bucket-endpoint> {
 # 		header_up Host {upstream_hostport}
 # 	}

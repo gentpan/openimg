@@ -17,7 +17,7 @@
         └───────┬────────┘  └──────┬───────┘  └──────────────┘
                 │                  │
                 ▼                  ▼
-   cdn/cache.imgla.com    用户自己的域名
+   cdn/cache.openimg.io   对象直连域名
                 └── Cloudflare CDN ──┘
                           │
                        读取直连 CDN，不过后端

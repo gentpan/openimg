@@ -184,7 +184,7 @@ function ImageDomain() {
               value={value}
               onChange={(e) => setValue(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && dirty && save()}
-              placeholder="https://imgla.com"
+              placeholder="https://cdn.example.com"
               className="flex-1 min-w-[14rem] rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 py-1.5 text-xs font-mono outline-none focus:border-brand-500 placeholder-faint"
             />
             <button

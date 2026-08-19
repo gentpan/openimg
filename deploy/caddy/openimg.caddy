@@ -76,8 +76,8 @@ openimg.io {
 
 # Images, served straight from MinIO — the app hands out URLs on this host but
 # never proxies the bytes itself.
-cdn.imgla.com {
-	tls /etc/caddy/certs/imgla-origin.crt /etc/caddy/certs/imgla-origin.key
+cdn.openimg.io {
+	tls /etc/caddy/certs/openimg-origin.crt /etc/caddy/certs/openimg-origin.key
 	request_body {
 		max_size 0
 	}
@@ -94,8 +94,8 @@ cdn.imgla.com {
 # would only add a place for them to disagree. What the separate origin buys is
 # CDN-level control: the thumbnail tier can be purged or re-tuned without
 # touching originals, and thumbnails are regenerable so that purge is cheap.
-cache.imgla.com {
-	tls /etc/caddy/certs/imgla-origin.crt /etc/caddy/certs/imgla-origin.key
+cache.openimg.io {
+	tls /etc/caddy/certs/openimg-origin.crt /etc/caddy/certs/openimg-origin.key
 	# 根路径别落到 MinIO——那会返回整个桶的对象列表
 	redir / https://openimg.io 301
 	rewrite * /openimg{uri}

@@ -57,7 +57,7 @@ macOS/iOS 客户端在独立仓库 [gentpan/openimg-app](https://github.com/gent
 | PostgreSQL 18 | 唯一数据库 |
 | MinIO（127.0.0.1:9000，桶 `openimg`） | 平台存储池；Host 头须匹配 `MINIO_SERVER_URL` 走 path-style |
 | Caddy（frankenphp 发行版） | 反代 + TLS + CDN 源站头 |
-| Cloudflare | CDN、DNS、邮件发送；三个 zone：openimg.io / imgla.com / litezoom.dev |
+| Cloudflare | CDN、DNS、邮件发送；两个 zone：openimg.io / litezoom.dev |
 | systemd | `openimg` 服务（仓库单元文件名 `openimg-backend.service`），NoNewPrivileges + ProtectSystem=strict |
 
 ### 域名布局
@@ -66,8 +66,8 @@ macOS/iOS 客户端在独立仓库 [gentpan/openimg-app](https://github.com/gent
 | --- | --- |
 | openimg.io | 主站 + API + 短链（`/:code` 302）；Go 进程独占域名（`FRONTEND_DIR` 服务 SPA），生产端口 8090 |
 | www.openimg.io | 301 → openimg.io |
-| cdn.imgla.com | 原图直连（`rewrite * /openimg{uri}` → MinIO；根路径 301 回主站，防桶列表泄露） |
-| cache.imgla.com | 缩略图直连；与原图同桶，分裂在域名层——缩略图可再生，单独 purge 便宜 |
+| cdn.openimg.io | 原图直连（`rewrite * /openimg{uri}` → MinIO；根路径 301 回主站，防桶列表泄露） |
+| cache.openimg.io | 缩略图直连；与原图同桶，分裂在域名层——缩略图可再生，单独 purge 便宜 |
 | litezoom.dev | 灯箱库官网 + CDN（`/litezoom.min.js`） |
 
 ## 开发环境
@@ -328,5 +328,5 @@ Docker 见 `backend/Dockerfile` 与根目录 `docker-compose.yml`（postgres + b
 | --- | --- |
 | iOS 客户端 | 产品决策：删号 cookie-only vs App Store 5.1.1(v)；Kit 层已就绪 |
 | Mac App 对外分发 | Developer ID 签名 + 公证未做（本机 ad-hoc 可用） |
-| `.env.example` 的 `S3_PUBLIC_URL_BASE` 示例值 | 写的还是 cdn.openimg.io，生产实际是 cdn.imgla.com（示例性质，自托管者会改） |
+
 | deploy/systemd 单元文件名 | 仓库叫 `openimg-backend.service`，生产服务名是 `openimg`，装机时注意 |

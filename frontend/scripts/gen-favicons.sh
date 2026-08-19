@@ -97,10 +97,11 @@ echo
 # actual source of truth, and the PNGs are rendered from it in the same run.
 # Stamp the hrefs with a hash of the source art.
 #
-# Cloudflare caches these for four hours and this project has no purge
-# credentials configured, so a recolour otherwise keeps serving the old icon to
-# anyone who has visited before — which is exactly what happened: the .ico went
-# green on disk and browsers kept showing the August violet for hours.
+# Cloudflare caches these for four hours, so a recolour otherwise keeps serving
+# the old icon to anyone who has visited before — which is exactly what
+# happened: the .ico went green on disk and browsers kept showing the August
+# violet for hours. deploy.sh does purge now, but a purge only helps the edge:
+# the browser on someone's laptop has its own copy.
 #
 # A content hash makes a recoloured file a different URL, which no cache
 # anywhere can confuse with the old one. Derived from favicon.svg because every
@@ -108,6 +109,24 @@ echo
 HASH=$(md5 -q "$SRC" | cut -c1-8)
 perl -0pi -e "s{(href=\"/(?:favicon|apple-touch-icon)[^\"?]*)(\?v=[a-f0-9]+)?\"}{\$1?v=$HASH\"}g" index.html
 echo "  版本戳 ?v=$HASH 已写入 index.html"
+
+# The social card gets its own stamp, off its own hash: og-image.png is not
+# rendered from favicon.svg, so tying it to $HASH would either restamp it when
+# nothing about it changed or leave it stale when it did.
+#
+# It needs the stamp more than the favicons do. A favicon that lags is a wrong
+# icon in a tab; a social card that lags is every link ever shared still
+# unfurling the old art. Twitter and Facebook expose a re-crawl button, WeChat
+# does not — for WeChat, changing the URL is the only way to invalidate it.
+OGHASH=$(md5 -q "$PUB/og-image.png" | cut -c1-8)
+perl -0pi -e "s{(content=\"https://openimg\.io/og-image\.png)(\?v=[a-f0-9]+)?\"}{\$1?v=$OGHASH\"}g" index.html
+echo "  社交图戳 ?v=$OGHASH 已写入 index.html"
+
+# The manifest's icon list carries no stamp and deliberately so: Android
+# re-reads the manifest on its own schedule (up to 30 days for an installed
+# WebAPK), so a stamp there buys nothing an installed app can act on. What it
+# would cost is a manifest that changes on every icon rebuild, which is a
+# needless cache miss for everyone who is not installing.
 echo
 
 echo "核对"

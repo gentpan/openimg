@@ -272,6 +272,8 @@ func (s *Server) Router() *gin.Engine {
 	authed.GET("/api/tokens", s.handleListTokens)
 	authed.POST("/api/tokens", s.handleCreateToken)
 	authed.DELETE("/api/tokens/:id", s.handleDeleteToken)
+	// 注销自己那一条走令牌组,理由见 handleRevokeCurrentToken。
+	machine.DELETE("/api/tokens/current", s.handleRevokeCurrentToken)
 
 	// Space economy
 

@@ -27,6 +27,9 @@ const (
 	// for a second factor only where one is warranted: a cookie session already
 	// implies a live browser login, a token does not.
 	contextViaToken = "openimg_via_token"
+	// contextTokenID 是这次请求用的那枚令牌的 id。只有令牌认证会设它,
+	// 用来支持"令牌注销自己"——那不是提权,是反过来。
+	contextTokenID = "openimg_token_id"
 	tokenLifetime = 7 * 24 * time.Hour
 	bcryptCost    = 11
 
@@ -215,8 +218,19 @@ func (s *Service) TokenOrSession() gin.HandlerFunc {
 
 		c.Set(contextUser, user)
 		c.Set(contextViaToken, true)
+		c.Set(contextTokenID, tok.ID)
 		c.Next()
 	}
+}
+
+// TokenID 返回这次请求所用令牌的 id;cookie 会话没有,返回 false。
+func TokenID(c *gin.Context) (uuid.UUID, bool) {
+	v, ok := c.Get(contextTokenID)
+	if !ok {
+		return uuid.Nil, false
+	}
+	id, ok := v.(uuid.UUID)
+	return id, ok
 }
 
 /// ViaToken reports whether this request came in on an API token.

@@ -122,3 +122,29 @@ func (s *Server) handleDeleteToken(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
+
+// DELETE /api/tokens/current — 让一枚令牌注销它自己。
+//
+// 为什么它可以挂在令牌组,而 /api/tokens/:id 只认 cookie:那一条能删掉**任意
+// 一枚**令牌,是账号管理;这一条只能删自己,方向是收权不是放权。一枚被粘进
+// 第三方客户端的令牌把自己作废,最坏的后果是那个客户端要重新登录。
+//
+// 没有这条的时候,app 退出只是把令牌从本机抹掉,服务器上那枚仍然有效——而
+// 提示语让用户"去网站的账号设置里删",现实是没人会去。于是每台退出过的机器
+// 背后都留着一枚活令牌,这正是退出想避免的事。
+func (s *Server) handleRevokeCurrentToken(c *gin.Context) {
+	id, ok := auth.TokenID(c)
+	if !ok {
+		// cookie 会话没有令牌可撤。不报错:退出流程照常走完,前端也不必为
+		// "我是哪种会话"分岔。
+		c.JSON(http.StatusOK, gin.H{"ok": true, "revoked": false})
+		return
+	}
+	u := auth.MustUser(c)
+	res := s.DB.Where("id = ? AND user_id = ?", id, u.ID).Delete(&models.APIToken{})
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": res.Error.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true, "revoked": res.RowsAffected > 0})
+}

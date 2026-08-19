@@ -90,18 +90,18 @@ cdn.openimg.io {
 	rewrite * /openimg{uri}
 	import openimg_minio
 	import openimg_object_headers
-	# 不带 sandbox。
+	# 这里不设 CSP,与 cache.openimg.io 保持一致(同一个桶、同一批对象,两个
+	# 域名的安全头不该不一样)。
 	#
-	# sandbox 会把响应放进沙箱浏览上下文,浏览器内置的图片查看器因此不再居中
-	# ——直接打开一张图会贴在左上角。而它防的那件事这里不成立:能内嵌脚本的
-	# 只有 SVG,而 SVG 在服务端是显式拒绝的(imageproc 的 ErrUnsupported),
-	# 用户组的允许格式里也没有它。
+	# 试过 default-src 'none'; sandbox,再退到 default-src 'none',两版都会让
+	# 浏览器内置的图片查看器不再居中——直接打开一张图贴在左上角。原因是
+	# default-src 会给没单独指定的指令兜底,其中包括 style-src,而 Chrome 的
+	# 图片文档正是靠注入一段样式来居中的。
 	#
-	# 真正拦住 polyglot 的是 nosniff 加正确的 Content-Type:浏览器不会把
-	# image/webp 当 HTML 渲染。加上这是独立域名,即使假设有脚本执行,也拿不到
-	# 主站的 cookie。所以 default-src 'none' 留着当额外一层,sandbox 的代价
-	# 大于收益。
-	header Content-Security-Policy "default-src 'none'"
+	# 而它防的那件事这里不成立:能内嵌脚本的只有 SVG,SVG 在服务端是显式拒绝
+	# 的(imageproc 的 ErrUnsupported),用户组的允许格式里也没有。真正拦住
+	# polyglot 的是 nosniff 加正确的 Content-Type——浏览器不会把 image/webp
+	# 当 HTML 渲染。加上这是独立域名,即使假设有脚本执行也拿不到主站 cookie。
 }
 
 # Thumbnails. Same bucket — the split is at the hostname, not the storage:

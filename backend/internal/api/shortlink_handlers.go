@@ -6,6 +6,7 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -60,7 +61,7 @@ func (s *Server) newShortCode(db *gorm.DB) (string, error) {
 func (s *Server) handleShortLink(c *gin.Context) {
 	code := c.Param("code")
 	if !models.IsValidShortCode(code) {
-		s.serveAppOrNotFound(c)
+		s.notAShortLink(c)
 		return
 	}
 
@@ -69,7 +70,7 @@ func (s *Server) handleShortLink(c *gin.Context) {
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// Not a code we issued — hand it to the SPA, which will show its own
 		// not-found rather than a bare 404 from the API.
-		s.serveAppOrNotFound(c)
+		s.notAShortLink(c)
 		return
 	}
 	if err != nil {
@@ -184,4 +185,37 @@ func (s *Server) shortBase() string {
 		return s.ShortBaseURL
 	}
 	return s.PublicBaseURL
+}
+
+
+// notAShortLink 处理"这个路径不是我们发过的短码"。
+//
+// 主站上交给 SPA,它会显示自己的未找到页;但**短链域名上要跳回主站**。
+//
+// 那个域名只做短链,不该是网站的第二个入口:同一个站开在两个域名上,搜索引擎
+// 当重复内容,用户还可能在那边注册登录——而 cookie 域根本对不上。
+//
+// 判据放在这里而不是 Caddy 的路径正则里:短码是 4-6 个字符,而 settings、
+// login、docs 这些词长度全都合法,正则怎么写都分不开。只有查过库、也查过
+// 保留字之后才知道它到底是不是短码。
+func (s *Server) notAShortLink(c *gin.Context) {
+	if s.ShortBaseURL != "" && sameHost(c.Request.Host, s.ShortBaseURL) {
+		c.Redirect(http.StatusMovedPermanently,
+			strings.TrimRight(s.PublicBaseURL, "/")+c.Request.URL.RequestURI())
+		return
+	}
+	s.serveAppOrNotFound(c)
+}
+
+// sameHost 比较请求的 Host 与一个配置里的基地址是不是同一个主机。
+func sameHost(reqHost, baseURL string) bool {
+	u, err := url.Parse(baseURL)
+	if err != nil || u.Host == "" {
+		return false
+	}
+	h := reqHost
+	if i := strings.IndexByte(h, ':'); i >= 0 {
+		h = h[:i]
+	}
+	return strings.EqualFold(h, u.Hostname())
 }

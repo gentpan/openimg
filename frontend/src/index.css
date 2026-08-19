@@ -41,7 +41,7 @@
    There used to be a light theme here, built by inverting the neutral ramp
    under [data-theme="light"]. It is gone: the product is dark, and a bright
    green brand cannot be text on white — #90FF3A is 1.27:1 there, so the light
-   theme had to darken it to #30800A and the brand stopped looking like itself.
+   theme had to darken it to #337400 and the brand stopped looking like itself.
    Dark has no such problem: the same green reads at 15.60:1 on the page.
 
    What remains switchable is the brand hue, at the bottom of this file.
@@ -156,8 +156,8 @@ html, body {
    prefix on 900 utilities and no re-render when it flips.
 
    The load-bearing variable is --color-brand-ink. Violet has a relative
-   luminance of 0.135 and carries white at 4.67:1; the green is 0.574 and
-   carries white at 1.68:1. So the two brands need *opposite* foregrounds, and
+   luminance of 0.135 and carries white at 4.67:1; the green is 0.778 and
+   carries white at 1.27:1. So the two brands need *opposite* foregrounds, and
    every filled control in the codebase already reads its foreground from that
    one variable. Flipping it to white is what makes violet work without
    touching a single component.

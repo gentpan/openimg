@@ -22,7 +22,7 @@ SRC=$BRAND/favicon.svg
 command -v rsvg-convert >/dev/null || { echo "需要 rsvg-convert：brew install librsvg"; exit 1; }
 command -v magick >/dev/null || { echo "需要 ImageMagick"; exit 1; }
 
-GREEN="#5DE31D"
+GREEN="#90FF3A"
 VIOLET="#8E47FF"
 
 # The sizes index.html actually references, plus the PWA and Apple ones the

@@ -81,7 +81,7 @@ func truncate(s string, n int) string {
 // Emails stay light-background regardless: dark mode in email clients is a
 // minefield (Gmail recolors, Outlook inverts), so the brand shows in the
 // accents, not the canvas. Each code color is the darkened shade of its brand
-// that stays readable on the tinted box — the raw brand green is a 1.7:1
+// that stays readable on the tinted box — the raw brand green is a 1.27:1
 // against white, which is exactly the mistake the old template made in
 // reverse (violet box, green digits, neither matching the site).
 type mailPalette struct {
@@ -89,7 +89,7 @@ type mailPalette struct {
 }
 
 var mailPalettes = map[string]mailPalette{
-	"green":  {BoxBg: "#f2fbe9", BoxBorder: "#cfe8bd", Code: "#3a7a12"},
+	"green":  {BoxBg: "#f1fbe9", BoxBorder: "#d0e8bd", Code: "#3f7a12"},
 	"violet": {BoxBg: "#f5f2ff", BoxBorder: "#ded3ff", Code: "#6d3fd4"},
 }
 

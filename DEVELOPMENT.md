@@ -183,8 +183,8 @@ npx tsc -b && npm run build && npx eslint .
 
 ### 设计
 
-- **产品固定深色**（浅色主题已删除：品牌绿 #5DE31D 在白底对比度 1.79:1 不可用）
-- 品牌色绿（#5DE31D）/ 紫（#8E47FF）一键切换：整套 `--color-brand-*` 变量在 `:root[data-brand="violet"]` 下覆盖，实心控件前景统一取 `--color-brand-ink`（绿配近黑、紫配白），切换零组件改动；favicon 用 data: URI 运行时重画
+- **产品固定深色**（浅色主题已删除：品牌绿 #90FF3A 在白底对比度 1.27:1 不可用）
+- 品牌色绿（#90FF3A）/ 紫（#8E47FF）一键切换：整套 `--color-brand-*` 变量在 `:root[data-brand="violet"]` 下覆盖，实心控件前景统一取 `--color-brand-ink`（绿配近黑、紫配白），切换零组件改动；favicon 用 data: URI 运行时重画
 - 头像、旗帜、状态点、开关等"本身就该是正圆"的元素用 `rounded-full`，其余遵循页面既有圆角语言
 - 品牌字体 Ubuntu 仅 Latin，CJK 落回系统栈；图标 Font Awesome
 - 悬停动效把 transform 与 color 的过渡时长分开（共用一个时长会显得卡）

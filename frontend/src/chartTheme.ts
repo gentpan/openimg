@@ -33,7 +33,7 @@ export interface ChartTheme {
 
 const DARK = {
   BRAND: "#90ff3a",
-  BRAND_DIM: "rgba(93, 227, 29, 0.15)",
+  BRAND_DIM: "rgba(144, 255, 58, 0.15)",
   SERIES: ["#90ff3a", "#38bdf8", "#fbbf24", "#f472b6", "#94a3b8", "#2dd4bf", "#fb923c"],
   GRID: "rgba(64, 64, 64, 0.35)",
   TICK: "#737373",

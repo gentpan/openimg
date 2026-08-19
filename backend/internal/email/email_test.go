@@ -46,7 +46,7 @@ func TestOTPEmailFollowsBrand(t *testing.T) {
 	green := OTPEmailHTML(i18n.ZH, "green", "445207", 5)
 	violet := OTPEmailHTML(i18n.ZH, "violet", "445207", 5)
 
-	for _, hex := range []string{"#f2fbe9", "#cfe8bd", "#3a7a12"} {
+	for _, hex := range []string{"#f1fbe9", "#d0e8bd", "#3f7a12"} {
 		if !strings.Contains(green, hex) {
 			t.Errorf("绿色主题邮件缺少配色 %s", hex)
 		}

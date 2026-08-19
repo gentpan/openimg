@@ -19,6 +19,17 @@
 	}
 }
 
+(openimg_app) {
+	reverse_proxy 127.0.0.1:8090 {
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		transport http {
+			dial_timeout 10s
+			response_header_timeout 300s
+		}
+	}
+}
+
 (openimg_object_headers) {
 	# Object keys are write-once and never reused, so a year is safe.
 	header Cache-Control "public, max-age=31536000, immutable"
@@ -64,14 +75,7 @@ openimg.io {
 	}
 	request_header @not_cloudflare -CF-Connecting-IP
 
-	reverse_proxy 127.0.0.1:8090 {
-		header_up X-Real-IP {remote_host}
-		header_up X-Forwarded-Proto {scheme}
-		transport http {
-			dial_timeout 10s
-			response_header_timeout 300s
-		}
-	}
+	import openimg_app
 }
 
 # Images, served straight from MinIO — the app hands out URLs on this host but
@@ -86,7 +90,18 @@ cdn.openimg.io {
 	rewrite * /openimg{uri}
 	import openimg_minio
 	import openimg_object_headers
-	header Content-Security-Policy "default-src 'none'; sandbox"
+	# 不带 sandbox。
+	#
+	# sandbox 会把响应放进沙箱浏览上下文,浏览器内置的图片查看器因此不再居中
+	# ——直接打开一张图会贴在左上角。而它防的那件事这里不成立:能内嵌脚本的
+	# 只有 SVG,而 SVG 在服务端是显式拒绝的(imageproc 的 ErrUnsupported),
+	# 用户组的允许格式里也没有它。
+	#
+	# 真正拦住 polyglot 的是 nosniff 加正确的 Content-Type:浏览器不会把
+	# image/webp 当 HTML 渲染。加上这是独立域名,即使假设有脚本执行,也拿不到
+	# 主站的 cookie。所以 default-src 'none' 留着当额外一层,sandbox 的代价
+	# 大于收益。
+	header Content-Security-Policy "default-src 'none'"
 }
 
 # Thumbnails. Same bucket — the split is at the hostname, not the storage:
@@ -101,4 +116,48 @@ cache.openimg.io {
 	rewrite * /openimg{uri}
 	import openimg_minio
 	import openimg_object_headers
+}
+
+# 短链域名。只做短链,不是主站的第二个入口。
+#
+# 短链打开的是**分享页**(带 Open Graph 标签的 SPA),不是 302 到图片——链接
+# 预览是不跑 JS 的爬虫抓的,标签必须在 HTML 里。所以这个域名除了短码本身,
+# 还得让分享页取到它的资源与数据,否则用户看到的是一片空白:
+#   /:code        短码,由应用的 handleShortLink 接
+#   /assets/*     分享页的 JS 与 CSS
+#   /api/s/*      分享页取图片信息、点赞、举报
+#   favicon 等    浏览器会自己去要,404 不好看
+#
+# 其余一律 301 回主站。不整站代理是因为那等于把同一个网站开在两个域名上:
+# 搜索引擎当重复内容,用户还可能在短链域名上注册登录——那不是这个域名该干
+# 的事,而且 cookie 域也对不上。
+163.uz {
+	tls /etc/caddy/certs/163uz-origin.crt /etc/caddy/certs/163uz-origin.key
+
+	encode zstd gzip
+
+	# 与主站同一条纪律:CF-Connecting-IP 只在请求真的来自 Cloudflare 时可信。
+	@not_cloudflare {
+		not remote_ip 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+	}
+	request_header @not_cloudflare -CF-Connecting-IP
+
+	# 短码长度与 models.NewShortCode 一致(4–6),留到 8 是给将来扩容量的余地。
+	# 用正则而不是放行整个根路径:否则 /login、/settings 这些也会被代理进来。
+	@short path_regexp ^/[A-Za-z0-9]{4,8}$
+	@assets path /assets/* /favicon.ico /favicon.svg /favicon-*.png /apple-touch-icon.png /site.webmanifest
+	@shareapi path /api/s/*
+
+	handle @short {
+		import openimg_app
+	}
+	handle @assets {
+		import openimg_app
+	}
+	handle @shareapi {
+		import openimg_app
+	}
+	handle {
+		redir https://openimg.io{uri} 301
+	}
 }

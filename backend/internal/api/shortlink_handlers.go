@@ -117,7 +117,7 @@ func (s *Server) serveShareApp(c *gin.Context, img *models.Image) {
 		profile = &p
 	}
 	imageURL := storage.URLFor(profile, img.ObjectKey, s.PublicBaseURL)
-	pageURL := storage.JoinURL(s.PublicBaseURL, img.ShortCode)
+	pageURL := storage.JoinURL(s.shortBase(), img.ShortCode)
 
 	// html.EscapeString, not string concatenation: the filename is entirely
 	// user-controlled and lands inside an attribute.
@@ -172,4 +172,16 @@ func (s *Server) BackfillShortCodes() {
 		done++
 	}
 	log.Printf("shortlink: backfilled %d/%d images", done, len(pending))
+}
+
+// shortBase 是拼短链时该用的域名。
+//
+// 空值回落主站,所以自建部署不配这一项时行为不变。三处拼装(图库列表、分享页、
+// 短链自身)都走这里,而不是各自读字段——短链域名是"同一件事只该有一处说法"
+// 的典型:分散开之后,漏改一处的表现是同一张图在不同页面给出两个短链。
+func (s *Server) shortBase() string {
+	if s.ShortBaseURL != "" {
+		return s.ShortBaseURL
+	}
+	return s.PublicBaseURL
 }

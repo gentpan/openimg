@@ -24,6 +24,12 @@ type Config struct {
 	StorageDir    string
 	TempDir       string
 	PublicBaseURL string
+	// ShortBaseURL 是短链挂的域名。留空即与 PublicBaseURL 同域。
+	//
+	// 单独一个配置而不是写死:短链的价值在于短,值得为它用一个更短的域名;
+	// 但自建部署多半只有一个域名,不该被迫再买一个。留空回落到主站,行为与
+	// 加这个配置之前一模一样。
+	ShortBaseURL string
 	FrontendDir   string
 	// AppleAppID is "TEAMID.bundleid" for the Mac app. Set it to serve the
 	// associated-domains document that lets the app use a passkey natively
@@ -105,6 +111,7 @@ func Load() Config {
 		StorageDir:    getenv("STORAGE_DIR", "/opt/openimg/storage"),
 		TempDir:       getenv("TEMP_DIR", "/opt/openimg/tmp"),
 		PublicBaseURL: getenv("PUBLIC_BASE_URL", "http://127.0.0.1:8080"),
+		ShortBaseURL:  strings.TrimRight(strings.TrimSpace(os.Getenv("SHORT_BASE_URL")), "/"),
 		// Optional. Set it to the frontend's dist/ and this process serves the
 		// SPA too, which is what lets short links live at the domain root.
 		FrontendDir:      os.Getenv("FRONTEND_DIR"),

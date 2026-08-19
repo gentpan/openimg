@@ -48,6 +48,8 @@ type Server struct {
 	// PublicBaseURL is this site's own origin, used to absolutise object URLs
 	// when a storage profile doesn't carry one.
 	PublicBaseURL string
+	// ShortBaseURL 是短链域名;空表示与主站同域。别直接读它,走 shortBase()。
+	ShortBaseURL string
 
 	MaxUploadSize        int64
 	RequireEmailVerified bool

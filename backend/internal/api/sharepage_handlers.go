@@ -99,7 +99,7 @@ func (s *Server) buildSharePayload(c *gin.Context, img *models.Image) sharePaylo
 		profile = &p
 	}
 	url := storage.URLFor(profile, img.ObjectKey, s.PublicBaseURL)
-	short := storage.JoinURL(s.PublicBaseURL, img.ShortCode)
+	short := storage.JoinURL(s.shortBase(), img.ShortCode)
 
 	thumb := url
 	if v := models.GridThumbVariant(img.VariantList()); v != "" {

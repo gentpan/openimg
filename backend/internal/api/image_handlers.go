@@ -74,7 +74,7 @@ func (s *Server) decorate(images []models.Image) []imageOut {
 		// uploaded before the switch still carry, then the original so a
 		// gallery keeps rendering while derivatives are queued.
 		if img.ShortCode != "" {
-			item.ShortURL = storage.JoinURL(s.PublicBaseURL, img.ShortCode)
+			item.ShortURL = storage.JoinURL(s.shortBase(), img.ShortCode)
 		}
 		item.Thumb = item.URL
 		if v := models.GridThumbVariant(img.VariantList()); v != "" {

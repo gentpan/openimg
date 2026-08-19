@@ -23,7 +23,7 @@ command -v rsvg-convert >/dev/null || { echo "需要 rsvg-convert：brew install
 command -v magick >/dev/null || { echo "需要 ImageMagick"; exit 1; }
 
 GREEN="#90FF3A"
-VIOLET="#8E47FF"
+VIOLET="#7624F4"
 
 # The sizes index.html actually references, plus the PWA and Apple ones the
 # manifest points at. Nothing here is speculative — a size no document asks for

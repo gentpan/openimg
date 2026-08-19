@@ -54,7 +54,7 @@ func TestOTPEmailFollowsBrand(t *testing.T) {
 			t.Errorf("紫色主题邮件混进了绿色配色 %s", hex)
 		}
 	}
-	for _, hex := range []string{"#f5f2ff", "#ded3ff", "#6d3fd4"} {
+	for _, hex := range []string{"#f7f2ff", "#e4d3ff", "#7a3fd4"} {
 		if !strings.Contains(violet, hex) {
 			t.Errorf("紫色主题邮件缺少配色 %s", hex)
 		}

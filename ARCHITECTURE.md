@@ -120,7 +120,7 @@
 
 - 上传队列提到全局 Context，悬浮在右下角，切换页面不中断
 - 所有页面容器统一 `max-w-7xl`，`scrollbar-gutter: stable` 防止切页抖动
-- 品牌字体 Ubuntu，主色 `#8E47FF`
+- 品牌字体 Ubuntu，主色 `#90FF3A`
 
 ## 部署
 

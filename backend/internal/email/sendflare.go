@@ -90,7 +90,7 @@ type mailPalette struct {
 
 var mailPalettes = map[string]mailPalette{
 	"green":  {BoxBg: "#f1fbe9", BoxBorder: "#d0e8bd", Code: "#3f7a12"},
-	"violet": {BoxBg: "#f5f2ff", BoxBorder: "#ded3ff", Code: "#6d3fd4"},
+	"violet": {BoxBg: "#f7f2ff", BoxBorder: "#e4d3ff", Code: "#7a3fd4"},
 }
 
 // MailBrand clamps a client-supplied brand hint to a known palette. The header

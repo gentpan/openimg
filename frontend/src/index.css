@@ -156,7 +156,7 @@ html, body {
    prefix on 900 utilities and no re-render when it flips.
 
    The load-bearing variable is --color-brand-ink. Violet has a relative
-   luminance of 0.135 and carries white at 4.67:1; the green is 0.778 and
+   luminance of 0.116 and carries white at 6.31:1; the green is 0.778 and
    carries white at 1.27:1. So the two brands need *opposite* foregrounds, and
    every filled control in the codebase already reads its foreground from that
    one variable. Flipping it to white is what makes violet work without
@@ -164,21 +164,21 @@ html, body {
    --------------------------------------------------------------------------- */
 
 :root[data-brand="violet"] {
-  --color-brand-200: #ddc8ff;
-  --color-brand-300: #c5a3ff;
-  --color-brand-400: #a87dff;
-  --color-brand-500: #8e47ff; /* hover fill — white 4.67:1 */
-  --color-brand-600: #7c2ee0; /* resting fill — white 6.32:1 */
-  --color-brand-800: #5e1cc4;
-  --color-brand-900: #2d0e63;
-  --color-brand-950: #1b0840;
+  --color-brand-200: #dfcaff;
+  --color-brand-300: #caa7ff;
+  --color-brand-400: #b482ff;
+  --color-brand-500: #8e4bf6; /* hover fill — white 4.68:1 */
+  --color-brand-600: #7624f4; /* resting fill — white 6.31:1 */
+  --color-brand-800: #5a0ad6;
+  --color-brand-900: #2e056c;
+  --color-brand-950: #1d0246;
   --color-brand-ink: #ffffff;
-  --color-brand-display: #a87dff;
+  --color-brand-display: #b482ff;
 
-  --heat-1: #5e1cc4;
-  --heat-2: #7c2ee0;
-  --heat-3: #8e47ff;
-  --heat-4: #a87dff;
+  --heat-1: #5a0ad6;
+  --heat-2: #7624f4;
+  --heat-3: #8e4bf6;
+  --heat-4: #b482ff;
 }
 
 /* Icon hover: grow slowly, recolour quickly.

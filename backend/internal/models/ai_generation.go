@@ -46,6 +46,18 @@ type AIGeneration struct {
 	// 返回的价钱(1k/2k/4k = 1/2/4),不是本地写死的常数。
 	Credits int `gorm:"not null;default:1" json:"credits"`
 
+	// Hidden 是用户在列表里"删掉"这条记录后置上的位:界面不再显示,行仍在。
+	//
+	// 不能用 gorm.DeletedAt。GORM 的软删除会给这张表的每一条查询自动补上
+	// `deleted_at IS NULL`,包括 UsedToday 里那个 Count——而那个 Count 就是
+	// 日限本身。一旦被静默改写,用户删一条记录就等于把当天的配额退回来一次,
+	// 删多少次就能白嫖多少次。用一个普通布尔列,过滤只发生在真正想过滤的那
+	// 一处(列表接口),别处的查询看不见它、也就不会被它改变。
+	//
+	// 同理这里也不做真删:退款重试(retryFailedRefunds)要扫失败行,对账要认
+	// 领孤儿,真删会把未结清的账一起删掉。
+	Hidden bool `gorm:"not null;default:false;index" json:"-"`
+
 	// 账本归属。这三列在扣费那一刻写死,之后只读不改。
 	//
 	// 为什么不在退款时现查用户绑没绑 pic.bi:那条路上有一个能把真钱换成免费

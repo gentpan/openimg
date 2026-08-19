@@ -507,7 +507,7 @@ func (s *Server) submitAIGen(c *gin.Context, gen *models.AIGeneration, opts aiSu
 func (s *Server) handleAIGenerations(c *gin.Context) {
 	u := auth.MustUser(c)
 	var list []models.AIGeneration
-	if err := s.DB.Where("user_id = ?", u.ID).
+	if err := s.DB.Where("user_id = ? AND hidden = ?", u.ID, false).
 		Order("created_at DESC").Limit(30).Find(&list).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -698,4 +698,57 @@ func aiFileName(prompt, ext string) string {
 		name = "ai"
 	}
 	return name + "." + ext
+}
+
+// DELETE /api/ai/generations/:id — 把一条生成记录从列表里去掉。
+//
+// 只置 Hidden,不删行。行是日限的计数单位(见 aigen.UsedToday),真删等于把
+// 当天配额退回来;而且退款重试和对账都要扫这张表,删掉就是把没结清的账一起
+// 抹了。用户看到的是"删除",系统里是"不再显示"——这两件事在这里必须分开。
+//
+// 只能删已经结束的记录。还在 charging/pending/running 的那条,额度已经扣了、
+// 上游可能还在跑,让它从界面上消失就等于让一笔未结的账消失,用户既看不到进
+// 度也看不到退款。
+//
+// image=1 时连同产出图一起删,走的是删图那条完整的路(软删 + 配额退还 +
+// 清理任务),而不是就地写一遍 UPDATE。产出图归用户所有,他要不要留是他的事,
+// 所以这是显式开关而不是默认行为。
+func (s *Server) handleDeleteAIGeneration(c *gin.Context) {
+	u := auth.MustUser(c)
+
+	var gen models.AIGeneration
+	if err := s.DB.Where("id = ? AND user_id = ?", c.Param("id"), u.ID).
+		First(&gen).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": i18n.T(c, "ai.gen_not_found"), "code": "not_found"})
+		return
+	}
+	if !gen.Status.IsTerminal() {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": i18n.T(c, "ai.delete_in_flight"), "code": "in_flight",
+		})
+		return
+	}
+
+	// 先删图再隐藏记录。反过来的话,删图失败时记录已经不见了,用户再也找不到
+	// 那张图的来处——而现在这个顺序下,删图失败就整个失败,界面上那条还在。
+	alsoImage := c.Query("image") == "1"
+	if alsoImage && gen.ImageID != nil {
+		var img models.Image
+		if err := s.DB.Where("id = ? AND user_id = ? AND deleted_at IS NULL",
+			*gen.ImageID, u.ID).First(&img).Error; err == nil {
+			if err := s.softDeleteImage(&img); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+		}
+		// 查不到就当已经删过了:目的是"这张图不在了",它已经不在了。
+	}
+
+	if err := s.DB.Model(&models.AIGeneration{}).
+		Where("id = ? AND user_id = ?", gen.ID, u.ID).
+		Update("hidden", true).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true, "image_deleted": alsoImage && gen.ImageID != nil})
 }

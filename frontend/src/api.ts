@@ -246,6 +246,13 @@ export const aiApi = {
     }).then((r) => r.generation),
   /** Newest first, capped server-side. Both members can come back null.
    *  Carries generations and edits alike; the pages filter by `kind`. */
+  /** 从列表里删掉一条记录。alsoImage 时连产出图一起删。
+   *  服务端只是把它标成隐藏——行是日限的计数单位,真删等于退回当天配额。 */
+  deleteGeneration: (id: string, alsoImage: boolean) =>
+    jfetch<{ ok: true; image_deleted: boolean }>(
+      `/api/ai/generations/${id}${alsoImage ? "?image=1" : ""}`,
+      { method: "DELETE" },
+    ),
   generations: () =>
     jfetch<{ generations: AIGeneration[] | null; images: Record<string, Image> | null }>(
       "/api/ai/generations",

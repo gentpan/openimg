@@ -68,6 +68,8 @@ var en = map[string]string{
 	"ai.disabled":                 "AI generation is not enabled on this site",
 	"ai.prompt_required":          "Describe the image you want first",
 	"ai.prompt_too_long":          "That description is too long — keep it under 1000 characters",
+	"ai.gen_not_found":     "Generation record not found",
+	"ai.delete_in_flight": "This one is still running — delete it once it finishes",
 	"ai.daily_limit":              "You've used today's generations — try again tomorrow",
 	"ai.abandoned":                "This generation never reached the provider — your credit was returned",
 	"ai.timed_out":                "The provider took too long — your credit was returned",

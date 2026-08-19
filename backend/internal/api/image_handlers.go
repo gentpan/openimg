@@ -176,28 +176,38 @@ func (s *Server) handleDeleteImage(c *gin.Context) {
 		return
 	}
 
-	now := time.Now()
-	if err := s.DB.Model(&img).Updates(map[string]any{
-		"deleted_at": now,
-		"status":     models.ImageDeleted,
-	}).Error; err != nil {
+	if err := s.softDeleteImage(&img); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
 
+// softDeleteImage 标记删除、退还配额、派发清理任务。
+//
+// 抽出来是因为现在有第二个入口:删一条 AI 生成记录时可以勾选"连同图片一起
+// 删"。删图这件事牵着三样东西(软删标记、配额退还只对平台池、清理任务),
+// 复制一遍迟早会漏掉其中一样,而漏掉配额退还是用户看得见的损失。
+func (s *Server) softDeleteImage(img *models.Image) error {
+	if err := s.DB.Model(img).Updates(map[string]any{
+		"deleted_at": time.Now(),
+		"status":     models.ImageDeleted,
+	}).Error; err != nil {
+		return err
+	}
 	// Refund only for platform-pool images — BYOS uploads never consumed quota.
 	var p models.StorageProfile
 	if err := s.DB.First(&p, "id = ?", img.ProfileID).Error; err == nil && p.IsPlatform() {
 		id := img.ID
-		if err := quota.Release(s.DB, img.UserID, img.SizeStored, fmt.Sprintf("删除图片 %s", img.OrigName), &id); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
+		if err := quota.Release(s.DB, img.UserID, img.SizeStored,
+			fmt.Sprintf("删除图片 %s", img.OrigName), &id); err != nil {
+			return err
 		}
 	}
 	if s.Queue != nil {
 		s.Queue.Submit(scheduler.JobPurge, img.ID)
 	}
-	c.JSON(http.StatusOK, gin.H{"ok": true})
+	return nil
 }
 
 // GET /api/public-stats — numbers for the landing page. Deliberately coarse:

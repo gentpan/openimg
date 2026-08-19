@@ -77,7 +77,7 @@ export default function GeneratePage() {
   // Both kinds are listed, because a submission with reference pictures *is* an
   // edit: filtered to "generate" alone, the record the user just watched appear
   // would vanish on the next poll and turn up on a page they were not on.
-  const { gens, images, setImages, working, prepend } = useGenerations(
+  const { gens, images, setImages, working, prepend, remove } = useGenerations(
     !!user,
     ["generate", "edit"],
     () => {
@@ -183,6 +183,11 @@ export default function GeneratePage() {
           icon="fa-wand-magic-sparkles"
           reuseLabel={t.generate.history.reusePrompt}
           resolveSource={resolveSource}
+          onDelete={(g, alsoImage) => {
+            remove(g, alsoImage)
+              .then(() => toast.success(t.generate.history.removed))
+              .catch((e) => toast.error(String(e)));
+          }}
           onReuse={(g) => {
             setPrompt(g.prompt);
             // Re-running an edit means re-running it on the same pictures; the

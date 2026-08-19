@@ -166,7 +166,33 @@ export function useGenerations(
     setGens((prev) => [g, ...prev]);
   }, []);
 
-  return { gens: mine, images, setImages, working, prepend, reload: load };
+  /** 删掉一条记录,可选连同产出图。
+   *
+   *  先发请求再改本地:乐观地先移除的话,请求失败时那一行要么凭空回来、要么
+   *  就此消失而服务端还留着——两种都是骗人。这个操作没有连点场景,一次往返
+   *  的等待不值得用正确性去换。
+   *
+   *  和 prepend 同理要作废在途的 ticket:此刻在飞的那次 list 是删除之前发出
+   *  的,落地会把删掉的行又贴回来。 */
+  const remove = useCallback(
+    async (g: AIGeneration, alsoImage: boolean) => {
+      await aiApi.deleteGeneration(g.id, alsoImage);
+      ticket.current++;
+      setGens((prev) => prev.filter((x) => x.id !== g.id));
+      if (alsoImage && g.image_id) {
+        setImages((prev) => {
+          const next = { ...prev };
+          delete next[g.image_id!];
+          return next;
+        });
+      }
+      // 额度不退,但删图会退还存储配额,顶栏的数字得跟上。
+      refreshAIStatus();
+    },
+    [],
+  );
+
+  return { gens: mine, images, setImages, working, prepend, remove, reload: load };
 }
 
 /**

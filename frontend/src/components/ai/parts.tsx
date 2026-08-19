@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLang } from "../../LangContext";
 import { useToast } from "../../ToastContext";
+import { useDialog } from "../../DialogContext";
 import { RingSpinner } from "../Spinner";
 import { genKind, genSources, inFlight, picbiRemaining } from "./generations";
 import type { AIGeneration, AIStatusOn, Image } from "../../types";
@@ -196,6 +197,7 @@ export function GenerationHistory({
   reuseLabel,
   onReuse,
   onOpenDetail,
+  onDelete,
   resolveSource,
 }: {
   gens: AIGeneration[];
@@ -208,11 +210,36 @@ export function GenerationHistory({
   reuseLabel: string;
   onReuse: (g: AIGeneration) => void;
   onOpenDetail: (img: Image) => void;
+  onDelete: (g: AIGeneration, alsoImage: boolean) => void;
   resolveSource?: (id: string) => Image | undefined;
 }) {
   const { t, locale } = useLang();
   const toast = useToast();
+  const dialog = useDialog();
   const [copied, setCopied] = useState<string | null>(null);
+
+  // 有产出图时是三选一,没有就是普通确认——与其给一个只有一种结果可选的
+  // 勾选框,不如让按钮本身说清会发生什么。
+  async function askDelete(g: AIGeneration, img?: Image) {
+    const h = t.generate.history;
+    if (!img) {
+      if (await dialog.confirm({ title: h.removeTitle, body: h.removeBody, danger: true,
+                                 confirmLabel: t.common.delete })) {
+        onDelete(g, false);
+      }
+      return;
+    }
+    const pick = await dialog.choose({
+      title: h.removeTitle,
+      body: h.removeBody,
+      options: [
+        { label: h.removeKeepImage, value: "keep" },
+        { label: h.removeWithImage, value: "image", danger: true },
+      ],
+    });
+    if (pick === "keep") onDelete(g, false);
+    if (pick === "image") onDelete(g, true);
+  }
 
   async function copyLink(img: Image) {
     try {
@@ -332,6 +359,18 @@ export function GenerationHistory({
                           {t.generate.history.openDetail}
                         </button>
                       </>
+                    )}
+
+                    {/* 还在跑的不给删:额度已经扣了、上游可能还在出图,让它从
+                        界面上消失就等于让一笔未结的账消失。 */}
+                    {!inFlight(g.status) && (
+                      <button
+                        onClick={() => askDelete(g, img)}
+                        className="text-[10px] text-neutral-600 hover:text-red-300 transition"
+                      >
+                        <i className="fa-solid fa-trash-can mr-1 text-[9px]" />
+                        {t.generate.history.remove}
+                      </button>
                     )}
                   </div>
                 </div>

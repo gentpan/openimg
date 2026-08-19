@@ -80,6 +80,8 @@ var zh = map[string]string{
 	"ai.disabled":                 "本站未开启 AI 生成",
 	"ai.prompt_required":          "请先描述你想要的画面",
 	"ai.prompt_too_long":          "描述太长了，请精简到 1000 字以内",
+	"ai.gen_not_found":            "找不到这条生成记录",
+	"ai.delete_in_flight":        "这条还在生成中，等它结束再删",
 	"ai.daily_limit":              "今天的生成次数已用完，明天再来",
 	"ai.no_credits":               "本月生成次数已用完，签到可以再领",
 	"ai.submit_failed":            "提交生成失败：%s",

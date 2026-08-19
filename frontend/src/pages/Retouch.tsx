@@ -152,7 +152,7 @@ export default function RetouchPage() {
 
   const promptRef = useRef<HTMLTextAreaElement>(null);
 
-  const { gens, images, setImages, working, prepend } = useGenerations(!!user, "edit", () => {
+  const { gens, images, setImages, working, prepend, remove } = useGenerations(!!user, "edit", () => {
     refresh();
     refreshAIStatus();
   });
@@ -253,6 +253,11 @@ export default function RetouchPage() {
           emptyHint={t.retouch.history.emptyHint}
           icon="fa-wand-magic"
           reuseLabel={t.retouch.history.reuse}
+          onDelete={(g, alsoImage) => {
+            remove(g, alsoImage)
+              .then(() => toast.success(t.generate.history.removed))
+              .catch((e) => toast.error(String(e)));
+          }}
           onReuse={(g) => {
             setPrompt(g.prompt);
             // The sources come back too where they can: re-running an edit with

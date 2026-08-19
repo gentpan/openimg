@@ -420,6 +420,12 @@ export const en: Dict = {
       openDetail: "Details and links in every format",
       reusePrompt: "Put this description back in the box",
       failedLabel: "Reason",
+      remove: "Delete",
+      removeTitle: "Delete this record?",
+      removeBody: "It disappears from the list. The generations you have already used are not returned.",
+      removeKeepImage: "Delete the record, keep the image",
+      removeWithImage: "Delete the record and the image",
+      removed: "Deleted",
     },
   },
 

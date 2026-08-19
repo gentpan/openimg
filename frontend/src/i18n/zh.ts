@@ -431,6 +431,12 @@ export const zh = {
       openDetail: "查看详情与各格式链接",
       reusePrompt: "把描述填回输入框",
       failedLabel: "失败原因",
+      remove: "删除",
+      removeTitle: "删除这条记录？",
+      removeBody: "记录会从列表里消失。已经用掉的次数不会退回来。",
+      removeKeepImage: "只删记录，图片留在图库",
+      removeWithImage: "记录和图片一起删",
+      removed: "已删除",
     },
   },
 

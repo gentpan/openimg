@@ -202,3 +202,165 @@ html, body {
     scale 500ms cubic-bezier(0, 0, 0.2, 1),
     color 150ms ease-out;
 }
+
+/* ---------------------------------------------------------------------------
+   导航的滑动标签。
+
+   一根发光细条停在当前页那一格下面,换页时滑过去。样式借自 pic.bi,但那边
+   只有两个等宽标签,位置能用 calc(100% / 2) 算死;这里最多六个、宽度各不
+   相同,而且标签文字在 md 以下会整体隐藏、宽度当场变一半——所以位置和宽度
+   是量出来的(见 Nav.tsx),CSS 只负责画。
+
+   发光强度按色相分开给。绿的相对亮度 0.778,紫的 0.116,差了六倍多;同一组
+   数值紫色是恰到好处的一抹光晕,绿色就是一条刺眼的灯管。
+
+   这里用了渐变和发光,与全局设计规则相悖——是按明确要求做的例外,只用在这
+   一个组件上。
+   --------------------------------------------------------------------------- */
+:root {
+  /* 细条本体的外发光。 */
+  --nav-glow: 0.34;
+  /* 标签底下那层向上收的柔光。 */
+  --nav-wash: 0.10;
+}
+
+:root[data-brand="violet"] {
+  /* 紫色深,同样的观感需要更强的光。 */
+  --nav-glow: 0.72;
+  --nav-wash: 0.14;
+}
+
+.nav-rail {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+}
+
+/* 贯穿整排的基线。标签的高光是从这条线上长出来的,没有它,发光条会显得浮
+   在半空。 */
+.nav-rail::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-neutral-800) 12%,
+    var(--color-neutral-800) 88%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.nav-tab {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0 0.7rem;
+  border-radius: 0.7rem 0.7rem 0 0;
+  color: var(--color-neutral-400);
+  white-space: nowrap;
+  transition:
+    color 180ms ease,
+    background-color 180ms ease;
+}
+
+.nav-tab:hover {
+  color: var(--color-neutral-100);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-brand-500) calc(var(--nav-wash) * 80%), transparent),
+    transparent
+  );
+}
+
+.nav-tab.is-active {
+  color: var(--color-brand-300);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-brand-500) calc(var(--nav-wash) * 100%), transparent),
+    transparent 88%
+  );
+}
+
+.nav-tab i {
+  font-size: 0.72rem;
+  color: var(--color-neutral-500);
+  transition: color 180ms ease;
+}
+
+.nav-tab:hover i,
+.nav-tab.is-active i {
+  color: inherit;
+}
+
+/* 滑动的发光条。left/width 由 Nav.tsx 量出来写进这两个变量;没有测到之前
+   宽度是 0,于是它不可见,而不是先闪现在错误的位置上。 */
+.nav-glider {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 0;
+  width: var(--nav-w, 0px);
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-brand-500) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 9px 1px color-mix(in srgb, var(--color-brand-500) calc(var(--nav-glow) * 100%), transparent);
+  transform: translateX(var(--nav-x, 0px));
+  transition:
+    transform 500ms cubic-bezier(0.37, 1.95, 0.66, 0.56),
+    width 500ms cubic-bezier(0.37, 1.95, 0.66, 0.56);
+  pointer-events: none;
+}
+
+/* 细条中段的一团光晕。单靠 box-shadow 的光是均匀的,加这一层才有"从中间
+   亮起来"的样子。 */
+.nav-glider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 18%;
+  left: 18%;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--color-brand-500);
+  filter: blur(8px);
+  opacity: calc(var(--nav-glow) * 0.85);
+  transform: translateY(-50%);
+}
+
+/* 向上收的柔光,把当前标签整格衬起来。 */
+.nav-glider::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 2.65rem;
+  border-radius: 0.7rem 0.7rem 0 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-brand-500) calc(var(--nav-wash) * 100%), transparent),
+    transparent 82%
+  );
+  opacity: 0.75;
+}
+
+/* 弹性缓动会过冲再回弹,对前庭敏感的人是明确的诱因。位置照样跟,只是不再
+   动画。 */
+@media (prefers-reduced-motion: reduce) {
+  .nav-glider {
+    transition: none;
+  }
+}

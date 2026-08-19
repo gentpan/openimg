@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import Logo from "../Logo";
@@ -18,6 +18,7 @@ import GroupBadge from "./GroupBadge";
  */
 export default function Nav() {
   const { t } = useLang();
+  const railRef = useRef<HTMLDivElement>(null);
   const { user, logout, refresh } = useAuth();
   const { brand, setBrand } = useBrand();
   const toast = useToast();
@@ -27,6 +28,36 @@ export default function Nav() {
   // it controls is inside the signed-in half of the bar anyway.
   const { status: ai } = useAIStatus(!!user);
   const aiEnabled = ai?.enabled === true;
+
+  // 发光条停在哪、有多宽,是量出来的。
+  //
+  // pic.bi 那边能用 calc(100% / 数量) 算,是因为它只有两个等宽标签。这里最多
+  // 六个、文案长短不一,而且 md 以下整排标签文字会隐藏、宽度当场腰斩——任何
+  // 算出来的分数都会错位。
+  //
+  // useLayoutEffect 而不是 useEffect:布局阶段就写好变量,浏览器绘制第一帧时
+  // 位置已经是对的,否则换页会看见它从旧位置闪一下。
+  useLayoutEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+
+    const place = () => {
+      const on = rail.querySelector<HTMLElement>(".nav-tab.is-active");
+      // 停留在原地而不是缩成 0:当前页不在导航里(比如设置页)时,让它留在上
+      // 一格比让它凭空消失更少突兀。
+      if (!on) return;
+      rail.style.setProperty("--nav-x", `${on.offsetLeft}px`);
+      rail.style.setProperty("--nav-w", `${on.offsetWidth}px`);
+    };
+    place();
+
+    // 宽度会在两种情况下变而 pathname 不变:窗口跨过 md 断点(标签文字显隐)、
+    // 以及字体加载完成后文字重新排版。ResizeObserver 两种都盯得住。
+    const ro = new ResizeObserver(place);
+    ro.observe(rail);
+    for (const el of rail.querySelectorAll(".nav-tab")) ro.observe(el);
+    return () => ro.disconnect();
+  }, [pathname, user, aiEnabled, t]);
 
   const pct = user && user.quota_bytes > 0 ? Math.min(100, (user.used_bytes / user.quota_bytes) * 100) : 0;
   const low = pct >= 90;
@@ -72,9 +103,9 @@ export default function Nav() {
           </span>
         </a>
 
-        <div className="flex items-center gap-2.5 text-xs">
+        <div className="flex items-center gap-2.5 text-xs self-stretch">
           {user && (
-            <>
+            <div ref={railRef} className="nav-rail">
               <NavItem to="/dashboard" icon="fa-gauge" label={t.nav.overview} active={pathname === "/dashboard"} />
               <NavItem to="/upload" icon="fa-cloud-arrow-up" label={t.common.upload} active={pathname === "/upload"} />
               <NavItem to="/gallery" icon="fa-images" label={t.nav.gallery} active={pathname === "/gallery"} />
@@ -97,7 +128,8 @@ export default function Nav() {
                 </>
               )}
               <NavItem to="/refer" icon="fa-gift" label={t.nav.refer} active={pathname === "/refer"} />
-            </>
+              <span className="nav-glider" aria-hidden="true" />
+            </div>
           )}
           {user?.role === "admin" && (
             <Link to="/admin" className="text-brand-400 hover:underline hidden sm:inline">
@@ -239,10 +271,11 @@ function NavItem({ to, icon, label, active }: { to: string; icon: string; label:
     <Link
       to={to}
       title={label}
-      className={`transition ${active ? "text-brand-300" : "text-neutral-400 hover:text-brand-300"}`}
+      aria-current={active ? "page" : undefined}
+      className={`nav-tab${active ? " is-active" : ""}`}
     >
       <i className={`fa-solid ${icon}`} />
-      <span className="ml-1.5 hidden md:inline">{label}</span>
+      <span className="hidden md:inline">{label}</span>
     </Link>
   );
 }

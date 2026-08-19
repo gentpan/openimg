@@ -18,7 +18,7 @@ import { MARK_PATH } from "./Logo";
  */
 export type Brand = "green" | "violet";
 
-const HUE: Record<Brand, string> = { green: "#5DE31D", violet: "#8E47FF" };
+const HUE: Record<Brand, string> = { green: "#90FF3A", violet: "#8E47FF" };
 
 /**
  * Repaint the tab icon in the current brand, as a data URI.

@@ -2,26 +2,26 @@
 
 /* One scale, and one rule about what goes on it.
    ---------------------------------------------------------------------------
-   #5DE31D has a relative luminance of 0.574. White text on it is 1.68:1 —
+   #90FF3A has a relative luminance of 0.778. White text on it is 1.27:1 —
    against 4.5:1 for AA that is unreadable, not merely low. So every filled
-   control takes --color-brand-ink (10.65:1), and white never appears on a
+   control takes --color-brand-ink (14.14:1), and white never appears on a
    brand surface anywhere in this codebase.
 
    That single fact is what makes this a redesign rather than a value swap: the
    violet this replaces was 0.135 and carried white at 4.67:1, so the old code
    had ~35 buttons filled with the brand and labelled in white.
 
-   #5DE31D sits at 600 — the resting fill of a solid button — with 500 as its
+   #90FF3A sits at 600 — the resting fill of a solid button — with 500 as its
    hover, so a button brightens under the pointer. */
 @theme {
-  --color-brand-200: #d1f8bf;
-  --color-brand-300: #aef18e; /* text on dark — 15.1:1 on the page */
-  --color-brand-400: #90ec65; /* text on dark — 13.8:1 */
-  --color-brand-500: #76e740; /* hover fill, borders, rings */
-  --color-brand-600: #5de31d; /* the brand */
-  --color-brand-800: #2f800a;
-  --color-brand-900: #204b0c;
-  --color-brand-950: #152c09;
+  --color-brand-200: #e0ffc8;
+  --color-brand-300: #c8ff9c; /* text on dark — 17.2:1 on the page */
+  --color-brand-400: #b3ff79; /* text on dark — 16.5:1 */
+  --color-brand-500: #a1ff58; /* hover fill, borders, rings */
+  --color-brand-600: #90ff3a; /* the brand */
+  --color-brand-800: #3e800a;
+  --color-brand-900: #284b0c;
+  --color-brand-950: #182c09;
   /* What goes on a brand fill. Near-black with a trace of the brand hue, so it
      reads as part of the control rather than as borrowed body text. */
   --color-brand-ink: #0a1b02;
@@ -32,7 +32,7 @@
      difference between a heading that reads as the brand colour and one that
      reads as dark olive. Body text keeps brand-400; anything set large takes
      this. */
-  --color-brand-display: #aef18e;
+  --color-brand-display: #c8ff9c;
 }
 
 /* ---------------------------------------------------------------------------
@@ -40,9 +40,9 @@
 
    There used to be a light theme here, built by inverting the neutral ramp
    under [data-theme="light"]. It is gone: the product is dark, and a bright
-   green brand cannot be text on white — #5DE31D is 1.79:1 there, so the light
+   green brand cannot be text on white — #90FF3A is 1.27:1 there, so the light
    theme had to darken it to #30800A and the brand stopped looking like itself.
-   Dark has no such problem: the same green reads at 11.96:1 on the page.
+   Dark has no such problem: the same green reads at 15.60:1 on the page.
 
    What remains switchable is the brand hue, at the bottom of this file.
    --------------------------------------------------------------------------- */
@@ -70,10 +70,10 @@
   --heat-zero: #404040;
   /* Green, not violet: the ramp answers "how many days", which is a quantity,
      and quantity is the brand scale's job. */
-  --heat-1: #368e0b;
-  --heat-2: #48ba12;
-  --heat-3: #5de31d;
-  --heat-4: #90ec65;
+  --heat-1: #439900;
+  --heat-2: #59cc00;
+  --heat-3: #90ff3a;
+  --heat-4: #b3ff79;
 }
 
 /* Reserve the scrollbar gutter on every page. Without this, navigating from a

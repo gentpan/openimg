@@ -32,13 +32,13 @@ export interface ChartTheme {
 }
 
 const DARK = {
-  BRAND: "#5de31d",
+  BRAND: "#90ff3a",
   BRAND_DIM: "rgba(93, 227, 29, 0.15)",
-  SERIES: ["#5de31d", "#38bdf8", "#fbbf24", "#f472b6", "#94a3b8", "#2dd4bf", "#fb923c"],
+  SERIES: ["#90ff3a", "#38bdf8", "#fbbf24", "#f472b6", "#94a3b8", "#2dd4bf", "#fb923c"],
   GRID: "rgba(64, 64, 64, 0.35)",
   TICK: "#737373",
-  COMPOSITION: ["#5de31d", "#38bdf8", "#fbbf24"],
-  FORMATS: ["#5de31d", "#38bdf8", "#fbbf24", "#f472b6", "#94a3b8", "#2dd4bf"],
+  COMPOSITION: ["#90ff3a", "#38bdf8", "#fbbf24"],
+  FORMATS: ["#90ff3a", "#38bdf8", "#fbbf24", "#f472b6", "#94a3b8", "#2dd4bf"],
   SAVED: "#34d399",
 };
 

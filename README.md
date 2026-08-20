@@ -1,9 +1,33 @@
-# Openimg
+<p align="center">
+  <img src="docs/icon.png" width="96" alt="Openimg">
+</p>
 
-永久免费的公益图床 · **[openimg.io](https://openimg.io)**
+<h1 align="center">Openimg</h1>
 
-上传即自动压缩转换，全球 CDN 分发，支持绑定用户自己的 R2 / S3 存储。
-没有付费墙 —— 存储空间靠每天签到累积。
+<p align="center">
+  永久免费的公益图床。上传即自动压缩转换，全球 CDN 分发，<br>
+  可以绑定你自己的 R2 / S3。没有付费墙 —— 空间靠每天签到累积。
+</p>
+
+<p align="center">
+  <a href="https://openimg.io"><img alt="在线站点" src="https://img.shields.io/badge/openimg.io-%E5%9C%A8%E7%BA%BF%E4%BD%BF%E7%94%A8-90FF3A?labelColor=0a0a0a"></a>
+  <a href="https://github.com/gentpan/openimg-app"><img alt="macOS 客户端" src="https://img.shields.io/github/v/release/gentpan/openimg-app?label=macOS%20%E5%AE%A2%E6%88%B7%E7%AB%AF&color=90FF3A&labelColor=0a0a0a"></a>
+  <a href="CHANGELOG.md"><img alt="更新记录" src="https://img.shields.io/badge/%E6%9B%B4%E6%96%B0%E8%AE%B0%E5%BD%95-CHANGELOG-0a0a0a"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/gentpan/openimg?label=%E8%AE%B8%E5%8F%AF&color=90FF3A&labelColor=0a0a0a"></a>
+</p>
+
+<p align="center">
+  <img alt="Go" src="https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white&labelColor=0a0a0a">
+  <img alt="Gin" src="https://img.shields.io/badge/Gin-008ECF?logo=gin&logoColor=white&labelColor=0a0a0a">
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white&labelColor=0a0a0a">
+  <img alt="libvips" src="https://img.shields.io/badge/libvips-8.15%2B-0a0a0a">
+  <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white&labelColor=0a0a0a">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white&labelColor=0a0a0a">
+  <img alt="Vite" src="https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white&labelColor=0a0a0a">
+  <img alt="Tailwind" src="https://img.shields.io/badge/Tailwind-v4-06B6D4?logo=tailwindcss&logoColor=white&labelColor=0a0a0a">
+  <img alt="S3" src="https://img.shields.io/badge/S3%20%E5%85%BC%E5%AE%B9-MinIO%20·%20R2%20·%20AWS-0a0a0a">
+  <img alt="Cloudflare" src="https://img.shields.io/badge/Cloudflare-CDN%20%2B%20Email-F38020?logo=cloudflare&logoColor=white&labelColor=0a0a0a">
+</p>
 
 ## 能力
 
@@ -27,17 +51,12 @@
 
 **敏感操作需邮箱验证码。** 改密码、添加 Passkey、清空图库都要过验证码，且验证码**按用途绑定哈希**——为改密码发的码无法用于登录。
 
-## 技术栈
+## 客户端
 
-| 层 | 选型 |
-| --- | --- |
-| 后端 | Go 1.26 + Gin + GORM |
-| 数据库 | PostgreSQL 18 |
-| 图片处理 | libvips（govips，cgo） |
-| 存储 | S3 兼容（MinIO / R2 / AWS 均可） |
-| 前端 | React 19 + Vite + TypeScript + Tailwind v4 |
-| 邮件 | Cloudflare Email Sending |
-| CDN | Cloudflare |
+macOS 原生客户端在 **[gentpan/openimg-app](https://github.com/gentpan/openimg-app)** ——
+拖进来就传好，链接直接进剪贴板；带目录监控自动上传、上传前编辑、AI 生成与修图。
+
+也可以用 API Token 接 PicGo / Typora / curl，见站内 `/docs`。
 
 ## 目录
 
@@ -51,6 +70,7 @@ deploy/     systemd unit
 
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — 系统结构、模块职责、上传流水线、数据模型
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** — 环境搭建、运行、构建、部署
+- **[CHANGELOG.md](CHANGELOG.md)** — 更新记录，按部署日期分段；自建者需要配合改动的地方单独标出
 
 ## 快速开始
 

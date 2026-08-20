@@ -533,6 +533,9 @@ export const zh = {
     signInToUpload: "登录后即可上传图片",
     signUpPerk: "注册送 1 GB，每天签到还能随机领 1–20 MB",
     signUpFree: "免费注册",
+    urlPlaceholder: "或粘贴一条图片网址",
+    urlFetch: "取图",
+    urlHint: "由服务器代取，只支持 http / https 的公网地址",
   },
 
   uploadPanel: {

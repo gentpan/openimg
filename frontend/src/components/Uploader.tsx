@@ -11,8 +11,9 @@ import { useLang } from "../LangContext";
 export default function Uploader({ compact = false }: { compact?: boolean }) {
   const { t } = useLang();
   const { user } = useAuth();
-  const { enqueue } = useUpload();
+  const { enqueue, enqueueURL } = useUpload();
   const [dragging, setDragging] = useState(false);
+  const [url, setUrl] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Paste-to-upload. Screenshot → Ctrl+V is the single most-used path on an
@@ -33,7 +34,14 @@ export default function Uploader({ compact = false }: { compact?: boolean }) {
     return () => window.removeEventListener("paste", onPaste);
   }, [enqueue, user]);
 
+  function fetchURL() {
+    if (!url.trim()) return;
+    enqueueURL(url);
+    setUrl("");
+  }
+
   return (
+    <>
     <div
       onDragOver={(e) => {
         e.preventDefault();
@@ -103,5 +111,40 @@ export default function Uploader({ compact = false }: { compact?: boolean }) {
         </>
       )}
     </div>
+
+    {/*
+      网址取图。摆在拖放区**外面**:拖放区整块都是一个"点了就选文件"的按钮,
+      把输入框放进去的话,点进去打字会先触发选文件的弹窗。
+    */}
+    {user && (
+      <div className="mt-3">
+        <div className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/40 px-3 py-2">
+          <i className="fa-solid fa-link text-xs text-neutral-600" />
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                fetchURL();
+              }
+            }}
+            placeholder={t.uploader.urlPlaceholder}
+            className="min-w-0 flex-1 bg-transparent text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={fetchURL}
+            disabled={!url.trim()}
+            className="shrink-0 rounded-lg bg-neutral-800 px-3 py-1 text-xs text-neutral-200 transition hover:bg-neutral-700 disabled:opacity-40 disabled:hover:bg-neutral-800"
+          >
+            {t.uploader.urlFetch}
+          </button>
+        </div>
+        <div className="mt-1.5 text-xs text-neutral-600">{t.uploader.urlHint}</div>
+      </div>
+    )}
+    </>
   );
 }

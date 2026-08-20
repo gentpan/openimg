@@ -16,7 +16,14 @@ export type ItemState = "queued" | "uploading" | "done" | "error";
 
 export interface QueueItem {
   id: string;
-  file: File;
+  /** 本地文件。按网址取图时没有——那些字节从来没有经过浏览器。 */
+  file?: File;
+  /** 按网址取图时的来源地址。 */
+  sourceURL?: string;
+  /** 显示名。两条来源都有,免得每个用到的地方都要判一次 file 在不在。 */
+  name: string;
+  /** 字节数;网址取图时事先不知道,为 0。 */
+  size: number;
   preview: string;
   state: ItemState;
   progress: number;
@@ -87,6 +94,7 @@ async function makePreview(file: File): Promise<string> {
 interface UploadCtx {
   items: QueueItem[];
   enqueue: (files: FileList | File[]) => void;
+  enqueueURL: (url: string) => void;
   remove: (id: string) => void;
   clear: () => void;
   clearFinished: () => void;
@@ -125,6 +133,8 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     const added = picked.map((file) => ({
       id: `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       file,
+      name: file.name,
+      size: file.size,
       preview: "",
       state: "queued" as ItemState,
       progress: 0,
@@ -133,6 +143,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     // each preview is patched in when it lands.
     setItems((prev) => [...prev, ...added]);
     for (const item of added) {
+      if (!item.file) continue;
       void makePreview(item.file).then((url) => {
         if (!itemsRef.current.some((i) => i.id === item.id)) {
           URL.revokeObjectURL(url); // removed while we were decoding
@@ -141,6 +152,38 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, preview: url } : i)));
       });
     }
+  }, []);
+
+  /**
+   * 按网址取图。
+   *
+   * 排进同一条队列,而不是另开一份状态:取回来之后它和别的图完全一样——同样要
+   * 显示结果、复制链接、去重提示。两份队列意味着这些都要写两遍,而写两遍的东
+   * 西迟早会不一致。
+   */
+  const enqueueURL = useCallback((raw: string) => {
+    const url = raw.trim();
+    if (!url) return;
+    let label = url;
+    try {
+      const u = new URL(url);
+      label = u.pathname.split("/").filter(Boolean).pop() || u.hostname;
+    } catch {
+      // 解析不了就原样显示,校验交给服务端——前端再判一遍只会和后端的规则
+      // 慢慢分叉。
+    }
+    setItems((prev) => [
+      ...prev,
+      {
+        id: `url-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        sourceURL: url,
+        name: label,
+        size: 0,
+        preview: "",
+        state: "queued" as ItemState,
+        progress: 0,
+      },
+    ]);
   }, []);
 
   const remove = useCallback((id: string) => {
@@ -180,11 +223,14 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     runningRef.current++;
     setItems((prev) => prev.map((i) => (i.id === next.id ? { ...i, state: "uploading" } : i)));
 
-    imageApi
-      .upload(next.file, {
-        onProgress: (pct) =>
-          setItems((prev) => prev.map((i) => (i.id === next.id ? { ...i, progress: pct } : i))),
-      })
+    const run = next.sourceURL
+      ? imageApi.uploadFromURL(next.sourceURL)
+      : imageApi.upload(next.file!, {
+          onProgress: (pct) =>
+            setItems((prev) => prev.map((i) => (i.id === next.id ? { ...i, progress: pct } : i))),
+        });
+
+    run
       .then((res) => {
         setItems((prev) =>
           prev.map((i) =>
@@ -211,11 +257,15 @@ export function UploadProvider({ children }: { children: ReactNode }) {
   // icon, or the bar lurches around as small files finish first.
   const overallProgress = useMemo(() => {
     if (items.length === 0) return 0;
-    const total = items.reduce((n, i) => n + i.file.size, 0);
+    // 网址取图没有大小(字节不经过浏览器),按大小加权会让它权重为零、整条进
+    // 度条对它视而不见。所以这类按一张固定的"名义大小"参与加权——不准,但至
+    // 少它在动。
+    const weight = (i: QueueItem) => (i.size > 0 ? i.size : 512 * 1024);
+    const total = items.reduce((n, i) => n + weight(i), 0);
     if (total === 0) return 0;
     const done = items.reduce((n, i) => {
       const pct = i.state === "done" ? 100 : i.state === "error" ? 0 : i.progress;
-      return n + (i.file.size * pct) / 100;
+      return n + (weight(i) * pct) / 100;
     }, 0);
     return Math.round((done / total) * 100);
   }, [items]);
@@ -224,6 +274,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     () => ({
       items,
       enqueue,
+      enqueueURL,
       remove,
       clear,
       clearFinished,
@@ -235,7 +286,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       doneCount: items.filter((i) => i.state === "done").length,
       errorCount: items.filter((i) => i.state === "error").length,
     }),
-    [items, enqueue, remove, clear, clearFinished, retry, format, overallProgress],
+    [items, enqueue, enqueueURL, remove, clear, clearFinished, retry, format, overallProgress],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

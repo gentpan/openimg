@@ -40,39 +40,12 @@ const uploadTimeout = 2 * time.Minute
 func (s *Server) handleUpload(c *gin.Context) {
 	u := auth.MustUser(c)
 	g := s.groupFor(u)
-
-	if s.RequireEmailVerified && !u.EmailVerified && !u.IsAdmin() {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error": i18n.T(c, "upload.email_unverified"), "code": "email_unverified",
-		})
-		return
-	}
-	if u.Status != models.UserActive {
-		c.JSON(http.StatusForbidden, gin.H{"error": i18n.T(c, "upload.suspended")})
+	maxSize, ok := s.uploadPreflight(c, u, &g)
+	if !ok {
 		return
 	}
 
-	// Daily upload count, per tier.
-	dayStart := time.Now().UTC().Truncate(24 * time.Hour)
-	var todayCount int64
-	s.DB.Model(&models.Image{}).
-		Where("user_id = ? AND created_at >= ?", u.ID, dayStart).
-		Count(&todayCount)
-	if g.DailyUploadCount > 0 && todayCount >= int64(g.DailyUploadCount) {
-		c.JSON(http.StatusTooManyRequests, gin.H{
-			"error": i18n.T(c, "upload.daily_limit"),
-			"used":  todayCount, "limit": g.DailyUploadCount,
-		})
-		return
-	}
-
-	// Cap the request body before reading a byte of it. The tier limit is the
-	// real bound; the server-wide one is a backstop against a misconfigured
-	// group.
-	maxSize := g.MaxFileSize
-	if maxSize <= 0 || (s.MaxUploadSize > 0 && maxSize > s.MaxUploadSize) {
-		maxSize = s.MaxUploadSize
-	}
+	// Cap the request body before reading a byte of it.
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxSize)
 
 	fh, err := c.FormFile("file")
@@ -98,7 +71,52 @@ func (s *Server) handleUpload(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "upload.read_failed", err.Error())})
 		return
 	}
+	s.finishUpload(c, u, &g, raw, sum, filepath.Base(fh.Filename))
+}
 
+// uploadPreflight 是两条上传路径(表单、按网址取)共用的那半:账号状态、每日
+// 张数、单文件上限。返回 ok=false 时响应已经写出去了。
+//
+// 抽出来不是为了少写几行,是为了**不会只改一处**:这几道闸任何一道在某一条路
+// 径上漏掉,那条路径就成了绕开限额的后门,而这种漏洞不会有任何症状。
+func (s *Server) uploadPreflight(c *gin.Context, u *models.User, g *models.UserGroup) (int64, bool) {
+	if s.RequireEmailVerified && !u.EmailVerified && !u.IsAdmin() {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": i18n.T(c, "upload.email_unverified"), "code": "email_unverified",
+		})
+		return 0, false
+	}
+	if u.Status != models.UserActive {
+		c.JSON(http.StatusForbidden, gin.H{"error": i18n.T(c, "upload.suspended")})
+		return 0, false
+	}
+
+	// Daily upload count, per tier.
+	dayStart := time.Now().UTC().Truncate(24 * time.Hour)
+	var todayCount int64
+	s.DB.Model(&models.Image{}).
+		Where("user_id = ? AND created_at >= ?", u.ID, dayStart).
+		Count(&todayCount)
+	if g.DailyUploadCount > 0 && todayCount >= int64(g.DailyUploadCount) {
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"error": i18n.T(c, "upload.daily_limit"),
+			"used":  todayCount, "limit": g.DailyUploadCount,
+		})
+		return 0, false
+	}
+
+	// The tier limit is the real bound; the server-wide one is a backstop
+	// against a misconfigured group.
+	maxSize := g.MaxFileSize
+	if maxSize <= 0 || (s.MaxUploadSize > 0 && maxSize > s.MaxUploadSize) {
+		maxSize = s.MaxUploadSize
+	}
+	return maxSize, true
+}
+
+// finishUpload 是两条路径共用的后半:认格式、落存储、回结果。
+func (s *Server) finishUpload(c *gin.Context, u *models.User, g *models.UserGroup,
+	raw []byte, sum, origName string) {
 	// Sniff the real format from the bytes. The filename extension and the
 	// client's Content-Type are both attacker-controlled and neither is
 	// consulted for anything but the display name.
@@ -127,14 +145,14 @@ func (s *Server) handleUpload(c *gin.Context) {
 
 	img, dup, err := s.storeUpload(ctx, storeParams{
 		User:       u,
-		Group:      &g,
+		Group:      g,
 		Backend:    backend,
 		Profile:    profile,
 		OnPlatform: onPlatform,
 		Raw:        raw,
 		SHA:        sum,
 		Ext:        ext,
-		OrigName:   filepath.Base(fh.Filename),
+		OrigName:   origName,
 		IP:         c.ClientIP(),
 	})
 	if err != nil {

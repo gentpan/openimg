@@ -177,6 +177,10 @@ func (s *Server) Router() *gin.Engine {
 	// management routes above deliberately do not.
 	machine := r.Group("", s.Auth.TokenOrSession())
 	machine.POST("/api/upload", s.uploadLimiter.middleware("upload.rate_limited"), s.handleUpload)
+	// 按网址取图。共用上传的限流器——它替用户向外发请求,比表单上传更该限速:
+	// 不限的话一个账号就能把这台机器变成一个流量放大器。
+	machine.POST("/api/upload/from-url",
+		s.uploadLimiter.middleware("upload.rate_limited"), s.handleUploadFromURL)
 	machine.GET("/api/images", s.handleListImages)
 	machine.GET("/api/images/:id", s.handleGetImage)
 	machine.DELETE("/api/images/:id", s.handleDeleteImage)

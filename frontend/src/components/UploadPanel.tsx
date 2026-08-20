@@ -219,8 +219,8 @@ function Row({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-neutral-300 truncate" title={item.file.name}>
-            {item.file.name}
+          <span className="text-[11px] text-neutral-300 truncate" title={item.name}>
+            {item.name}
           </span>
           {item.deduplicated && (
             <span
@@ -234,7 +234,7 @@ function Row({
 
         {item.state === "done" ? (
           <div className="text-[10px] text-neutral-600 truncate">
-            {formatBytes(item.file.size, 0)}
+            {item.size > 0 ? formatBytes(item.size, 0) : ""}
             {saved > 0 && <span className="text-brand-400"> · {t.uploadPanel.saved(formatBytes(saved, 0))}</span>}
           </div>
         ) : item.state === "error" ? (

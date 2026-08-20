@@ -506,6 +506,9 @@ export const en: Dict = {
     signInToUpload: "Sign in to upload images",
     signUpPerk: "Get 1 GB when you sign up, plus a random 1–20 MB for each daily check-in",
     signUpFree: "Sign up free",
+    urlPlaceholder: "or paste an image URL",
+    urlFetch: "Fetch",
+    urlHint: "Fetched by the server; public http / https addresses only",
   },
 
   uploadPanel: {

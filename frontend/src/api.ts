@@ -153,6 +153,23 @@ export const imageApi = {
    * because fetch still has no upload-progress event, and a picture host
    * without a progress bar feels broken on anything slower than a LAN.
    */
+  /**
+   * 按网址取图。**服务端下载**,不是浏览器下载。
+   *
+   * 浏览器这条路走不通:第三方图片地址基本都会被 CORS 挡掉,而能绕过 CORS 的
+   * 只有服务端。代价是这个接口让任何登录用户都能驱使我们的服务器去请求一个
+   * 地址,防护全在后端的 fetchurl 包里。
+   *
+   * 没有进度:字节从来没有经过浏览器,进度只有服务端知道。与其编一个假的百分
+   * 比,不如在界面上就显示成"正在取"。
+   */
+  uploadFromURL(url: string): Promise<{ image: Image; deduplicated: boolean }> {
+    return jfetch("/api/upload/from-url", {
+      method: "POST",
+      body: JSON.stringify({ url }),
+    });
+  },
+
   upload(
     file: File,
     opts: { onProgress?: (pct: number) => void; signal?: AbortSignal } = {},

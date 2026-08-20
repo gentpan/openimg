@@ -57,12 +57,22 @@ func (s *Server) handleGetQuota(c *gin.Context) {
 		Where("user_id = ? AND type = ?", u.ID, models.QuotaCheckin).
 		Select("COALESCE(SUM(bytes), 0)").Scan(&checkinTotal)
 
+	// 累计签到**天数**,与上面那个累计字节是两件事。等级按天数算而不是按字节:
+	// 字节是随机的(每次在区间里摇),用它当经验值等于让运气决定等级。
+	//
+	// 数 checkin_records 而不是数流水:那张表有 (user_id, date) 唯一索引,一天
+	// 一行是它的结构保证;流水里一次签到可能因为周月奖励落成多行。
+	var checkinDays int64
+	s.DB.Model(&models.CheckinRecord{}).Where("user_id = ?", u.ID).Count(&checkinDays)
+
 	c.JSON(http.StatusOK, gin.H{
 		"quota_bytes":     u.QuotaBytes,
 		"used_bytes":      u.UsedBytes,
 		"available_bytes": quota.Available(u),
 		"image_count":     imageCount,
 		"uploads_today":   uploadsToday,
+		// 注册时间。等级的另一半按它算——它完全刷不了,只会自己往前走。
+		"member_since": u.CreatedAt.UTC().Format(time.RFC3339),
 		"tier": gin.H{
 			"name":               g.Name,
 			"description":        g.Description,
@@ -76,6 +86,7 @@ func (s *Server) handleGetQuota(c *gin.Context) {
 		"checkin": gin.H{
 			"checked_in_today":  u.LastCheckinDate >= today && u.LastCheckinDate != "",
 			"total_earned":      checkinTotal,
+			"total_days":        checkinDays,
 			"streak":            u.CheckinStreak,
 			"last_date":         u.LastCheckinDate,
 			"next_min_bytes":    nextMin,

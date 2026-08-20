@@ -83,5 +83,13 @@ func (s *Server) handleUploadTrend(c *gin.Context) {
 		r := byDay[key]
 		out = append(out, uploadTrendPoint{Date: key, Count: r.Count, Bytes: r.Bytes})
 	}
+	// 明确禁缓存。
+	//
+	// 这份数据每传一张图就变,而且只有一两千字节——缓存它换不来什么,却会引入
+	// 一个很难查的失败:中间层给响应挂上校验器之后,客户端下次带条件请求过来会
+	// 拿到 **304 和空 body**。URLSession 只有在本地缓存还留着那条记录时才补得
+	// 上内容,补不上就是空的,而解码器只接受 2xx —— 表现是趋势图整块消失,没有
+	// 任何报错。
+	c.Header("Cache-Control", "no-store")
 	c.JSON(http.StatusOK, gin.H{"days": days, "points": out})
 }

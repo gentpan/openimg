@@ -24,8 +24,12 @@ func routerWithSPAFallback(s *Server) *gin.Engine {
 }
 
 func get(r *gin.Engine, path string) *httptest.ResponseRecorder {
+	return req(r, http.MethodGet, path)
+}
+
+func req(r *gin.Engine, method, path string) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
-	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
+	r.ServeHTTP(w, httptest.NewRequest(method, path, nil))
 	return w
 }
 
@@ -81,5 +85,27 @@ func TestMacUpdateServesManifest(t *testing.T) {
 	// 撤回一个坏版本靠推新清单,TTL 长了就推不出去。
 	if cc := w.Header().Get("Cache-Control"); !strings.Contains(cc, "max-age=300") {
 		t.Errorf("Cache-Control = %q,想要短 TTL", cc)
+	}
+}
+
+// HEAD 也必须自己答。
+//
+// Gin 不会因为注册了 GET 就自动接 HEAD,而没接的那个动词会落进 NoRoute ——
+// `curl -I` 于是拿到 200 + text/html,看着像"活着",其实是兜底在答。任何用
+// HEAD 探活的监控都会被骗过去,包括 release.sh 里那一步验证。
+func TestMacUpdateAnswersHEAD(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "update.json")
+	if err := os.WriteFile(path, []byte(`{"payload":"e30=","sig":"AA==","keyId":"k1"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	r := routerWithSPAFallback(&Server{MacUpdateManifest: path})
+
+	w := req(r, http.MethodHead, macUpdatePath)
+	if w.Code != http.StatusOK {
+		t.Fatalf("HEAD 应当 200,得到 %d", w.Code)
+	}
+	if ct := w.Header().Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
+		t.Errorf("HEAD 的 Content-Type = %q —— 说明它落进了 SPA 兜底", ct)
 	}
 }

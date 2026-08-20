@@ -202,6 +202,7 @@ func (s *Server) Router() *gin.Engine {
 	// holder cannot already derive from the image list.
 	machine.GET("/api/quota/transactions", s.handleQuotaTransactions)
 	machine.GET("/api/storage/summary", s.handleStorageSummary)
+	machine.GET("/api/stats/uploads", s.handleUploadTrend)
 
 	// AI 文生图。放在机器组:它就是一种上传,只不过图是生成出来的。
 	// 额度由 aigen 的余额与每日上限把关,不另设中间件。

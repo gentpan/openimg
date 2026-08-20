@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { authApi } from "./api";
+import { authApi, userApi } from "./api";
 import { resetAIStatus } from "./aiStatus";
 import type { User } from "./types";
 
@@ -14,6 +14,10 @@ interface AuthCtx {
 
 const Ctx = createContext<AuthCtx | null>(null);
 
+/// 这次页面加载有没有报过时区。放模块级而不是 state:它不参与渲染,
+/// 而且 AuthProvider 重挂载时不该重报。
+let tzReported = false;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,6 +26,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const u = await authApi.me();
       setUser(u);
+      // 会话确实建立之后才报时区:未登录时这个接口必然 401。
+      // 一次页面加载只报一次——时区在一次会话里不会变,而 refresh() 在签到、
+      // 上传之后都会被调,每次都发一个空操作请求没有意义。
+      if (!tzReported) {
+        tzReported = true;
+        void userApi.reportTimezone();
+      }
     } catch {
       setUser(null);
     }
@@ -32,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await refresh();
       setLoading(false);
     })();
+
   }, []);
 
   return (

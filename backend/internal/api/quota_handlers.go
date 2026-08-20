@@ -29,14 +29,14 @@ func (s *Server) handleGetQuota(c *gin.Context) {
 	var imageCount int64
 	s.DB.Model(&models.Image{}).Where("user_id = ? AND deleted_at IS NULL", u.ID).Count(&imageCount)
 
-	today := checkin.Today()
+	today := checkin.TodayIn(u.Location())
 	nextStreak := 1
-	if u.LastCheckinDate == today {
+	if u.LastCheckinDate >= today && u.LastCheckinDate != "" {
 		nextStreak = u.CheckinStreak
 	} else if u.CheckinStreak > 0 {
 		// Only continues if the last check-in was yesterday; otherwise the
 		// preview should show a reset streak rather than an optimistic one.
-		if u.LastCheckinDate == time.Now().UTC().AddDate(0, 0, -1).Format("2006-01-02") {
+		if u.LastCheckinDate == time.Now().In(u.Location()).AddDate(0, 0, -1).Format("2006-01-02") {
 			nextStreak = u.CheckinStreak + 1
 		}
 	}
@@ -74,7 +74,7 @@ func (s *Server) handleGetQuota(c *gin.Context) {
 			"max_profiles":       g.MaxProfiles,
 		},
 		"checkin": gin.H{
-			"checked_in_today":  u.LastCheckinDate == today,
+			"checked_in_today":  u.LastCheckinDate >= today && u.LastCheckinDate != "",
 			"total_earned":      checkinTotal,
 			"streak":            u.CheckinStreak,
 			"last_date":         u.LastCheckinDate,

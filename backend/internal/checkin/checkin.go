@@ -24,7 +24,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// ErrAlreadyCheckedIn is returned for a second check-in on the same UTC day.
+// ErrAlreadyCheckedIn 是同一天里的第二次签到。"一天"按用户时区算,见 TodayIn。
 var ErrAlreadyCheckedIn = errors.New("今天已经签到过了")
 
 // Milestone lengths. A "month" is 30 days rather than a calendar month so the
@@ -50,9 +50,24 @@ type Result struct {
 	Capped     bool   `json:"capped"` // group cap swallowed part or all of the grant
 }
 
-// Today is the UTC date key. Everything here is UTC so a user travelling
-// across timezones can't check in twice in one day.
-func Today() string { return time.Now().UTC().Format("2006-01-02") }
+// Today 是"今天"的日期键,按给定时区算。
+//
+// 原来一律用 UTC,理由写的是"这样跨时区旅行也不能一天签两次"。但那个性质对
+// 非 UTC 用户本来就不成立:东八区的日界落在本地早上 8 点,7 点签一次、9 点
+// 还能再签一次,一个自然日里就是两次。UTC 既没挡住它想挡的,又让所有东八区
+// 用户的"一天"从早上 8 点开始——本地时间才是用户实际过的那一天。
+//
+// 防重复现在靠 Do() 里那道 `>=`:签过 8-20 之后,任何时区都换不出一个 ≤8-20
+// 的"今天"。
+func TodayIn(loc *time.Location) string {
+	if loc == nil {
+		loc = time.UTC
+	}
+	return time.Now().In(loc).Format("2006-01-02")
+}
+
+// Today 保留 UTC 语义,给拿不到用户的调用点用。
+func Today() string { return TodayIn(time.UTC) }
 
 // randomGrant picks a uniformly random amount in [min, max]. Degenerate
 // ranges (min > max, or either unset) collapse to whichever bound is usable,
@@ -90,7 +105,16 @@ func Do(db *gorm.DB, user *models.User, group *models.UserGroup) (*Result, error
 	if group == nil {
 		return nil, fmt.Errorf("checkin: user has no group")
 	}
-	today := Today()
+	today := TodayIn(user.Location())
+
+	// 已经签过今天、或者签过一个"更晚"的日期,都不给再签。
+	//
+	// 原来是等值判断,那在按本地时区算日界之后有个洞:签完之后把时区往西调,
+	// "今天"会退回昨天,等值不成立就又能签一次。日期是 ISO 串,字典序就是时
+	// 间序,一个 >= 就堵死了。
+	if user.LastCheckinDate >= today && user.LastCheckinDate != "" {
+		return nil, ErrAlreadyCheckedIn
+	}
 
 	// Streak continues only if the previous check-in was literally yesterday;
 	// any gap resets it to 1.

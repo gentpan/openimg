@@ -172,6 +172,7 @@ var zh = map[string]string{
 	"token.not_found":     "Token 不存在",
 
 	// Upload preferences
+	"prefs.bad_timezone":          "时区无效",
 	"prefs.bad_upload_mode":    "upload_mode 必须是 optimized 或 original",
 	"prefs.bad_variant_format": "variant_format 必须是 none / webp / avif",
 	"prefs.bad_width_preset":   "不支持的宽度预设",

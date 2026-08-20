@@ -121,6 +121,22 @@ export const authApi = {
 export const userApi = {
   updatePreferences: (prefs: Record<string, unknown>) =>
     jfetch<{ ok: true }>("/api/preferences", { method: "PATCH", body: JSON.stringify(prefs) }),
+  /** 把浏览器时区报上去。
+   *
+   *  签到的「一天」从几点开始要按用户实际过的那一天算,而服务端没别的办法
+   *  知道那是哪个时区。报一次存在账号上,不跟着每次请求走——跟着请求走的话
+   *  改一下就能让「今天」变成另一天,签到可以刷。
+   *
+   *  失败不提示也不重试:没报上去只是退回 UTC 日界,也就是这个字段存在之前
+   *  的行为,为它弹个错只会让人困惑。 */
+  reportTimezone: () => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!tz) return Promise.resolve();
+    return jfetch<{ ok: true }>("/api/preferences", {
+      method: "PATCH",
+      body: JSON.stringify({ timezone: tz }),
+    }).catch(() => undefined);
+  },
   deleteAccount: (confirm: string) =>
     jfetch<{ ok: true; deleted_images: number }>("/api/account", {
       method: "DELETE",

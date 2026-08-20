@@ -1,8 +1,10 @@
 package api
 
 import (
-	"github.com/gentpan/openimg/backend/internal/i18n"
 	"net/http"
+	"time"
+
+	"github.com/gentpan/openimg/backend/internal/i18n"
 
 	"github.com/gentpan/openimg/backend/internal/auth"
 	"github.com/gin-gonic/gin"
@@ -14,6 +16,9 @@ type preferencesReq struct {
 	MaxImageWidth *int    `json:"max_image_width"`
 	ThumbWidth    *int    `json:"thumb_width"`
 	ThumbFormat   *string `json:"thumb_format"`
+	// Timezone 决定这个账号的"一天"从几点开始,签到与日限都按它算。
+	// IANA 名,客户端启动时报一次。
+	Timezone *string `json:"timezone"`
 }
 
 var (
@@ -46,6 +51,17 @@ func (s *Server) handleUpdatePreferences(c *gin.Context) {
 		return
 	}
 	updates := map[string]any{}
+	if req.Timezone != nil {
+		// 用 LoadLocation 校验:它只认时区库里真实存在的名字,顺带挡掉任何
+		// 想借这个字段塞路径的写法。空串是合法的,表示回到 UTC。
+		if *req.Timezone != "" {
+			if _, err := time.LoadLocation(*req.Timezone); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "prefs.bad_timezone")})
+				return
+			}
+		}
+		updates["timezone"] = *req.Timezone
+	}
 	if req.UploadMode != nil {
 		if !allowedModes[*req.UploadMode] {
 			c.JSON(http.StatusBadRequest, gin.H{"error": i18n.T(c, "prefs.bad_upload_mode")})

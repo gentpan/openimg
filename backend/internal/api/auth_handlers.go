@@ -1,11 +1,11 @@
 package api
 
 import (
+	"github.com/gentpan/openimg/backend/internal/checkin"
 	"github.com/gentpan/openimg/backend/internal/i18n"
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gentpan/openimg/backend/internal/auth"
 	"github.com/gentpan/openimg/backend/internal/models"
@@ -64,7 +64,7 @@ func toPublic(u *models.User, group *models.UserGroup) publicUser {
 		UsedBytes:      u.UsedBytes,
 		AvailableBytes: quota.Available(u),
 		CheckinStreak:  u.CheckinStreak,
-		CheckedInToday: u.LastCheckinDate == time.Now().UTC().Format("2006-01-02"),
+		CheckedInToday: u.LastCheckinDate >= checkin.TodayIn(u.Location()) && u.LastCheckinDate != "",
 		HasPassword:    u.PasswordHash != "",
 		EmailVerified:  u.EmailVerified,
 		Google:         u.GoogleSub != "",

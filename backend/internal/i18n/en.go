@@ -158,6 +158,7 @@ var en = map[string]string{
 	"token.not_found":     "Token not found",
 
 	// Upload preferences
+	"prefs.bad_timezone":     "Unknown timezone",
 	"prefs.bad_upload_mode":    "upload_mode must be optimized or original",
 	"prefs.bad_variant_format": "variant_format must be none, webp, or avif",
 	"prefs.bad_width_preset":   "Unsupported width preset",

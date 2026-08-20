@@ -70,6 +70,13 @@ type User struct {
 
 	// Last UTC date the user checked in (yyyy-mm-dd), and how many consecutive
 	// days that streak has run. Empty date means never checked in.
+	// Timezone 是这个账号用来划"一天"的时区,IANA 名。空表示 UTC。
+	//
+	// 存在账号上而不是每次请求现取:日界要是跟着请求头走,改一下请求头就能
+	// 让"今天"变成另一天,签到直接可以刷。存下来之后,能被时区改动买到的最多
+	// 是一天——偏移量只跨 -12…+14。而 Do() 里那道 `>=` 把这一天也堵死了。
+	Timezone string `gorm:"size:64" json:"timezone,omitempty"`
+
 	LastCheckinDate string `gorm:"size:10;index" json:"last_checkin_date,omitempty"`
 	CheckinStreak   int    `gorm:"not null;default:0" json:"checkin_streak"`
 
@@ -230,4 +237,16 @@ type Session struct {
 	UserAgent string    `gorm:"size:255" json:"user_agent"`
 	ExpiresAt time.Time `gorm:"not null;index" json:"expires_at"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+// Location 是这个账号划"一天"用的时区。取不到就退回 UTC——那是这个字段加进
+// 来之前的行为,老账号不会因为没填而拿到一个跳变的日界。
+func (u *User) Location() *time.Location {
+	if u.Timezone == "" {
+		return time.UTC
+	}
+	if loc, err := time.LoadLocation(u.Timezone); err == nil {
+		return loc
+	}
+	return time.UTC
 }

@@ -37,6 +37,9 @@ type Server struct {
 	// is not served at all — see apple_assoc.go for why a placeholder would be
 	// worse than nothing.
 	AppleAppID string
+	// MacUpdateManifest 是 macOS 客户端更新清单的路径。空表示这个部署不提供
+	// 自动更新——那时那条路由返回明确的 404,而不是让它落进 SPA 兜底拿到 200。
+	MacUpdateManifest string
 	// ReactionSalt keeps hashed visitor addresses non-portable.
 	ReactionSalt string
 	// AIGen 是文生图上游。没配 APIMART_API_KEY 时它是禁用态,相关接口
@@ -345,6 +348,7 @@ func (s *Server) Router() *gin.Engine {
 	// Before NoRoute: the SPA fallback would answer this path with index.html,
 	// which Apple rejects.
 	s.registerAppleAssociation(r)
+	s.registerMacUpdate(r)
 
 	r.NoRoute(s.serveAppOrNotFound)
 	return r

@@ -30,13 +30,16 @@ type Config struct {
 	// 但自建部署多半只有一个域名,不该被迫再买一个。留空回落到主站,行为与
 	// 加这个配置之前一模一样。
 	ShortBaseURL string
-	FrontendDir   string
+	FrontendDir  string
 	// AppleAppID is "TEAMID.bundleid" for the Mac app. Set it to serve the
 	// associated-domains document that lets the app use a passkey natively
 	// instead of through a web sheet. Unset, the document is not served.
-	AppleAppID   string
-	CookieDomain string
-	CookieSecure bool
+	AppleAppID string
+	// MacUpdateManifest 指向 macOS 客户端更新清单的文件路径。留空即不提供
+	// 自动更新,那条路由会返回明确的 404。
+	MacUpdateManifest string
+	CookieDomain      string
+	CookieSecure      bool
 
 	JWTSecret string
 	// StorageMasterKey (base64, 32 bytes) encrypts user-supplied bucket
@@ -114,12 +117,13 @@ func Load() Config {
 		ShortBaseURL:  strings.TrimRight(strings.TrimSpace(os.Getenv("SHORT_BASE_URL")), "/"),
 		// Optional. Set it to the frontend's dist/ and this process serves the
 		// SPA too, which is what lets short links live at the domain root.
-		FrontendDir:      os.Getenv("FRONTEND_DIR"),
-		AppleAppID:       os.Getenv("APPLE_APP_ID"),
-		CookieDomain:     getenv("COOKIE_DOMAIN", ""),
-		CookieSecure:     secure,
-		JWTSecret:        mustGet("JWT_SECRET"),
-		StorageMasterKey: os.Getenv("STORAGE_MASTER_KEY"),
+		FrontendDir:       os.Getenv("FRONTEND_DIR"),
+		AppleAppID:        os.Getenv("APPLE_APP_ID"),
+		MacUpdateManifest: os.Getenv("MAC_UPDATE_MANIFEST"),
+		CookieDomain:      getenv("COOKIE_DOMAIN", ""),
+		CookieSecure:      secure,
+		JWTSecret:         mustGet("JWT_SECRET"),
+		StorageMasterKey:  os.Getenv("STORAGE_MASTER_KEY"),
 
 		GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 		GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),

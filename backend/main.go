@@ -123,6 +123,7 @@ func main() {
 	srv.ShortBaseURL = cfg.ShortBaseURL
 	srv.FrontendDir = cfg.FrontendDir
 	srv.AppleAppID = cfg.AppleAppID
+	srv.MacUpdateManifest = cfg.MacUpdateManifest
 	srv.ReactionSalt = cfg.JWTSecret
 	// Existing rows predate short links; give them one.
 	go srv.BackfillShortCodes()

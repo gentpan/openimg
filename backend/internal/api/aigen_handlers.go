@@ -175,6 +175,37 @@ type aiGenPlan struct {
 //
 // 1k 同时也是免费档,所以这条路不必过 pickResolution:那道闸拦的是"传了一个
 // 自己没资格用的档位",而这里的档位根本不由客户端决定。
+// aiWatermarkPrompt 把用户那一句话包成一条真正能出水印的提示词。
+//
+// 用户只该说"画什么"(山峰、猫头鹰、字母 G),剩下的不该由他操心——而那些约束
+// 又恰恰是这件事成不成的关键,漏一条就得重生成一次、白花一次额度。
+//
+// 每一条都对应一个具体的失败:
+//
+//   - **纯白背景、无渐变无阴影**:透明底是本机用 Vision 的前景分割抠出来的,
+//     它认的是"主体与背景分得开"。渐变底、投影、倒影都会让边缘糊成一片,
+//     抠完带一圈灰边。这是整条约束里最要紧的一条。
+//   - **粗线条、大色块、无细节**:水印最终按画面宽度的百分之十几渲染、
+//     再压到 45% 不透明度。一枚在 1024 像素上好看的精细图标,到那个尺寸只剩
+//     一团脏点。
+//   - **居中、留白**:锚点贴边摆放,主体顶到画布边缘的话,缩放后会被切掉一角。
+//   - **不要额外文字**:模型很爱自作主张加一行英文标语。水印上的小字在那个
+//     尺寸下是不可读的噪点。但用户自己要求的字母或字要留——所以说的是"不要
+//     上面没描述过的文字",不是"不要文字"。
+//
+// 用英文写,用户那句话原样嵌进去:图像模型对英文指令的服从度明显更高,而主体
+// 描述用什么语言都能认。
+func aiWatermarkPrompt(user string) string {
+	return "A single logo mark, centered on the canvas: " + user + ".\n" +
+		"Style: flat vector icon, bold simple shapes, thick strokes, " +
+		"solid high-contrast silhouette, no fine detail, no texture, no gradient.\n" +
+		"Background: one flat pure white background, completely empty, " +
+		"no shadow, no reflection, no border, no frame, no mockup, no scene.\n" +
+		"Composition: the mark fills about 70% of the canvas and is fully visible, " +
+		"with clear empty margin on all four sides.\n" +
+		"Do not add any text, letters, words or signature that was not described above."
+}
+
 func aiWatermarkPlan() aiGenPlan {
 	return aiGenPlan{
 		Model:      aigen.DefaultModel,
@@ -189,7 +220,14 @@ func aiWatermarkPlan() aiGenPlan {
 // 轮询拿着任务号问上游,不需要原始请求体。多开三列存的是一份永远不会被读的
 // 拷贝,外加一次迁移。
 type aiSubmitOpts struct {
-	ImageURLs    []string
+	ImageURLs []string
+	// UpstreamPrompt 覆盖发给上游的提示词,记录里存的那份不变。
+	//
+	// 两者分开是因为它们服务于不同的读者:记录给人看("我当时想要什么"),
+	// 上游那份给模型看(还带着一堆约束)。混成一份的话,历史列表里会是一大段
+	// 英文模板,而「抄这条描述再生成一次」会把模板塞回输入框——用户再也改不回
+	// 自己那句话。
+	UpstreamPrompt string
 }
 
 type aiEditReq struct {
@@ -310,8 +348,11 @@ func (s *Server) handleAIGenerate(c *gin.Context) {
 		return
 	}
 
-	s.submitAIGen(c, &gen, aiSubmitOpts{
-	})
+	var opts aiSubmitOpts
+	if purpose == aiPurposeWatermark {
+		opts.UpstreamPrompt = aiWatermarkPrompt(prompt)
+	}
+	s.submitAIGen(c, &gen, opts)
 }
 
 // POST /api/ai/edit — 拿自己图库里的图去改。
@@ -472,12 +513,16 @@ var errAISourceMissing = errors.New("ai: 源图不存在或不属于此用户")
 func (s *Server) submitAIGen(c *gin.Context, gen *models.AIGeneration, opts aiSubmitOpts) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
+	upstream := gen.Prompt
+	if opts.UpstreamPrompt != "" {
+		upstream = opts.UpstreamPrompt
+	}
 	taskID, err := s.AIGen.Submit(ctx, aigen.Req{
-		Prompt:       gen.Prompt,
-		Model:        gen.Model,
-		Size:         gen.Size,
-		Resolution:   gen.Resolution,
-		ImageURLs:    opts.ImageURLs,
+		Prompt:     upstream,
+		Model:      gen.Model,
+		Size:       gen.Size,
+		Resolution: gen.Resolution,
+		ImageURLs:  opts.ImageURLs,
 	})
 	if err != nil {
 		// 没递交成功就没花上游的钱。走统一的失败路径,让退款和状态落库

@@ -64,11 +64,7 @@ func (s *Server) decorate(images []models.Image) []imageOut {
 			key := models.VariantKey(img.ObjectKey, v)
 			// Display sizes may live on their own origin; full-size
 			// derivatives stay with the original they replace.
-			if models.IsThumbVariant(v) {
-				item.Variants[v] = storage.ThumbURLFor(p, key, s.PublicBaseURL)
-			} else {
-				item.Variants[v] = storage.URLFor(p, key, s.PublicBaseURL)
-			}
+			item.Variants[v] = storage.VariantURLFor(p, v, key, s.PublicBaseURL)
 		}
 		// Prefer the grid tier, then the legacy 200px one that images
 		// uploaded before the switch still carry, then the original so a

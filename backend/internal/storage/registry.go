@@ -246,6 +246,20 @@ func (r *Registry) EnsurePlatformProfile(ctx context.Context, cfg S3Config) erro
 // worthless the moment a user pastes it into a forum or a README.
 // ThumbURLFor is URLFor for a display-size variant: it prefers the profile's
 // thumbnail origin and falls back to the main one when none is configured.
+// VariantURLFor routes a variant to the origin that serves it: display sizes
+// live on the thumbnail host, everything else stays with the original.
+//
+// This exists because the routing rule was inlined at three call sites and one
+// of them (the on-demand generator) never got the thumbnail branch — the same
+// w600 came back on the image host there and the thumbnail host in listings.
+// One function so the next origin split can't reopen that gap.
+func VariantURLFor(p *models.StorageProfile, variant, key, fallbackBase string) string {
+	if models.IsThumbVariant(variant) {
+		return ThumbURLFor(p, key, fallbackBase)
+	}
+	return URLFor(p, key, fallbackBase)
+}
+
 func ThumbURLFor(p *models.StorageProfile, key, fallbackBase string) string {
 	if p != nil && p.ThumbBaseURL != "" {
 		return JoinURL(strings.TrimRight(p.ThumbBaseURL, "/"), p.KeyPrefix+key)

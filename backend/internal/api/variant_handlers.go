@@ -77,7 +77,7 @@ func (s *Server) handleMakeVariant(c *gin.Context) {
 	if img.HasVariant(name) {
 		c.JSON(http.StatusOK, gin.H{
 			"ok": true, "existing": true,
-			"variant": name, "url": storage.URLFor(profile, key, s.PublicBaseURL),
+			"variant": name, "url": storage.VariantURLFor(profile, name, key, s.PublicBaseURL),
 		})
 		return
 	}
@@ -151,7 +151,7 @@ func (s *Server) handleMakeVariant(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"ok": true, "variant": name,
-		"url":    storage.URLFor(profile, key, s.PublicBaseURL),
+		"url":    storage.VariantURLFor(profile, name, key, s.PublicBaseURL),
 		"bytes":  out.Size(),
 		"width":  out.Width,
 		"height": out.Height,

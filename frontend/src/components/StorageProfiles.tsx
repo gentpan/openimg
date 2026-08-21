@@ -38,7 +38,7 @@ function describeEndpoint(t: Dict, endpoint: string): string {
  * bucket that can't be written to is worse than no bucket, because uploads
  * would fail only after the user believes they're set up.
  */
-/** "https://cdn.openimg.io/" → "cdn.openimg.io" */
+/** "https://files.openimgcdn.com/" → "files.openimgcdn.com" */
 function hostOf(url: string): string {
   try {
     return new URL(url).host;

@@ -66,8 +66,8 @@ macOS/iOS 客户端在独立仓库 [gentpan/openimg-app](https://github.com/gent
 | --- | --- |
 | openimg.io | 主站 + API + 短链（`/:code` 302）；Go 进程独占域名（`FRONTEND_DIR` 服务 SPA），生产端口 8090 |
 | www.openimg.io | 301 → openimg.io |
-| cdn.openimg.io | 原图直连（`rewrite * /openimg{uri}` → MinIO；根路径 301 回主站，防桶列表泄露） |
-| cache.openimg.io | 缩略图直连；与原图同桶，分裂在域名层——缩略图可再生，单独 purge 便宜 |
+| files.openimgcdn.com | 原图直连（`rewrite * /openimg{uri}` → MinIO；根路径 301 回主站，防桶列表泄露） |
+| cache.openimgcdn.com | 缩略图直连；与原图同桶，分裂在域名层——缩略图可再生，单独 purge 便宜 |
 | litezoom.dev | 灯箱库官网 + CDN（`/litezoom.min.js`） |
 
 ## 开发环境

@@ -34,6 +34,18 @@ func New(db *gorm.DB, rpID, displayName, origin string) (*Service, error) {
 		RPDisplayName: displayName,
 		RPID:          rpID,
 		RPOrigins:     []string{origin},
+		// 强制用户验证(Touch ID / 密码)。
+		//
+		// 不写这一段的话 AuthenticatorSelection 是零值,UserVerification 为空
+		// 串——**等同于 "preferred",意思是"验了最好,没验也收"**。系统据此认
+		// 为可以跳过,于是点一下就登录了,指纹一次都不弹。
+		//
+		// 对一个能直接登进账号的凭证来说这不是便利,是把「你有这台设备」当成
+		// 了「你是这个人」:设备被人拿到、屏幕开着,就能直接进。所以要 required。
+		AuthenticatorSelection: protocol.AuthenticatorSelection{
+			ResidentKey:      protocol.ResidentKeyRequirementRequired,
+			UserVerification: protocol.VerificationRequired,
+		},
 	})
 	if err != nil {
 		return nil, err
@@ -117,8 +129,8 @@ func (s *Service) FinishEnroll(user *models.User, flowID, name string, raw *prot
 		// which made it look like dead schema; it is not. Passing these back in
 		// allowCredentials on the next sign-in is what lets a browser say "use
 		// your phone" instead of offering every transport and waiting.
-		Transports:      joinTransports(cred.Transport),
-		Name:            name,
+		Transports: joinTransports(cred.Transport),
+		Name:       name,
 	}
 	if pkc.Name == "" {
 		pkc.Name = "Passkey " + time.Now().Format("01/02 15:04")

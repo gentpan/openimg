@@ -47,6 +47,16 @@ www.openimg.io {
 	redir https://openimg.io{uri} permanent
 }
 
+# CDN 域名的裸域与 www 都跳回主站。
+#
+# 它们不该是站点的第二个入口:同一份内容挂在两个域名下会被搜索引擎判成重复,
+# 而且用户拿到哪个地址是随机的。这个域名只负责对象直连,那由 files. 和
+# cache. 两个子域承担。
+openimgcdn.com, www.openimgcdn.com {
+	tls /etc/caddy/certs/openimgcdn-origin.crt /etc/caddy/certs/openimgcdn-origin.key
+	redir https://openimg.io{uri} permanent
+}
+
 openimg.io {
 	tls /etc/caddy/certs/openimg-origin.crt /etc/caddy/certs/openimg-origin.key
 
@@ -80,8 +90,10 @@ openimg.io {
 
 # Images, served straight from MinIO — the app hands out URLs on this host but
 # never proxies the bytes itself.
-cdn.openimg.io {
-	tls /etc/caddy/certs/openimg-origin.crt /etc/caddy/certs/openimg-origin.key
+files.openimgcdn.com {
+	# 独立证书:openimg-origin.crt 的 SAN 只有 *.openimg.io 和 openimg.io,
+	# 覆盖不到这个域名。用错证书的表现是浏览器直接拦下,而 curl -k 试不出来。
+	tls /etc/caddy/certs/openimgcdn-origin.crt /etc/caddy/certs/openimgcdn-origin.key
 	request_body {
 		max_size 0
 	}
@@ -90,7 +102,7 @@ cdn.openimg.io {
 	rewrite * /openimg{uri}
 	import openimg_minio
 	import openimg_object_headers
-	# 这里不设 CSP,与 cache.openimg.io 保持一致(同一个桶、同一批对象,两个
+	# 这里不设 CSP,与 cache.openimgcdn.com 保持一致(同一个桶、同一批对象,两个
 	# 域名的安全头不该不一样)。
 	#
 	# 试过 default-src 'none'; sandbox,再退到 default-src 'none',两版都会让
@@ -109,8 +121,8 @@ cdn.openimg.io {
 # would only add a place for them to disagree. What the separate origin buys is
 # CDN-level control: the thumbnail tier can be purged or re-tuned without
 # touching originals, and thumbnails are regenerable so that purge is cheap.
-cache.openimg.io {
-	tls /etc/caddy/certs/openimg-origin.crt /etc/caddy/certs/openimg-origin.key
+cache.openimgcdn.com {
+	tls /etc/caddy/certs/openimgcdn-origin.crt /etc/caddy/certs/openimgcdn-origin.key
 	# 根路径别落到 MinIO——那会返回整个桶的对象列表
 	redir / https://openimg.io 301
 	rewrite * /openimg{uri}

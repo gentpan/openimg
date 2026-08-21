@@ -47,7 +47,7 @@ type StorageProfile struct {
 	AccessKeyMask string `gorm:"size:32" json:"access_key_mask"`
 
 	// PublicBaseURL is the CDN origin this bucket is served from, e.g.
-	// "https://cdn.openimg.io". Object URLs are assembled at read time.
+	// "https://files.openimgcdn.com". Object URLs are assembled at read time.
 	PublicBaseURL string `gorm:"size:255;not null" json:"public_base_url"`
 	// ThumbBaseURL optionally serves the display-size variants from a second
 	// origin. Empty means they share PublicBaseURL.

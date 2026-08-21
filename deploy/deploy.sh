@@ -133,7 +133,7 @@ code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://openimg.io/
 [[ "$code" == "200" ]] && ok "openimg.io  $code" || die "openimg.io  $code"
 # CDN 域名根路径设计为 301 回主站(否则 MinIO 会返回整个桶的对象列表),
 # 域名健康与否要看它跳得对不对,而不是 200
-for host in cdn.openimg.io cache.openimg.io; do
+for host in files.openimgcdn.com cache.openimgcdn.com; do
     code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://$host/")
     [[ "$code" == "301" ]] && ok "$host  301 →  openimg.io" || die "$host  $code(应为 301)"
 done
@@ -143,7 +143,7 @@ done
 # 判据是"取一个不存在的对象要拿到 404"。404 说明请求真的走到了 MinIO 并被
 # 它拒绝,整条代理链是通的;502/503 说明后面没人接,而 200 说明拿到了桶列表
 # ——那是更糟的一种坏。不用真实对象键是为了不依赖任何接口或凭据。
-for host in cdn.openimg.io cache.openimg.io; do
+for host in files.openimgcdn.com cache.openimgcdn.com; do
     code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
            "https://$host/deploy-probe-does-not-exist-$$.png")
     [[ "$code" == "404" ]] && ok "$host  对象链路通(404)" \
@@ -152,6 +152,13 @@ done
 
 code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://www.openimg.io/")
 [[ "$code" == "301" ]] && ok "www.openimg.io  301 →  openimg.io" || die "www 跳转异常：$code"
+
+# CDN 域名的裸域与 www 只做跳转,不是站点的第二个入口。单独验:它们用的是另
+# 一张证书,而证书没配对时表现是 TLS 握手失败,不是 4xx —— curl 会直接报错。
+for host in openimgcdn.com www.openimgcdn.com; do
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://$host/")
+    [[ "$code" == "301" ]] && ok "$host  301 →  openimg.io" || die "$host  $code(应为 301)"
+done
 
 # The check that matters. A 200 here proves nothing on its own: the SPA
 # fallback will happily answer 200 with HTML for a .js path, and the browser

@@ -34,7 +34,7 @@ type S3Config struct {
 	Bucket        string
 	AccessKey     string
 	SecretKey     string
-	PublicURLBase string // CDN origin, e.g. "https://cdn.openimg.io"
+	PublicURLBase string // CDN origin, e.g. "https://files.openimgcdn.com"
 	ThumbURLBase  string
 	KeyPrefix     string
 	UsePathStyle  bool // true for MinIO, false for R2

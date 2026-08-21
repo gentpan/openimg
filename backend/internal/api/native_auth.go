@@ -149,7 +149,7 @@ func (s *Server) handleNativeExchange(c *gin.Context) {
 			group = &g
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{"plain": plain, "user": toPublic(&u, group)})
+	c.JSON(http.StatusOK, gin.H{"plain": plain, "user": toPublic(&u, group, s.AvatarFor(&u))})
 }
 
 func nativeTokenName(device string) string {

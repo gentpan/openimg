@@ -133,7 +133,7 @@ code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://openimg.io/
 [[ "$code" == "200" ]] && ok "openimg.io  $code" || die "openimg.io  $code"
 # CDN 域名根路径设计为 301 回主站(否则 MinIO 会返回整个桶的对象列表),
 # 域名健康与否要看它跳得对不对,而不是 200
-for host in files.openimgcdn.com cache.openimgcdn.com; do
+for host in files.openimgcdn.com cache.openimgcdn.com static.openimg.io; do
     code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://$host/")
     [[ "$code" == "301" ]] && ok "$host  301 →  openimg.io" || die "$host  $code(应为 301)"
 done
@@ -143,7 +143,7 @@ done
 # 判据是"取一个不存在的对象要拿到 404"。404 说明请求真的走到了 MinIO 并被
 # 它拒绝,整条代理链是通的;502/503 说明后面没人接,而 200 说明拿到了桶列表
 # ——那是更糟的一种坏。不用真实对象键是为了不依赖任何接口或凭据。
-for host in files.openimgcdn.com cache.openimgcdn.com; do
+for host in files.openimgcdn.com cache.openimgcdn.com static.openimg.io; do
     code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
            "https://$host/deploy-probe-does-not-exist-$$.png")
     [[ "$code" == "404" ]] && ok "$host  对象链路通(404)" \

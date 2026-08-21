@@ -220,7 +220,7 @@ func (s *Server) handleVerifyOTP(c *gin.Context) {
 			group = &g
 		}
 	}
-	c.JSON(http.StatusOK, toPublic(&u, group))
+	c.JSON(http.StatusOK, toPublic(&u, group, s.AvatarFor(&u)))
 }
 
 // generateOTP returns a numeric code of the requested length, e.g. "418265".

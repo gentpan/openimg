@@ -54,7 +54,9 @@ type publicUser struct {
 	MaxImageWidth int    `json:"max_image_width"`
 }
 
-func toPublic(u *models.User, group *models.UserGroup) publicUser {
+// avatarURL 由调用方拼好传进来:它需要存储配置,而这个函数是纯的映射,
+// 不该为了一个字段去持有 Server。
+func toPublic(u *models.User, group *models.UserGroup, avatarURL string) publicUser {
 	pu := publicUser{
 		ID:             u.ID.String(),
 		Email:          u.Email,
@@ -70,7 +72,7 @@ func toPublic(u *models.User, group *models.UserGroup) publicUser {
 		Google:         u.GoogleSub != "",
 		Github:         u.GithubID != "",
 		Picbi:          u.PicbiID != "",
-		AvatarURL:      u.AvatarURL,
+		AvatarURL:      avatarURL,
 		ReferralCode:   u.ReferralCode,
 		UploadMode:     u.UploadMode,
 		VariantFormat:  u.VariantFormat,
@@ -150,7 +152,7 @@ func (s *Server) handleRegister(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "session: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, toPublic(&u, &freeGroup))
+	c.JSON(http.StatusCreated, toPublic(&u, &freeGroup, s.AvatarFor(&u)))
 }
 
 func (s *Server) handleLogin(c *gin.Context) {
@@ -188,7 +190,7 @@ func (s *Server) handleLogin(c *gin.Context) {
 			group = &g
 		}
 	}
-	c.JSON(http.StatusOK, toPublic(&u, group))
+	c.JSON(http.StatusOK, toPublic(&u, group, s.AvatarFor(&u)))
 }
 
 func (s *Server) handleLogout(c *gin.Context) {
@@ -205,7 +207,7 @@ func (s *Server) handleMe(c *gin.Context) {
 			group = &g
 		}
 	}
-	c.JSON(http.StatusOK, toPublic(u, group))
+	c.JSON(http.StatusOK, toPublic(u, group, s.AvatarFor(u)))
 }
 
 type registerCodeReq struct {

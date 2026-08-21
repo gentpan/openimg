@@ -120,6 +120,7 @@ func main() {
 	srv := api.New(gdb, queue, authSvc, registry, cipher)
 	srv.StorageDir = cfg.StorageDir
 	srv.PublicBaseURL = cfg.PublicBaseURL
+	srv.AvatarURLBase = cfg.AvatarURLBase
 	srv.ShortBaseURL = cfg.ShortBaseURL
 	srv.FrontendDir = cfg.FrontendDir
 	srv.AppleAppID = cfg.AppleAppID

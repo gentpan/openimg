@@ -55,13 +55,18 @@
     <meta name="twitter:title" content="Openimg — 永久免费的公益图床" />
     <meta name="twitter:description" content="永久免费公益图床：自动压缩转换 WebP/AVIF，全球 CDN 加速，支持绑定自有 R2/S3 存储。" />
     <meta name="twitter:image" content="https://openimg.io/og-image.png?v=011ed747" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <!-- 字体走 Google 原生源。preconnect 两个都要:CSS 在 fonts.googleapis.com,
+         而里面引的 woff2 在 fonts.gstatic.com —— 只连前者的话,字体文件那一跳
+         仍要现建连接,首屏会闪一下无字形。 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://static.giantaccel.com" crossorigin />
+    <!-- FontAwesome 的字体文件是 CSS 里的相对路径(../webfonts/),与 CSS 同域,
+         所以只需要这一个 preconnect。 -->
+    <link rel="preconnect" href="https://static.bluecdn.com" crossorigin />
     <link rel="preconnect" href="https://tongji.giantaccel.com" crossorigin />
     <link rel="preconnect" href="https://static.cloudflareinsights.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap" />
-    <link rel="stylesheet" href="https://static.giantaccel.com/libs/fontawesome/7.2.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.3.1/css/all.min.css" />
     <title>Openimg — 免费图床 | 图片外链 · WebP/AVIF 压缩 · CDN 加速</title>
     <script defer src="https://tongji.giantaccel.com/script.js" data-website-id="9a9ad5b3-521f-409c-9802-f1612c916384"></script>
     <!-- Cloudflare Web Analytics。与自建的 tongji 并存,不是替换:一个看自己的

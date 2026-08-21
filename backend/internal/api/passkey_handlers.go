@@ -198,7 +198,7 @@ func (s *Server) handlePasskeyLoginFinish(c *gin.Context) {
 			group = &g
 		}
 	}
-	c.JSON(http.StatusOK, toPublic(u, group))
+	c.JSON(http.StatusOK, toPublic(u, group, s.AvatarFor(u)))
 }
 
 // ---- List + delete user's passkeys ----

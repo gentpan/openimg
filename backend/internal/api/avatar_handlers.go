@@ -79,7 +79,7 @@ func (s *Server) handleUploadAvatar(c *gin.Context) {
 	}
 
 	previous := u.AvatarKey
-	url := storage.URLFor(profile, key, s.PublicBaseURL)
+	url := s.avatarURL(profile, key)
 	if err := s.DB.Model(u).Updates(map[string]any{
 		"avatar_key": key,
 		"avatar_url": url,
@@ -127,4 +127,40 @@ func (s *Server) deleteAvatarObject(key string) {
 			log.Printf("avatar: dropping %s failed: %v", key, err)
 		}
 	}()
+}
+
+// avatarURL 按 key 拼出头像地址。
+//
+// 配了 AVATAR_URL_BASE 就用它,否则回落到平台存储那套(与从前一致)。
+//
+// 头像单独一个域名是有理由的:它跟着账号走、量小、几乎不变,而图片 CDN 域名一
+// 个月里换过两次。绑在一起的话每换一次图片域名,所有头像地址都要跟着迁一次。
+func (s *Server) avatarURL(p *models.StorageProfile, key string) string {
+	if key == "" {
+		return ""
+	}
+	if base := strings.TrimRight(s.AvatarURLBase, "/"); base != "" {
+		return base + "/" + strings.TrimLeft(key, "/")
+	}
+	return storage.URLFor(p, key, s.PublicBaseURL)
+}
+
+// AvatarFor 是读出口:**有 key 就现拼,不用库里存的那一串**。
+//
+// 库里的 avatar_url 是上传当时写死的完整地址,域名一换它就失效——cdn.imgla.com
+// 停用后头像全裂,正是这么来的。而 avatar_key 一直存着,拼得出来。
+//
+// 没有 key 说明这是 Google / GitHub 的第三方头像,那串地址不归我们管,原样返回。
+func (s *Server) AvatarFor(u *models.User) string {
+	if u == nil {
+		return ""
+	}
+	if u.AvatarKey == "" {
+		return u.AvatarURL
+	}
+	_, profile, err := s.Storage.Platform(context.Background())
+	if err != nil {
+		return u.AvatarURL // 存储暂时不可用时退回旧值,总比返回空好
+	}
+	return s.avatarURL(profile, u.AvatarKey)
 }

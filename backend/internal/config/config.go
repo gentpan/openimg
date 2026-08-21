@@ -85,6 +85,10 @@ type Config struct {
 	S3SecretKey     string
 	S3PublicURLBase string
 	S3ThumbURLBase  string
+	// 头像的直连来源。与图片分开:头像跟着账号走、量小、几乎不变,而图片域名
+	// 换过两次——把它们绑在一起,每换一次图片 CDN 就要跟着迁一次头像。
+	// 留空时回落到图片域名,行为与从前一致。
+	AvatarURLBase string
 	S3KeyPrefix     string
 	S3UsePathStyle  bool
 
@@ -150,6 +154,7 @@ func Load() Config {
 		S3SecretKey:     os.Getenv("S3_SECRET_KEY"),
 		S3PublicURLBase: os.Getenv("S3_PUBLIC_URL_BASE"),
 		S3ThumbURLBase:  os.Getenv("S3_THUMB_URL_BASE"),
+		AvatarURLBase:   os.Getenv("AVATAR_URL_BASE"),
 		S3KeyPrefix:     os.Getenv("S3_KEY_PREFIX"),
 		S3UsePathStyle:  parseBool(getenv("S3_PATH_STYLE", "true")),
 

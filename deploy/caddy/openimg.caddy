@@ -90,6 +90,23 @@ openimg.io {
 
 # Images, served straight from MinIO — the app hands out URLs on this host but
 # never proxies the bytes itself.
+# 头像直连。
+#
+# 与图片分开一个域名,不是为了分流量,是为了**不再一起搬家**:头像跟着账号走、
+# 量小、几乎不变,而图片 CDN 域名一个月里换过两次(imgla → openimg.io →
+# openimgcdn.com)。绑在一起的话每换一次,所有头像地址都要跟着迁一次——而头像
+# 恰恰是把完整 URL 写进库的那一个,迁起来要改数据。
+#
+# 留在 openimg.io 下面,所以复用主证书。
+static.openimg.io {
+	tls /etc/caddy/certs/openimg-origin.crt /etc/caddy/certs/openimg-origin.key
+	# 根路径别落到 MinIO——那会返回整个桶的对象列表
+	redir / https://openimg.io 301
+	rewrite * /openimg{uri}
+	import openimg_minio
+	import openimg_object_headers
+}
+
 files.openimgcdn.com {
 	# 独立证书:openimg-origin.crt 的 SAN 只有 *.openimg.io 和 openimg.io,
 	# 覆盖不到这个域名。用错证书的表现是浏览器直接拦下,而 curl -k 试不出来。

@@ -40,7 +40,7 @@ if [[ "${1:-}" == "--rollback" ]]; then
     exit 0
 fi
 
-say "1/6  本地校验"
+say "1/7  本地校验"
 cd "$ROOT/backend"
 go build ./... >/dev/null           || die "后端编译失败"
 go vet ./internal/... >/dev/null    || die "go vet 失败"
@@ -51,7 +51,7 @@ npx tsc -b --pretty false >/dev/null 2>&1 || die "TypeScript 校验失败"
 npm run build >/dev/null 2>&1            || die "前端构建失败"
 ok "前端 tsc / build"
 
-say "2/6  凭据扫描"
+say "2/7  凭据扫描"
 cd "$ROOT"
 if git diff --cached --quiet && git diff --quiet; then :; fi
 if grep -rqE "GOCSPX-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}" \
@@ -60,7 +60,7 @@ if grep -rqE "GOCSPX-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}" \
 fi
 ok "未发现硬编码凭据"
 
-say "3/6  上传"
+say "3/7  上传"
 ssh_ "cp $REMOTE/bin/openimg-server $REMOTE/bin/openimg-server.prev"
 ok "已备份当前二进制"
 rsync -az --delete -e "ssh -i $KEY -o BatchMode=yes" \
@@ -72,7 +72,30 @@ rsync -az --delete -e "ssh -i $KEY -o BatchMode=yes" \
     "$ROOT/frontend/dist/" "$HOST:$REMOTE/frontend/"
 ok "前端产物"
 
-say "4/6  远端编译并切换"
+# Caddy 站点配置也要同步。
+#
+# 这一步原来没有,后果是 deploy/caddy/openimg.caddy 改了也不生效——线上那份
+# 一直停在最后一次手动 scp 的版本。切 CDN 域名时这个缺口才暴露:代码、env、
+# DNS、证书全就位,而 Caddy 仍在服务旧域名,Cloudflare 拿到的是 525。
+#
+# 路径是 /etc/frankenphp/sites/,不是 /etc/caddy/ —— 后者那个 systemd 服务
+# 早就停了(2026-08-03 起 php_server 指令报错),真正在 443 上的是 frankenphp。
+#
+# validate 通过才 reload:配置有语法错时 reload 会让服务整个停掉,而那一刻
+# 站点是活的。宁可不生效,也不能把活站点搞挂。
+say "4/7  同步站点配置"
+CADDY_REMOTE=/etc/frankenphp/sites/openimg.caddy
+ssh_ "cp $CADDY_REMOTE $CADDY_REMOTE.bak-\$(date +%Y%m%d-%H%M%S)"
+scp -i "$KEY" -o BatchMode=yes deploy/caddy/openimg.caddy "$HOST:$CADDY_REMOTE" >/dev/null
+if ssh_ 'frankenphp validate --config /etc/frankenphp/Caddyfile' >/dev/null 2>&1; then
+    ssh_ 'systemctl reload frankenphp' && ok "站点配置已生效"
+else
+    printf "  配置校验失败,已回滚\n" >&2
+    ssh_ "cp \$(ls -t $CADDY_REMOTE.bak-* | head -1) $CADDY_REMOTE"
+    die "Caddy 配置有误"
+fi
+
+say "5/7  远端编译并切换"
 ssh_ bash -s <<REMOTE_SCRIPT
 set -euo pipefail
 export PATH=/usr/local/go/bin:\$PATH
@@ -90,7 +113,7 @@ ssh_ 'systemctl is-active openimg' | grep -q active || {
 }
 ok "编译并重启完成"
 
-say "5/6  清 CDN 缓存"
+say "6/7  清 CDN 缓存"
 if [[ -n "${CF_API_KEY:-}" ]]; then
     # Two credential shapes. A Global API Key needs the account email alongside
     # it; a scoped API Token is a bearer credential and needs nothing else.
@@ -128,7 +151,7 @@ else
     printf "  旧资源可能仍被 CDN 缓存，浏览器请强制刷新\n"
 fi
 
-say "6/6  验证"
+say "7/7  验证"
 code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://openimg.io/")
 [[ "$code" == "200" ]] && ok "openimg.io  $code" || die "openimg.io  $code"
 # CDN 域名根路径设计为 301 回主站(否则 MinIO 会返回整个桶的对象列表),

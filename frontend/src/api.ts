@@ -145,6 +145,16 @@ export const userApi = {
 };
 
 // ----- Images -----
+/**
+ * 上传的返回。promoted 只在这一次上传恰好触发了升级或扩容时出现——服务端顺带
+ * 判的,平时不下发这个字段。
+ */
+export interface UploadResult {
+  image: Image;
+  deduplicated: boolean;
+  promoted?: { group: string; granted_bytes: number; loyalty: boolean };
+}
+
 export const imageApi = {
   publicStats: () => jfetch<PublicStats>("/api/public-stats"),
 
@@ -163,7 +173,7 @@ export const imageApi = {
    * 没有进度:字节从来没有经过浏览器,进度只有服务端知道。与其编一个假的百分
    * 比,不如在界面上就显示成"正在取"。
    */
-  uploadFromURL(url: string): Promise<{ image: Image; deduplicated: boolean }> {
+  uploadFromURL(url: string): Promise<UploadResult> {
     return jfetch("/api/upload/from-url", {
       method: "POST",
       body: JSON.stringify({ url }),
@@ -173,7 +183,7 @@ export const imageApi = {
   upload(
     file: File,
     opts: { onProgress?: (pct: number) => void; signal?: AbortSignal } = {},
-  ): Promise<{ image: Image; deduplicated: boolean }> {
+  ): Promise<UploadResult> {
     return new Promise((resolve, reject) => {
       const form = new FormData();
       form.append("file", file);

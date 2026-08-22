@@ -354,6 +354,11 @@ export const zh = {
   },
 
   upload: {
+    /** 升级与扩容的提示。都是顺带发生的好事，用完就走，不需要用户确认。 */
+    promote: {
+      trusted: (space: string) => `已升级为受信任用户，空间 +${space}`,
+      loyalty: (space: string) => `长期活跃奖励，空间 +${space}`,
+    },
     emailUnverified: "你的邮箱还没有验证，验证后才能上传图片。",
     goVerify: "去验证 →",
     storageDetails: "空间明细 →",

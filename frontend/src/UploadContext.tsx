@@ -9,7 +9,9 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "./AuthContext";
-import { imageApi } from "./api";
+import { useLang } from "./LangContext";
+import { useToast } from "./ToastContext";
+import { formatBytes, imageApi } from "./api";
 import type { Image } from "./types";
 
 export type ItemState = "queued" | "uploading" | "done" | "error";
@@ -116,6 +118,8 @@ const Ctx = createContext<UploadCtx | null>(null);
  */
 export function UploadProvider({ children }: { children: ReactNode }) {
   const { user, refresh } = useAuth();
+  const { t } = useLang();
+  const toast = useToast();
   const [items, setItems] = useState<QueueItem[]>([]);
   const [format, setFormat] = useState<LinkFormat>("url");
   const runningRef = useRef(0);
@@ -239,6 +243,16 @@ export function UploadProvider({ children }: { children: ReactNode }) {
               : i,
           ),
         );
+        // 升级和扩容都是服务端顺带判出来的,平时这个字段根本不下发。批量上传
+        // 时也只会命中一次——升上去之后后面几张就不再满足"还在 free 组"了。
+        if (res.promoted) {
+          const space = formatBytes(res.promoted.granted_bytes, 0);
+          toast.success(
+            res.promoted.group
+              ? t.upload.promote.trusted(space)
+              : t.upload.promote.loyalty(space),
+          );
+        }
         refresh();
       })
       .catch((err: Error) => {
@@ -251,7 +265,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         // Nudge the effect so the next queued item starts.
         setItems((prev) => [...prev]);
       });
-  }, [items, user, refresh]);
+  }, [items, user, refresh, t, toast]);
 
   // Size-weighted progress: a 20 MB photo shouldn't count the same as a 40 KB
   // icon, or the bar lurches around as small files finish first.

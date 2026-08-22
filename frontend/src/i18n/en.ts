@@ -351,6 +351,10 @@ export const en: Dict = {
   },
 
   upload: {
+    promote: {
+      trusted: (space: string) => `Upgraded to trusted — ${space} more space`,
+      loyalty: (space: string) => `Long-time member bonus — ${space} more space`,
+    },
     emailUnverified: "Verify your email before you can upload images.",
     goVerify: "Verify now →",
     storageDetails: "Storage details →",

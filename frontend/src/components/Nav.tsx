@@ -138,6 +138,22 @@ export default function Nav() {
               {t.nav.admin}
             </Link>
           )}
+          {/* 下载入口。放在登录/未登录两个分支之外——两种状态都该看得到,
+              而写在分支里就得维护两份。小屏藏起来:那里已经很挤,而首页本来
+              就有一整块讲这件事。 */}
+          <Link
+            to="/download"
+            onMouseEnter={() => prefetch("/download")}
+            onFocus={() => prefetch("/download")}
+            className={`hidden sm:inline-flex items-center gap-1 whitespace-nowrap transition ${
+              pathname === "/download"
+                ? "text-brand-300"
+                : "text-neutral-500 hover:text-brand-300"
+            }`}
+          >
+            <Icon name="download" className="text-[10px]" />
+            {t.nav.download}
+          </Link>
           {user ? (
             <>
               <button

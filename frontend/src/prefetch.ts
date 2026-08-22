@@ -14,6 +14,7 @@ const loaders: Record<string, () => Promise<unknown>> = {
   "/settings": () => import("./pages/Settings"),
   "/refer": () => import("./pages/Refer"),
   "/docs": () => import("./pages/Docs"),
+  "/download": () => import("./pages/Download"),
   "/login": () => import("./pages/Login"),
   "/register": () => import("./pages/Register"),
 };

@@ -238,6 +238,7 @@ export const en: Dict = {
   },
 
   nav: {
+    download: "Download",
     overview: "Overview",
     gallery: "Gallery",
     generate: "AI images",

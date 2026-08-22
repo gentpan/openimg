@@ -243,6 +243,7 @@ export const zh = {
   },
 
   nav: {
+    download: "下载",
     overview: "概览",
     gallery: "图库",
     generate: "AI 生成",

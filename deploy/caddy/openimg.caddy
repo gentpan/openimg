@@ -43,7 +43,7 @@
 }
 
 www.openimg.io {
-	tls /etc/caddy/certs/openimg-origin.crt /etc/caddy/certs/openimg-origin.key
+	tls /etc/frankenphp/certs/openimg-origin.crt /etc/frankenphp/certs/openimg-origin.key
 	redir https://openimg.io{uri} permanent
 }
 
@@ -53,12 +53,12 @@ www.openimg.io {
 # 而且用户拿到哪个地址是随机的。这个域名只负责对象直连,那由 files. 和
 # cache. 两个子域承担。
 openimgcdn.com, www.openimgcdn.com {
-	tls /etc/caddy/certs/openimgcdn-origin.crt /etc/caddy/certs/openimgcdn-origin.key
+	tls /etc/frankenphp/certs/openimgcdn-origin.crt /etc/frankenphp/certs/openimgcdn-origin.key
 	redir https://openimg.io{uri} permanent
 }
 
 openimg.io {
-	tls /etc/caddy/certs/openimg-origin.crt /etc/caddy/certs/openimg-origin.key
+	tls /etc/frankenphp/certs/openimg-origin.crt /etc/frankenphp/certs/openimg-origin.key
 
 	# The app streams uploads; a proxy-level cap would reject them before the
 	# per-tier limit in the application ever applied.
@@ -99,7 +99,7 @@ openimg.io {
 #
 # 留在 openimg.io 下面,所以复用主证书。
 static.openimg.io {
-	tls /etc/caddy/certs/openimg-origin.crt /etc/caddy/certs/openimg-origin.key
+	tls /etc/frankenphp/certs/openimg-origin.crt /etc/frankenphp/certs/openimg-origin.key
 	# 根路径别落到 MinIO——那会返回整个桶的对象列表
 	redir / https://openimg.io 301
 	rewrite * /openimg{uri}
@@ -110,7 +110,7 @@ static.openimg.io {
 files.openimgcdn.com {
 	# 独立证书:openimg-origin.crt 的 SAN 只有 *.openimg.io 和 openimg.io,
 	# 覆盖不到这个域名。用错证书的表现是浏览器直接拦下,而 curl -k 试不出来。
-	tls /etc/caddy/certs/openimgcdn-origin.crt /etc/caddy/certs/openimgcdn-origin.key
+	tls /etc/frankenphp/certs/openimgcdn-origin.crt /etc/frankenphp/certs/openimgcdn-origin.key
 	request_body {
 		max_size 0
 	}
@@ -139,7 +139,7 @@ files.openimgcdn.com {
 # CDN-level control: the thumbnail tier can be purged or re-tuned without
 # touching originals, and thumbnails are regenerable so that purge is cheap.
 cache.openimgcdn.com {
-	tls /etc/caddy/certs/openimgcdn-origin.crt /etc/caddy/certs/openimgcdn-origin.key
+	tls /etc/frankenphp/certs/openimgcdn-origin.crt /etc/frankenphp/certs/openimgcdn-origin.key
 	# 根路径别落到 MinIO——那会返回整个桶的对象列表
 	redir / https://openimg.io 301
 	rewrite * /openimg{uri}
@@ -161,7 +161,7 @@ cache.openimgcdn.com {
 # 搜索引擎当重复内容,用户还可能在短链域名上注册登录——那不是这个域名该干
 # 的事,而且 cookie 域也对不上。
 163.uz {
-	tls /etc/caddy/certs/163uz-origin.crt /etc/caddy/certs/163uz-origin.key
+	tls /etc/frankenphp/certs/163uz-origin.crt /etc/frankenphp/certs/163uz-origin.key
 
 	encode zstd gzip
 

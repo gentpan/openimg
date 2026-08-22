@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useState } from "react";
 import { useAuth } from "../AuthContext";
 import { userApi } from "../api";
@@ -77,7 +78,7 @@ export default function ConvertSettings() {
 
         {original && (
           <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-950/20 px-3 py-2 text-[10px] text-amber-200/90 leading-relaxed">
-            <i className="fa-solid fa-triangle-exclamation mr-1" />
+            <Icon name="triangle-exclamation" className="mr-1"  />
               {t.convertSettings.original.warning}
               <br />
               {t.convertSettings.original.warningSecurity}
@@ -194,7 +195,7 @@ export default function ConvertSettings() {
         </div>
 
       <div className="mt-3 rounded-lg bg-neutral-950/60 border border-neutral-800 px-3 py-2 text-[10px] text-neutral-500 leading-relaxed">
-        <i className="fa-solid fa-circle-info mr-1 text-neutral-600" />
+        <Icon name="circle-info" className="mr-1 text-neutral-600"  />
           {t.convertSettings.thumbnailNote}
       </div>
 
@@ -236,7 +237,7 @@ function ModeCard({
         {badge && (
           <span className="rounded-full bg-brand-900/50 px-1.5 py-0.5 text-[9px] text-brand-300">{badge}</span>
         )}
-        {active && <i className="fa-solid fa-check ml-auto text-[10px] text-brand-400" />}
+        {active && <Icon name="check" className="ml-auto text-[10px] text-brand-400"  />}
       </div>
       <ul className="space-y-0.5">
         {lines.map((l) => (

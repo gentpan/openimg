@@ -124,6 +124,6 @@
 
 ## 部署
 
-`deploy/systemd/openimg-backend.service` — 以 `openimg` 用户运行 `/opt/openimg/bin/openimg-server`，已加固（NoNewPrivileges、ProtectSystem=strict）。反向代理用 Caddy。
+`deploy/systemd/openimg-backend.service` — 以 `openimg` 用户运行 `/opt/openimg/bin/openimg-server`，已加固（NoNewPrivileges、ProtectSystem=strict）。生产反代是 frankenphp（基于 Caddy，同时服务多个站点）；`deploy/caddy/openimg.caddy` 由 `deploy.sh` 同步到 `/etc/frankenphp/sites/` 并 reload。
 
 Docker 镜像基于 Debian 而非 Alpine：libvips 在 musl 上历史性缺少 AVIF/HEIC 编解码器。

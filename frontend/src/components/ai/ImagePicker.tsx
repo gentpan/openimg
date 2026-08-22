@@ -1,3 +1,4 @@
+import Icon from "../../Icon";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { imageApi } from "../../api";
@@ -99,7 +100,7 @@ export default function ImagePicker({
           <div className="flex-1" />
 
           <div className="relative">
-            <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-neutral-600" />
+            <Icon name="magnifying-glass" className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-neutral-600"  />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -114,7 +115,7 @@ export default function ImagePicker({
             aria-label={t.common.close}
             className="text-neutral-500 transition hover:text-neutral-100"
           >
-            <i className="fa-solid fa-xmark" />
+            <Icon name="xmark"  />
           </button>
         </div>
 
@@ -124,7 +125,7 @@ export default function ImagePicker({
           {images.length === 0 && !busy ? (
             <div className="py-16 text-center">
               <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-950">
-                <i className="fa-solid fa-images text-xl text-brand-500" />
+                <Icon name="images" className="text-xl text-brand-500"  />
               </div>
               <div className="text-sm text-neutral-400">
                 {query ? t.gallery.emptySearch : t.common.noUploadsYet}
@@ -239,7 +240,7 @@ function PickCard({
             : "border border-white/50 bg-black/50 text-transparent group-hover:text-white"
         }`}
       >
-        {selected ? order : <i className="fa-solid fa-check text-[9px]" />}
+        {selected ? order : <Icon name="check" className="text-[9px]"  />}
       </span>
     </button>
   );

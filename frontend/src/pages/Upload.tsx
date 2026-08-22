@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
@@ -43,7 +44,7 @@ export default function UploadPage() {
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
         {!user.email_verified && (
           <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-950/20 px-4 py-3 text-xs text-amber-200">
-            <i className="fa-solid fa-triangle-exclamation mr-1.5" />
+            <Icon name="triangle-exclamation" className="mr-1.5"  />
             {t.upload.emailUnverified}
             <Link to="/settings" className="ml-1.5 underline hover:text-amber-100">
               {t.upload.goVerify}

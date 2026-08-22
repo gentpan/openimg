@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useEffect, useState } from "react";
 import { formatBytes, storageApi } from "../api";
 import type { ProfileInput, StorageProfile } from "../types";
@@ -166,7 +167,7 @@ export default function StorageProfiles() {
                 <div className="mt-1 text-[10px] text-neutral-600 truncate">
                   {p.is_platform ? (
                     <>
-                      <i className="fa-solid fa-globe mr-1 text-neutral-700" />
+                      <Icon name="globe" className="mr-1 text-neutral-700"  />
                       {hostOf(p.public_base_url) || t.storageProfiles.platformHosted}
                     </>
                   ) : (
@@ -248,7 +249,7 @@ export default function StorageProfiles() {
               />
               {form.endpoint && (
                 <div className="mt-1 text-[10px] text-brand-400/80">
-                  <i className="fa-solid fa-wand-magic-sparkles mr-1" />
+                  <Icon name="wand-magic-sparkles" className="mr-1"  />
                   {describeEndpoint(t, form.endpoint)}
                 </div>
               )}
@@ -284,7 +285,7 @@ export default function StorageProfiles() {
           </div>
 
           <div className="mt-3 rounded-lg bg-amber-950/20 border border-amber-500/20 px-3 py-2 text-[10px] text-amber-200/90">
-            <i className="fa-solid fa-shield-halved mr-1" />
+            <Icon name="shield-halved" className="mr-1"  />
             {t.storageProfiles.securityNote}
           </div>
 
@@ -319,7 +320,7 @@ export default function StorageProfiles() {
           onClick={() => startEdit("new")}
           className="inline-flex h-8 items-center justify-center rounded-lg bg-neutral-800 px-3 text-xs text-neutral-200 hover:bg-neutral-700 transition"
         >
-          <i className="fa-solid fa-plus mr-1.5" />
+          <Icon name="plus" className="mr-1.5"  />
           {t.storageProfiles.addTitle}
         </button>
       )}

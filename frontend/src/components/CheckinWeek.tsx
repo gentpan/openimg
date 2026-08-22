@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { formatBytes } from "../api";
 import type { CheckinRecord } from "../types";
 import { useLang } from "../LangContext";
@@ -34,7 +35,7 @@ export default function CheckinWeek({ records }: { records: CheckinRecord[] }) {
                     : "bg-neutral-800 text-transparent"
               } ${d > today ? "opacity-45" : ""}`}
             >
-              {done && <i className="fa-solid fa-check" />}
+              {done && <Icon name="check"  />}
             </div>
             <span className={`text-[10px] ${isToday ? "text-brand-300" : "text-neutral-500"}`}>
               {t.checkinWeek.weekdayInitial(i)}

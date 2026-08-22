@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useEffect, useState } from "react";
 import { tokenApi } from "../api";
 import type { ApiToken } from "../types";
@@ -63,7 +64,7 @@ export default function ApiTokens() {
       {fresh && (
         <div className="mb-3 rounded-xl border border-brand-500/30 bg-brand-950/20 p-3">
           <div className="text-[11px] text-brand-200 mb-2">
-            <i className="fa-solid fa-triangle-exclamation mr-1" />
+            <Icon name="triangle-exclamation" className="mr-1"  />
             {t.apiTokens.shownOnce}
           </div>
           <div className="flex items-center gap-1.5">
@@ -83,7 +84,7 @@ export default function ApiTokens() {
               }}
               className="shrink-0 rounded-md bg-brand-600 px-2.5 py-1.5 text-[10px] text-brand-ink hover:bg-brand-500 transition"
             >
-              <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"} mr-1`} />
+              <Icon name={copied ? "check" : "copy"} className={`mr-1`}  />
               {copied ? t.common.copied : t.common.copy}
             </button>
             <button

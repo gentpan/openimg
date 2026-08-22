@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useEffect, useRef, useState } from "react";
 import { useLang } from "../LangContext";
 
@@ -33,9 +34,9 @@ export default function PageSizeMenu({
         title={t.gallery.pageSizeTitle}
         className="flex items-center gap-1.5 rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:border-neutral-700 transition"
       >
-        <i className="fa-solid fa-table-cells text-[10px] text-neutral-500" />
+        <Icon name="table-cells" className="text-[10px] text-neutral-500"  />
         <span className="tabular-nums">{value}</span>
-        <i className="fa-solid fa-chevron-down text-[8px] text-neutral-600" />
+        <Icon name="chevron-down" className="text-[8px] text-neutral-600"  />
       </button>
 
       {open && (
@@ -53,7 +54,7 @@ export default function PageSizeMenu({
             >
               <span className="tabular-nums">{n}</span>
               <span className="text-neutral-600">{t.gallery.pageSizeUnit}</span>
-              {n === value && <i className="fa-solid fa-check ml-auto text-[9px]" />}
+              {n === value && <Icon name="check" className="ml-auto text-[9px]"  />}
             </button>
           ))}
         </div>

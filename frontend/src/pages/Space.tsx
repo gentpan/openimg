@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useCallback, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
@@ -17,12 +18,12 @@ import type { Dict } from "../i18n";
 // Keys resolved at render: a module constant is evaluated once at import,
 // and the language can change after.
 const txLabels = (t: Dict): Record<string, { label: string; icon: string; tone: string }> => ({
-  signup_grant: { label: t.space.tx.signupGrant, icon: "fa-gift", tone: "text-brand-300" },
-  checkin: { label: t.space.tx.checkin, icon: "fa-calendar-check", tone: "text-brand-300" },
-  referral: { label: t.space.tx.referral, icon: "fa-user-plus", tone: "text-brand-300" },
-  admin_grant: { label: t.space.tx.adminGrant, icon: "fa-user-shield", tone: "text-amber-300" },
-  upload: { label: t.space.tx.upload, icon: "fa-cloud-arrow-up", tone: "text-neutral-400" },
-  delete_refund: { label: t.space.tx.deleteRefund, icon: "fa-trash-can", tone: "text-brand-300" },
+  signup_grant: { label: t.space.tx.signupGrant, icon: "gift", tone: "text-brand-300" },
+  checkin: { label: t.space.tx.checkin, icon: "calendar-check", tone: "text-brand-300" },
+  referral: { label: t.space.tx.referral, icon: "user-plus", tone: "text-brand-300" },
+  admin_grant: { label: t.space.tx.adminGrant, icon: "user-shield", tone: "text-amber-300" },
+  upload: { label: t.space.tx.upload, icon: "cloud-arrow-up", tone: "text-neutral-400" },
+  delete_refund: { label: t.space.tx.deleteRefund, icon: "trash-can", tone: "text-brand-300" },
 });
 
 /** Days into the current month-long milestone. */
@@ -164,7 +165,7 @@ export default function SpacePage() {
                 )}
                   {quota && quota.checkin.total_earned > 0 && (
                     <div className="mt-1 text-[11px] text-brand-400">
-                      <i className="fa-solid fa-gift mr-1 text-[10px]" />
+                      <Icon name="gift" className="mr-1 text-[10px]"  />
                       {t.space.checkin.totalEarned(formatBytes(quota.checkin.total_earned))}
                     </div>
                   )}
@@ -238,12 +239,12 @@ export default function SpacePage() {
               {txs.map((tx) => {
                 const meta = txLabels(t)[tx.type] || {
                   label: tx.type,
-                  icon: "fa-circle",
+                  icon: "circle",
                   tone: "text-neutral-400",
                 };
                 return (
                   <div key={tx.id} className="flex items-center gap-3 px-5 py-2.5">
-                    <i className={`fa-solid ${meta.icon} ${meta.tone} text-xs w-4 text-center`} />
+                    <Icon name={meta.icon} className={`${meta.tone} text-xs w-4 text-center`}  />
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-neutral-300">{meta.label}</div>
                       <div className="text-[10px] text-neutral-600 truncate">{tx.reason}</div>

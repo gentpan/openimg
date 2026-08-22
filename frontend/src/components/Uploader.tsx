@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../AuthContext";
@@ -76,7 +77,7 @@ export default function Uploader({ compact = false }: { compact?: boolean }) {
           dragging ? "bg-brand-900/40" : "bg-neutral-900"
         } ${compact ? "w-12 h-12" : "w-16 h-16"}`}
       >
-        <i className={`fa-solid fa-cloud-arrow-up text-brand-500 ${compact ? "text-xl" : "text-2xl"}`} />
+        <Icon name="cloud-arrow-up" className={`text-brand-500 ${compact ? "text-xl" : "text-2xl"}`}  />
       </div>
 
       {user ? (
@@ -119,7 +120,7 @@ export default function Uploader({ compact = false }: { compact?: boolean }) {
     {user && (
       <div className="mt-3">
         <div className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/40 px-3 py-2">
-          <i className="fa-solid fa-link text-xs text-neutral-600" />
+          <Icon name="link" className="text-xs text-neutral-600"  />
           <input
             type="url"
             value={url}

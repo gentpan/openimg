@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useEffect, useRef, useState } from "react";
 import { accountApi, type OtpPurpose } from "../api";
 import { RingSpinner } from "./Spinner";
@@ -107,7 +108,7 @@ export default function OtpConfirm({
               danger ? "bg-red-900/40 text-red-300" : "bg-brand-900/40 text-brand-300"
             }`}
           >
-            <i className="fa-solid fa-envelope-circle-check" />
+            <Icon name="envelope-circle-check"  />
           </span>
           <span className="text-sm text-neutral-100">{label.title}</span>
         </div>

@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
+	_ "net/http/pprof" // registers handlers on DefaultServeMux; served only when PPROF_ADDR is set
 	"net/url"
 	"os/signal"
 	"syscall"
@@ -70,7 +72,19 @@ func rpIDFor(baseURL string) string {
 
 func main() {
 	cfg := config.Load()
-	gdb := db.Open(cfg.DatabaseURL)
+	// Profiling endpoint on its own listener, off unless asked for. The
+	// handlers have no auth, so this must stay bound to loopback in prod.
+	// Started before anything else: it should still be reachable when a
+	// startup step below (database, storage) wedges or crashes.
+	if cfg.PprofAddr != "" {
+		go func() {
+			log.Printf("pprof: listening on %s", cfg.PprofAddr)
+			if err := http.ListenAndServe(cfg.PprofAddr, nil); err != nil {
+				log.Printf("pprof: %v", err)
+			}
+		}()
+	}
+	gdb := db.Open(cfg.DatabaseURL, cfg.AutoMigrate)
 	referral.BackfillCodes(gdb)
 	if n, err := quota.BackfillMissingGrants(gdb); err != nil {
 		log.Printf("quota: backfill failed: %v", err)

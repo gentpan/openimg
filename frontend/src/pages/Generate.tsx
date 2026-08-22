@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
@@ -157,7 +158,7 @@ export default function GeneratePage() {
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
         <h1 className="mb-1.5 flex items-center gap-2.5 text-lg font-brand text-neutral-100">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-brand-400">
-            <i className="fa-solid fa-wand-magic-sparkles text-sm" />
+            <Icon name="wand-magic-sparkles" className="text-sm"  />
           </span>
           {t.generate.title}
         </h1>
@@ -165,7 +166,7 @@ export default function GeneratePage() {
 
         {!user.email_verified && (
           <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-950/20 px-4 py-3 text-xs text-amber-200">
-            <i className="fa-solid fa-triangle-exclamation mr-1.5" />
+            <Icon name="triangle-exclamation" className="mr-1.5"  />
             {t.upload.emailUnverified}
             <Link to="/settings" className="ml-1.5 underline hover:text-amber-100">
               {t.upload.goVerify}
@@ -180,7 +181,7 @@ export default function GeneratePage() {
           title={t.generate.history.title}
           empty={t.generate.history.empty}
           emptyHint={t.generate.history.emptyHint}
-          icon="fa-wand-magic-sparkles"
+          icon="wand-magic-sparkles"
           reuseLabel={t.generate.history.reusePrompt}
           resolveSource={resolveSource}
           onDelete={(g, alsoImage) => {
@@ -297,7 +298,7 @@ export default function GeneratePage() {
                 </>
               ) : (
                 <>
-                  <i className="fa-solid fa-wand-magic-sparkles mr-1.5 text-xs" />
+                  <Icon name="wand-magic-sparkles" className="mr-1.5 text-xs"  />
                   {/* The label follows the request rather than announcing a
                       mode: it is still one button doing one thing. */}
                   {refs.length > 0 ? t.generate.submitWithRef : t.generate.submit}

@@ -1,3 +1,4 @@
+import Icon from "../../Icon";
 import { useEffect, useState } from "react";
 import {
   ArcElement,
@@ -71,14 +72,14 @@ export default function AdminDashboard() {
     <div className="space-y-4">
       {/* KPI row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Kpi label="托管图片" value={s.total_images.toLocaleString()} sub={`今日 +${s.images_today}`} icon="fa-images" />
-        <Kpi label="注册用户" value={s.total_users.toLocaleString()} sub={`今日签到 ${s.checkins_today}`} icon="fa-users" />
-        <Kpi label="实际占用" value={formatBytes(s.stored_bytes)} sub={`已发放 ${formatBytes(s.granted_bytes)}`} icon="fa-database" />
+        <Kpi label="托管图片" value={s.total_images.toLocaleString()} sub={`今日 +${s.images_today}`} icon="images" />
+        <Kpi label="注册用户" value={s.total_users.toLocaleString()} sub={`今日签到 ${s.checkins_today}`} icon="users" />
+        <Kpi label="实际占用" value={formatBytes(s.stored_bytes)} sub={`已发放 ${formatBytes(s.granted_bytes)}`} icon="database" />
         <Kpi
           label="队列 / 待备份"
           value={`${s.queue_depth} / ${s.pending_backup}`}
           sub={s.blocked_images > 0 ? `${s.blocked_images} 张已屏蔽` : "无屏蔽内容"}
-          icon="fa-list-check"
+          icon="list-check"
           alert={s.queue_depth > 100 || s.pending_backup > 100}
         />
       </div>
@@ -361,7 +362,7 @@ function Kpi({
       }`}
     >
       <div className="flex items-center gap-1.5 text-[10px] text-neutral-500">
-        <i className={`fa-solid ${icon}`} />
+        <Icon name={icon}  />
         {label}
       </div>
       <div className={`mt-1 text-xl font-brand ${alert ? "text-amber-300" : "text-neutral-100"}`}>{value}</div>

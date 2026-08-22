@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
@@ -51,66 +52,66 @@ import type { Image } from "../types";
 const PRESETS = [
   {
     key: "watermark" as const,
-    icon: "fa-eraser",
+    icon: "eraser",
     prompt:
       "Remove all watermarks, logos and text overlays from this image. Keep everything else exactly unchanged.",
   },
   {
     key: "declutter" as const,
-    icon: "fa-user-slash",
+    icon: "user-slash",
     prompt:
       "Remove the unwanted people and clutter in the background. Keep the main subject unchanged.",
   },
   {
     key: "background" as const,
-    icon: "fa-image",
+    icon: "image",
     prompt:
       "Replace the background with a clean solid studio backdrop. Keep the subject unchanged.",
   },
   {
     key: "restore" as const,
-    icon: "fa-clock-rotate-left",
+    icon: "clock-rotate-left",
     prompt:
       "Restore this old photo: remove scratches and stains, fix fading, keep the original look.",
   },
   {
     key: "sharpen" as const,
-    icon: "fa-wand-sparkles",
+    icon: "wand-sparkles",
     prompt: "Enhance the sharpness and detail of this image without changing its content.",
   },
   {
     key: "text" as const,
-    icon: "fa-text-slash",
+    icon: "text-slash",
     prompt:
       "Remove all text, captions and subtitles from this image. Reconstruct what was behind them; keep everything else unchanged.",
   },
   {
     key: "whitebg" as const,
-    icon: "fa-square",
+    icon: "square",
     prompt:
       "Cut out the product and place it on a pure white background, centered, with soft even lighting and a natural contact shadow.",
   },
   {
     key: "colorize" as const,
-    icon: "fa-palette",
+    icon: "palette",
     prompt:
       "Colorize this black and white photo with natural, period-accurate colors. Keep the original composition and details.",
   },
   {
     key: "portrait" as const,
-    icon: "fa-face-smile",
+    icon: "face-smile",
     prompt:
       "Retouch this portrait: even out skin tone, remove blemishes, brighten the eyes. Keep the person clearly recognizable — do not reshape the face.",
   },
   {
     key: "cartoon" as const,
-    icon: "fa-paintbrush",
+    icon: "paintbrush",
     prompt:
       "Redraw this image as a clean flat illustration with bold outlines and simple shading. Keep the subject and composition recognizable.",
   },
   {
     key: "expand" as const,
-    icon: "fa-expand",
+    icon: "expand",
     prompt:
       "Extend this image outward, continuing the scene naturally on all sides. Keep the existing content untouched.",
   },
@@ -228,7 +229,7 @@ export default function RetouchPage() {
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
         <h1 className="mb-1.5 flex items-center gap-2.5 text-lg font-brand text-neutral-100">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-brand-400">
-            <i className="fa-solid fa-wand-magic text-sm" />
+            <Icon name="wand-magic" className="text-sm"  />
           </span>
           {t.retouch.title}
         </h1>
@@ -236,7 +237,7 @@ export default function RetouchPage() {
 
         {!user.email_verified && (
           <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-950/20 px-4 py-3 text-xs text-amber-200">
-            <i className="fa-solid fa-triangle-exclamation mr-1.5" />
+            <Icon name="triangle-exclamation" className="mr-1.5"  />
             {t.upload.emailUnverified}
             <Link to="/settings" className="ml-1.5 underline hover:text-amber-100">
               {t.upload.goVerify}
@@ -251,7 +252,7 @@ export default function RetouchPage() {
           title={t.retouch.history.title}
           empty={t.retouch.history.empty}
           emptyHint={t.retouch.history.emptyHint}
-          icon="fa-wand-magic"
+          icon="wand-magic"
           reuseLabel={t.retouch.history.reuse}
           onDelete={(g, alsoImage) => {
             remove(g, alsoImage)
@@ -326,8 +327,9 @@ export default function RetouchPage() {
                       : "border-neutral-700 bg-neutral-900 text-neutral-400 hover:border-neutral-600 hover:text-neutral-200"
                   }`}
                 >
-                  <i
-                    className={`fa-solid ${p.icon} text-[10px] ${
+                  <Icon
+                    name={p.icon}
+                    className={`text-[10px] ${
                       active ? "text-brand-ink/70" : "text-neutral-600"
                     }`}
                   />
@@ -403,7 +405,7 @@ export default function RetouchPage() {
                 </>
               ) : (
                 <>
-                  <i className="fa-solid fa-wand-magic mr-1.5 text-xs" />
+                  <Icon name="wand-magic" className="mr-1.5 text-xs"  />
                   {t.retouch.submit}
                 </>
               )}

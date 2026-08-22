@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useLang } from "../LangContext";
 
 /**
@@ -44,7 +45,7 @@ export default function Pager({
         className={`${btn} text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100`}
         title={t.common.pager.prev}
       >
-        <i className="fa-solid fa-chevron-left text-[9px]" />
+        <Icon name="chevron-left" className="text-[9px]"  />
       </button>
 
       {start > 0 && (
@@ -90,7 +91,7 @@ export default function Pager({
         className={`${btn} text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100`}
         title={t.common.pager.next}
       >
-        <i className="fa-solid fa-chevron-right text-[9px]" />
+        <Icon name="chevron-right" className="text-[9px]"  />
       </button>
     </div>
   );

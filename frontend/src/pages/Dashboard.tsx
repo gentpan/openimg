@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
@@ -92,7 +93,7 @@ export default function DashboardPage() {
             to="/upload"
             className="rounded-lg bg-brand-600 px-3.5 py-1.5 text-xs font-medium text-brand-ink hover:bg-brand-500 transition"
           >
-            <i className="fa-solid fa-cloud-arrow-up mr-1.5" />
+            <Icon name="cloud-arrow-up" className="mr-1.5"  />
             {t.dashboard.uploadCta}
           </Link>
         </div>
@@ -103,7 +104,7 @@ export default function DashboardPage() {
             label={t.common.availableStorage}
             value={formatBytes(quota?.available_bytes ?? user.available_bytes, 0)}
             sub={t.dashboard.kpi.availableStorageSub(formatBytes(usedAnimated, 1), Number(usedPct.toFixed(0)), formatBytes(quota?.quota_bytes ?? user.quota_bytes, 0))}
-            icon="fa-database"
+            icon="database"
             alert={usedPct >= 90}
             href="/space"
           />
@@ -111,13 +112,13 @@ export default function DashboardPage() {
             label={t.dashboard.kpi.totalImages}
             value={String(quota?.image_count ?? 0)}
             sub={t.dashboard.kpi.uploadsTodaySub(quota?.uploads_today ?? 0, quota?.tier.daily_upload_count ?? 0)}
-            icon="fa-images"
+            icon="images"
           />
           <Kpi
             label={t.dashboard.kpi.checkinStreak}
             value={t.common.days(user.checkin_streak)}
             sub={user.checked_in_today ? t.dashboard.kpi.checkedInToday : t.dashboard.kpi.notCheckedInToday}
-            icon="fa-calendar-check"
+            icon="calendar-check"
           />
           <Kpi
             label={t.dashboard.kpi.savedByOptimizing}
@@ -127,7 +128,7 @@ export default function DashboardPage() {
                 ? t.dashboard.kpi.origToStored(formatBytes(summary.size_orig, 0), formatBytes(summary.size_stored, 0))
                 : t.dashboard.kpi.acrossAllImages
             }
-            icon="fa-compress"
+            icon="compress"
           />
         </div>
 
@@ -288,9 +289,9 @@ function Kpi({
   const body = (
     <>
       <div className="flex items-center gap-1.5 text-[10px] text-neutral-500">
-        <i className={`fa-solid ${icon}`} />
+        <Icon name={icon}  />
         {label}
-        {href && <i className="fa-solid fa-arrow-right ml-auto text-[9px] opacity-0 group-hover:opacity-60 transition" />}
+        {href && <Icon name="arrow-right" className="ml-auto text-[9px] opacity-0 group-hover:opacity-60 transition"  />}
       </div>
       <div className={`mt-1 text-xl font-brand ${alert ? "text-amber-300" : "text-neutral-100"}`}>{value}</div>
       {sub && <div className="mt-0.5 text-[10px] text-neutral-600">{sub}</div>}

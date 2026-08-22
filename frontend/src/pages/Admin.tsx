@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Nav from "../components/Nav";
@@ -18,14 +19,14 @@ type Tab = "dashboard" | "users" | "groups" | "images" | "reports" | "ledger" | 
 // empty so the bare /admin stays the overview — links people have already
 // bookmarked keep meaning what they meant.
 const TABS: { key: Tab; slug: string; label: string; icon: string }[] = [
-  { key: "dashboard", slug: "", label: "总览", icon: "fa-chart-line" },
-  { key: "users", slug: "users", label: "用户", icon: "fa-users" },
-  { key: "groups", slug: "groups", label: "用户组", icon: "fa-layer-group" },
-  { key: "images", slug: "images", label: "图片", icon: "fa-images" },
-  { key: "reports", slug: "reports", label: "举报", icon: "fa-flag" },
-  { key: "ledger", slug: "ledger", label: "空间流水", icon: "fa-receipt" },
-  { key: "login", slug: "login", label: "登录方式", icon: "fa-right-to-bracket" },
-  { key: "upload", slug: "upload", label: "上传设置", icon: "fa-sliders" },
+  { key: "dashboard", slug: "", label: "总览", icon: "chart-line" },
+  { key: "users", slug: "users", label: "用户", icon: "users" },
+  { key: "groups", slug: "groups", label: "用户组", icon: "layer-group" },
+  { key: "images", slug: "images", label: "图片", icon: "images" },
+  { key: "reports", slug: "reports", label: "举报", icon: "flag" },
+  { key: "ledger", slug: "ledger", label: "空间流水", icon: "receipt" },
+  { key: "login", slug: "login", label: "登录方式", icon: "right-to-bracket" },
+  { key: "upload", slug: "upload", label: "上传设置", icon: "sliders" },
 ];
 
 export default function AdminLayout() {
@@ -53,7 +54,7 @@ export default function AdminLayout() {
         <div className="flex items-center gap-3 mb-5">
           <h1 className="flex items-center gap-2.5 text-lg font-brand text-neutral-100">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-brand-400">
-              <i className="fa-solid fa-shield-halved text-sm" />
+              <Icon name="shield-halved" className="text-sm"  />
             </span>
             管理后台
           </h1>
@@ -74,7 +75,7 @@ export default function AdminLayout() {
                   : "bg-neutral-900 text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800"
               }`}
             >
-              <i className={`fa-solid ${t.icon} text-[10px]`} />
+              <Icon name={t.icon} className={`text-[10px]`}  />
               {t.label}
               {t.key === "reports" && openReports > 0 && (
                 <span className="ml-0.5 rounded-full bg-red-600 px-1.5 text-[9px] text-white">
@@ -439,7 +440,7 @@ function ImagesTab() {
             <img src={img.thumb_url} alt="" loading="lazy" className="w-full aspect-square object-cover" />
             {img.status === "blocked" && (
               <div className="absolute inset-0 bg-red-950/60 flex items-center justify-center">
-                <i className="fa-solid fa-eye-slash text-red-300" />
+                <Icon name="eye-slash" className="text-red-300"  />
               </div>
             )}
             {/* The uploader on the tile itself, not only in the panel: scanning
@@ -503,7 +504,7 @@ function AdminImageDetail({
           )}
           <div className="flex-1" />
           <button onClick={onClose} className="text-neutral-500 hover:text-neutral-100 transition">
-            <i className="fa-solid fa-xmark" />
+            <Icon name="xmark"  />
           </button>
         </div>
 
@@ -524,7 +525,7 @@ function AdminImageDetail({
               }}
               className="mt-1 inline-block text-[10px] text-brand-400 hover:underline"
             >
-              <i className="fa-solid fa-copy mr-1" />
+              <Icon name="copy" className="mr-1"  />
               复制邮箱
             </a>
           </div>
@@ -545,7 +546,7 @@ function AdminImageDetail({
             disabled={busy}
             className="rounded-lg bg-neutral-800 px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-700 disabled:opacity-50 transition"
           >
-            <i className={`fa-solid ${img.status === "blocked" ? "fa-eye" : "fa-eye-slash"} mr-1.5`} />
+            <Icon name={img.status === "blocked" ? "eye" : "eye-slash"} className={`mr-1.5`}  />
             {img.status === "blocked" ? "解除屏蔽" : "屏蔽"}
           </button>
           <div className="flex-1" />
@@ -554,7 +555,7 @@ function AdminImageDetail({
             disabled={busy}
             className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50 transition"
           >
-            <i className="fa-solid fa-trash-can mr-1.5" />
+            <Icon name="trash-can" className="mr-1.5"  />
             删除
           </button>
         </div>
@@ -647,7 +648,7 @@ function ReportsTab({ onChange }: { onChange: (n: number) => void }) {
                     )}
                   </span>
                 </span>
-                <i className="fa-solid fa-chevron-right mt-1 shrink-0 text-[9px] text-neutral-700 group-hover:text-brand-400" />
+                <Icon name="chevron-right" className="mt-1 shrink-0 text-[9px] text-neutral-700 group-hover:text-brand-400"  />
               </button>
 
               {status === "open" && (
@@ -745,7 +746,7 @@ function ReportDetail({
             aria-label="关闭"
             className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-800 hover:text-neutral-200"
           >
-            <i className="fa-solid fa-xmark" />
+            <Icon name="xmark"  />
           </button>
         </div>
 
@@ -809,7 +810,7 @@ function ReportDetail({
                 onClick={() => setRevealed(true)}
                 className="flex h-32 w-full items-center justify-center rounded-lg border border-dashed border-neutral-700 text-xs text-neutral-500 transition hover:border-brand-500 hover:text-brand-300"
               >
-                <i className="fa-solid fa-eye mr-1.5" />
+                <Icon name="eye" className="mr-1.5"  />
                 点击查看被举报的图片
               </button>
             )}
@@ -928,7 +929,7 @@ function LedgerTab() {
     <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 overflow-hidden">
       <div className="flex flex-wrap items-center gap-2 px-5 pt-4 pb-3">
         <div className="relative flex-1 min-w-[14rem]">
-          <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-neutral-600" />
+          <Icon name="magnifying-glass" className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-neutral-600"  />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -942,7 +943,7 @@ function LedgerTab() {
               title="清空"
               className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-neutral-600 hover:text-neutral-300"
             >
-              <i className="fa-solid fa-xmark" />
+              <Icon name="xmark"  />
             </button>
           )}
         </div>
@@ -952,7 +953,7 @@ function LedgerTab() {
 
       {err && (
         <div className="mx-5 mb-2 rounded-lg border border-red-500/30 bg-red-950/20 px-3 py-2 text-[11px] text-red-300">
-          <i className="fa-solid fa-triangle-exclamation mr-1.5" />
+          <Icon name="triangle-exclamation" className="mr-1.5"  />
           加载失败：{err} —— 下方显示的仍是上一次的结果
         </div>
       )}

@@ -104,7 +104,7 @@ npm run dev                            # http://localhost:5173
 /opt/openimg/bin/openimg-server
 ```
 
-systemd unit 见 `deploy/systemd/openimg-backend.service`，反向代理用 Caddy。
+systemd unit 见 `deploy/systemd/openimg-backend.service`。openimg.io 生产反代是 frankenphp（基于 Caddy），站点配置 `deploy/caddy/openimg.caddy` 由 `deploy.sh` 自动同步；自建单机部署可参考 `deploy/caddy/Caddyfile` 模板。
 
 ### 两件必须分开备份的东西
 

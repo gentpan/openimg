@@ -1,3 +1,4 @@
+import Icon from "../../Icon";
 import { useEffect, useState } from "react";
 import { adminApi } from "../../api";
 import type { OAuthStatus } from "../../types";
@@ -63,7 +64,7 @@ export default function LoginMethods() {
 
       {!status.can_store && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 px-4 py-2.5 text-xs text-amber-200">
-          <i className="fa-solid fa-triangle-exclamation mr-1.5" />
+          <Icon name="triangle-exclamation" className="mr-1.5"  />
           服务端未配置 STORAGE_MASTER_KEY，无法在后台加密保存密钥。请改用环境变量，或先生成主密钥：
           <code className="ml-1 text-amber-100">openssl rand -base64 32</code>
         </div>
@@ -98,7 +99,7 @@ export default function LoginMethods() {
                   rel="noopener noreferrer"
                   className="text-[10px] text-brand-400 hover:underline"
                 >
-                  去申请 <i className="fa-solid fa-arrow-up-right-from-square text-[8px]" />
+                  去申请 <Icon name="arrow-up-right-from-square" className="text-[8px]"  />
                 </a>
               </div>
 
@@ -173,8 +174,9 @@ export default function LoginMethods() {
 function MethodRow({ label, enabled, note }: { label: string; enabled: boolean; note: string }) {
   return (
     <div className="flex items-center gap-3">
-      <i
-        className={`fa-solid ${enabled ? "fa-circle-check text-teal-400" : "fa-circle-xmark text-faint"} text-xs`}
+      <Icon
+        name={enabled ? "circle-check" : "circle-xmark"}
+        className={`${enabled ? "text-teal-400" : "text-faint"} text-xs`}
       />
       <div className="flex-1 min-w-0">
         <div className="text-xs text-neutral-300">{label}</div>
@@ -209,7 +211,7 @@ function CopyRow({ value }: { value: string }) {
           copied ? "bg-brand-600 text-brand-ink" : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
         }`}
       >
-        <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"}`} />
+        <Icon name={copied ? "check" : "copy"}  />
       </button>
     </div>
   );

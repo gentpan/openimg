@@ -1,3 +1,4 @@
+import Icon from "./Icon";
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 import { useLang } from "./LangContext";
 
@@ -84,9 +85,9 @@ export function useToast() {
 }
 
 const STYLES: Record<ToastKind, { icon: string; chip: string }> = {
-  success: { icon: "fa-circle-check", chip: "bg-teal-900/40 text-teal-300" },
-  error: { icon: "fa-circle-exclamation", chip: "bg-red-900/40 text-red-300" },
-  info: { icon: "fa-circle-info", chip: "bg-brand-900/40 text-brand-300" },
+  success: { icon: "circle-check", chip: "bg-teal-900/40 text-teal-300" },
+  error: { icon: "circle-exclamation", chip: "bg-red-900/40 text-red-300" },
+  info: { icon: "circle-info", chip: "bg-brand-900/40 text-brand-300" },
 };
 
 /**
@@ -114,7 +115,7 @@ function ToastStack({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: nu
             <span
               className={`mt-px shrink-0 flex h-5 w-5 items-center justify-center rounded-md text-[10px] ${st.chip}`}
             >
-              <i className={`fa-solid ${st.icon}`} />
+              <Icon name={st.icon}  />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-xs text-neutral-100">{item.text}</span>

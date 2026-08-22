@@ -60,13 +60,12 @@
          仍要现建连接,首屏会闪一下无字形。 -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- FontAwesome 的字体文件是 CSS 里的相对路径(../webfonts/),与 CSS 同域,
-         所以只需要这一个 preconnect。 -->
-    <link rel="preconnect" href="https://static.bluecdn.com" crossorigin />
     <link rel="preconnect" href="https://tongji.giantaccel.com" crossorigin />
     <link rel="preconnect" href="https://static.cloudflareinsights.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap" />
-    <link rel="stylesheet" href="https://static.bluecdn.com/libs/fontawesome/7.3.1/css/all.min.css" />
+    <!-- 图标走内联 SVG(src/icons.ts + src/Icon.tsx),不再加载 FontAwesome 的
+         webfont 和全量 CSS:只用到 90 多个字形,打包进 JS 比 200KB 的外部
+         CSS+字体便宜得多,还省掉一次跨域阻塞渲染。 -->
     <title>Openimg — 免费图床 | 图片外链 · WebP/AVIF 压缩 · CDN 加速</title>
     <script defer src="https://tongji.giantaccel.com/script.js" data-website-id="9a9ad5b3-521f-409c-9802-f1612c916384"></script>
     <!-- Cloudflare Web Analytics。与自建的 tongji 并存,不是替换:一个看自己的

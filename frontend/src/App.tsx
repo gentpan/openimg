@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { BrandProvider } from "./BrandContext";
@@ -7,20 +7,24 @@ import { LangProvider, useLang } from "./LangContext";
 import { ToastProvider } from "./ToastContext";
 import { UploadProvider } from "./UploadContext";
 import UploadPanel from "./components/UploadPanel";
-import AdminLayout from "./pages/Admin";
-import DashboardPage from "./pages/Dashboard";
-import GalleryPage from "./pages/Gallery";
-import GeneratePage from "./pages/Generate";
-import SharePage from "./pages/Share";
 import Home from "./pages/Home";
-import LoginPage from "./pages/Login";
-import ReferPage from "./pages/Refer";
-import DocsPage from "./pages/Docs";
-import RegisterPage from "./pages/Register";
-import RetouchPage from "./pages/Retouch";
-import SettingsPage from "./pages/Settings";
-import SpacePage from "./pages/Space";
-import UploadPage from "./pages/Upload";
+
+// Home is the landing page, so it stays eager; every other route is a
+// dynamic import so the first paint no longer pays for the admin console,
+// the chart library, the AI pages and everything else at once.
+const AdminLayout = lazy(() => import("./pages/Admin"));
+const DashboardPage = lazy(() => import("./pages/Dashboard"));
+const GalleryPage = lazy(() => import("./pages/Gallery"));
+const GeneratePage = lazy(() => import("./pages/Generate"));
+const SharePage = lazy(() => import("./pages/Share"));
+const LoginPage = lazy(() => import("./pages/Login"));
+const ReferPage = lazy(() => import("./pages/Refer"));
+const DocsPage = lazy(() => import("./pages/Docs"));
+const RegisterPage = lazy(() => import("./pages/Register"));
+const RetouchPage = lazy(() => import("./pages/Retouch"));
+const SettingsPage = lazy(() => import("./pages/Settings"));
+const SpacePage = lazy(() => import("./pages/Space"));
+const UploadPage = lazy(() => import("./pages/Upload"));
 
 export default function App() {
   useEffect(() => {
@@ -46,6 +50,7 @@ export default function App() {
       <AuthProvider>
         <UploadProvider>
         <BrowserRouter>
+          <Suspense fallback={<LazyFallback />}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -77,6 +82,7 @@ export default function App() {
               register rather than hiding the product behind a login wall. */}
             <Route path="/*" element={<Home />} />
           </Routes>
+          </Suspense>
           {/* Floating upload queue — outside <Routes> so it survives navigation */}
           <UploadPanel />
         </BrowserRouter>
@@ -87,6 +93,13 @@ export default function App() {
     </BrandProvider>
     </LangProvider>
   );
+}
+
+// Shown while a lazy route's chunk is still in flight. Deliberately plain:
+// it renders on slow networks, so it must not depend on the chunk loading.
+function LazyFallback() {
+  const { t } = useLang();
+  return <CenterMsg>{t.common.loading}</CenterMsg>;
 }
 
 function RequireAdmin({ children }: { children: React.ReactElement }) {

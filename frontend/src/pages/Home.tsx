@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../AuthContext";
@@ -14,12 +15,12 @@ import type { Dict } from "../i18n";
  *  Holds dictionary keys rather than text: a module constant is evaluated
  *  once at import, while the language can change at any time after. */
 const HIGHLIGHTS: { icon: string; key: keyof Dict["home"]["highlight"] }[] = [
-  { icon: "fa-sliders", key: "optimizeOrOriginal" },
-  { icon: "fa-file-zipper", key: "webpAvif" },
-  { icon: "fa-globe", key: "globalCdn" },
-  { icon: "fa-user-shield", key: "stripExif" },
-  { icon: "fa-cloud", key: "ownBucket" },
-  { icon: "fa-infinity", key: "freeForever" },
+  { icon: "sliders", key: "optimizeOrOriginal" },
+  { icon: "file-zipper", key: "webpAvif" },
+  { icon: "globe", key: "globalCdn" },
+  { icon: "user-shield", key: "stripExif" },
+  { icon: "cloud", key: "ownBucket" },
+  { icon: "infinity", key: "freeForever" },
 ];
 
 export default function Home() {
@@ -38,7 +39,7 @@ export default function Home() {
           <div className="text-center mb-8">
             <Reveal direction="scale" duration={500}>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-500/30 bg-brand-950/30 px-3 py-1 text-[11px] text-brand-300 mb-5">
-                <i className="fa-solid fa-heart text-[9px]" />
+                <Icon name="heart" className="text-[9px]"  />
                 {t.home.hero.badge}
               </span>
             </Reveal>
@@ -63,7 +64,7 @@ export default function Home() {
                     key={h.key}
                     className="inline-flex items-center gap-1.5 rounded-full border border-neutral-800 bg-neutral-900/50 px-3 py-1.5 text-[11px] text-neutral-300"
                   >
-                    <i className={`fa-solid ${h.icon} text-[9px] text-brand-400`} />
+                    <Icon name={h.icon} className={`text-[9px] text-brand-400`}  />
                     {t.home.highlight[h.key]}
                   </li>
                 ))}
@@ -90,37 +91,37 @@ export default function Home() {
               {[
                 <Feature
                   key="a"
-                  icon="fa-compress"
+                  icon="compress"
                   title={t.home.features.optimize.title}
                   desc={t.home.features.optimize.desc}
                 />,
                 <Feature
                   key="b"
-                  icon="fa-bolt"
+                  icon="bolt"
                   title={t.home.features.cdn.title}
                   desc={t.home.features.cdn.desc}
                 />,
                 <Feature
                   key="c"
-                  icon="fa-shield-halved"
+                  icon="shield-halved"
                   title={t.home.features.privacy.title}
                   desc={t.home.features.privacy.desc}
                 />,
                 <Feature
                   key="d"
-                  icon="fa-cloud"
+                  icon="cloud"
                   title={t.home.features.ownStorage.title}
                   desc={t.home.features.ownStorage.desc}
                 />,
                 <Feature
                   key="e"
-                  icon="fa-calendar-check"
+                  icon="calendar-check"
                   title={t.home.features.checkin.title}
                   desc={t.home.features.checkin.desc}
                 />,
                 <Feature
                   key="f"
-                  icon="fa-plug"
+                  icon="plug"
                   title={t.home.features.tools.title}
                   desc={t.home.features.tools.desc}
                 />,
@@ -173,7 +174,7 @@ export default function Home() {
               title={t.home.integration.curlCardTitle}
               copyLabel={t.common.copy}
               copiedLabel={t.common.copied}
-              icon="fa-terminal"
+              icon="terminal"
               code={`curl -X POST https://openimg.io/api/upload \\
   -H "Authorization: Bearer oimg_xxxxxx" \\
   -F "file=@photo.jpg"`}
@@ -182,7 +183,7 @@ export default function Home() {
               title={t.home.integration.picgoCardTitle}
               copyLabel={t.common.copy}
               copiedLabel={t.common.copied}
-              icon="fa-plug"
+              icon="plug"
               code={[
                   `${t.home.integration.picgoConfigLabel.apiUrl}   https://openimg.io/api/upload`,
                   `${t.home.integration.picgoConfigLabel.postField}  file`,
@@ -244,7 +245,7 @@ function Feature({
   return (
     <div className="h-full rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:border-neutral-700 transition">
       <div className="w-9 h-9 rounded-lg bg-brand-950/40 flex items-center justify-center mb-3">
-        <i className={`fa-solid ${icon} text-brand-400 text-sm`} />
+        <Icon name={icon} className={`text-brand-400 text-sm`}  />
       </div>
       <div className="text-sm font-medium text-neutral-100">{title}</div>
       <p className="mt-1.5 text-xs text-neutral-500 leading-relaxed">{desc}</p>
@@ -282,7 +283,7 @@ function CodeCard({
     <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800/60">
         <span className="text-xs text-neutral-300">
-          <i className={`fa-solid ${icon} mr-1.5 text-neutral-500`} />
+          <Icon name={icon} className={`mr-1.5 text-neutral-500`}  />
           {title}
         </span>
         <button
@@ -295,7 +296,7 @@ function CodeCard({
           }}
           className="text-[10px] text-neutral-500 hover:text-brand-300 transition"
         >
-          <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"} mr-1`} />
+          <Icon name={copied ? "check" : "copy"} className={`mr-1`}  />
           {copied ? copiedLabel : copyLabel}
         </button>
       </div>

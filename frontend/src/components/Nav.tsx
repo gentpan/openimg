@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
@@ -10,6 +11,7 @@ import { useLang } from "../LangContext";
 import { useToast } from "../ToastContext";
 import Avatar from "./Avatar";
 import GroupBadge from "./GroupBadge";
+import { prefetch } from "../prefetch";
 
 /**
  * Shared top navigation. Every page had its own copy before; the space pill is
@@ -106,28 +108,28 @@ export default function Nav() {
         <div className="flex items-center gap-2.5 text-xs self-stretch">
           {user && (
             <div ref={railRef} className="nav-rail">
-              <NavItem to="/dashboard" icon="fa-gauge" label={t.nav.overview} active={pathname === "/dashboard"} />
-              <NavItem to="/upload" icon="fa-cloud-arrow-up" label={t.common.upload} active={pathname === "/upload"} />
-              <NavItem to="/gallery" icon="fa-images" label={t.nav.gallery} active={pathname === "/gallery"} />
+              <NavItem to="/dashboard" icon="gauge" label={t.nav.overview} active={pathname === "/dashboard"} />
+              <NavItem to="/upload" icon="cloud-arrow-up" label={t.common.upload} active={pathname === "/upload"} />
+              <NavItem to="/gallery" icon="images" label={t.nav.gallery} active={pathname === "/gallery"} />
               {/* Absent, not disabled, where the deployment configured no AI
                   key: there is nothing behind the link on such a build. */}
               {aiEnabled && (
                 <>
                   <NavItem
                     to="/generate"
-                    icon="fa-wand-magic-sparkles"
+                    icon="wand-magic-sparkles"
                     label={t.nav.generate}
                     active={pathname === "/generate"}
                   />
                   <NavItem
                     to="/retouch"
-                    icon="fa-wand-magic"
+                    icon="wand-magic"
                     label={t.nav.retouch}
                     active={pathname === "/retouch"}
                   />
                 </>
               )}
-              <NavItem to="/refer" icon="fa-gift" label={t.nav.refer} active={pathname === "/refer"} />
+              <NavItem to="/refer" icon="gift" label={t.nav.refer} active={pathname === "/refer"} />
               <span className="nav-glider" aria-hidden="true" />
             </div>
           )}
@@ -156,12 +158,12 @@ export default function Nav() {
                   <RingSpinner className="h-3.5 w-3.5 inline-block align-[-2px]" />
                 ) : user.checked_in_today ? (
                   <>
-                    <i className="fa-solid fa-check text-[10px] mr-1" />
+                    <Icon name="check" className="text-[10px] mr-1"  />
                     {t.common.days(user.checkin_streak)}
                   </>
                 ) : (
                   <>
-                    <i className="fa-solid fa-calendar-check text-[10px] mr-1" />
+                    <Icon name="calendar-check" className="text-[10px] mr-1"  />
                     {t.nav.checkin}
                   </>
                 )}
@@ -169,13 +171,15 @@ export default function Nav() {
               <Link
                 to="/space"
                 title={t.nav.storagePillTitle(formatBytes(user.used_bytes), formatBytes(user.quota_bytes))}
+                onMouseEnter={() => prefetch("/space")}
+                onFocus={() => prefetch("/space")}
                 className={`rounded-full px-2 py-0.5 transition ${
                   low
                     ? "bg-amber-900/30 text-amber-200 hover:bg-amber-900/50"
                     : "bg-brand-900/30 text-brand-200 hover:bg-brand-900/50"
                 }`}
               >
-                <i className="fa-solid fa-database text-[10px] mr-1" />
+                <Icon name="database" className="text-[10px] mr-1"  />
                 {formatBytes(user.available_bytes, 0)}
               </Link>
               <button
@@ -191,6 +195,8 @@ export default function Nav() {
               <LangFlagButton />
               <Link
                 to="/settings"
+                onMouseEnter={() => prefetch("/settings")}
+                onFocus={() => prefetch("/settings")}
                 className="flex items-center gap-1.5 text-neutral-400 hover:text-brand-300 min-w-0"
               >
                 <Avatar user={user} size={20} />
@@ -211,7 +217,7 @@ export default function Nav() {
                 aria-label={t.common.signOut}
                 className="text-neutral-600 hover:text-red-400 transition"
               >
-                <i className="fa-solid fa-right-from-bracket" />
+                <Icon name="right-from-bracket"  />
               </button>
             </>
           ) : (
@@ -233,8 +239,10 @@ export default function Nav() {
               <Link
                 to="/login"
                 className="rounded-full px-3 py-0.5 bg-brand-600 text-brand-ink hover:bg-brand-500 transition whitespace-nowrap"
+                onMouseEnter={() => prefetch("/login")}
+                onFocus={() => prefetch("/login")}
               >
-                <i className="fa-solid fa-right-to-bracket text-[10px] mr-1" />
+                <Icon name="right-to-bracket" className="text-[10px] mr-1"  />
                 {t.common.signIn}
               </Link>
             </>
@@ -273,8 +281,10 @@ function NavItem({ to, icon, label, active }: { to: string; icon: string; label:
       title={label}
       aria-current={active ? "page" : undefined}
       className={`nav-tab${active ? " is-active" : ""}`}
+      onMouseEnter={() => prefetch(to)}
+      onFocus={() => prefetch(to)}
     >
-      <i className={`fa-solid ${icon}`} />
+      <Icon name={icon}  />
       <span className="hidden md:inline">{label}</span>
     </Link>
   );

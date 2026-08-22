@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useMemo, useState } from "react";
 import { useLang } from "../LangContext";
 
@@ -115,7 +116,7 @@ export default function PasswordField({
               aria-label={t.passwordField.generateAria}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-800 hover:text-brand-300"
             >
-              <i className="fa-solid fa-dice text-xs" />
+              <Icon name="dice" className="text-xs"  />
             </button>
           )}
           <button
@@ -125,7 +126,7 @@ export default function PasswordField({
             aria-label={visible ? t.passwordField.hide : t.passwordField.show}
             className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-800 hover:text-brand-300"
           >
-            <i className={`fa-solid ${visible ? "fa-eye-slash" : "fa-eye"} text-xs`} />
+            <Icon name={visible ? "eye-slash" : "eye"} className={`text-xs`}  />
           </button>
         </div>
       </div>
@@ -148,7 +149,7 @@ export default function PasswordField({
 
       {copied && (
         <div className="mt-1.5 text-[10px] text-teal-400">
-          <i className="fa-solid fa-check mr-1" />
+          <Icon name="check" className="mr-1"  />
           {t.passwordField.generatedCopied}
         </div>
       )}

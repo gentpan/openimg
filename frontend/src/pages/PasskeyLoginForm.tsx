@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { startAuthentication } from "@simplewebauthn/browser";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -60,7 +61,7 @@ export default function PasskeyLoginForm() {
         disabled={busy}
         className="w-full rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-700 disabled:text-neutral-500 inline-flex items-center justify-center gap-2"
       >
-        <i className="fa-solid fa-fingerprint" aria-hidden></i>
+        <Icon name="fingerprint" />
         {busy ? t.auth.passkey.submitBusy : t.auth.passkey.submit}
       </button>
       <p className="text-xs text-neutral-500 text-center">

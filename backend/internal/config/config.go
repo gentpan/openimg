@@ -13,6 +13,15 @@ type Config struct {
 	ListenAddr  string
 	DatabaseURL string
 
+	// AutoMigrate runs GORM's schema sync at startup. On by default so a
+	// fresh checkout just works; production can flip it off once the schema
+	// is stable, skipping the full-table scans on every restart.
+	AutoMigrate bool
+
+	// PprofAddr, when set (e.g. 127.0.0.1:6060), serves net/http/pprof on a
+	// separate listener. Bind loopback only — there is no auth on it.
+	PprofAddr string
+
 	// APIMart 文生图。留空即不开这个功能——接口一律回"未开启",界面把入口
 	// 藏起来,而不是让用户点一下才收到 401。
 	APIMartKey  string
@@ -109,12 +118,15 @@ func Load() Config {
 	maxUpload, _ := strconv.ParseInt(getenv("MAX_UPLOAD_SIZE", "52428800"), 10, 64) // 50 MiB
 	secure, _ := strconv.ParseBool(getenv("COOKIE_SECURE", "false"))
 	requireVerified, _ := strconv.ParseBool(getenv("REQUIRE_EMAIL_VERIFIED", "true"))
+	autoMigrate, _ := strconv.ParseBool(getenv("DB_AUTO_MIGRATE", "true"))
 
 	cfg := Config{
 		APIMartKey:    getenv("APIMART_API_KEY", ""),
 		APIMartBase:   getenv("APIMART_BASE_URL", ""),
 		ListenAddr:    getenv("LISTEN_ADDR", "127.0.0.1:8080"),
 		DatabaseURL:   mustGet("DATABASE_URL"),
+		AutoMigrate:   autoMigrate,
+		PprofAddr:     os.Getenv("PPROF_ADDR"),
 		StorageDir:    getenv("STORAGE_DIR", "/opt/openimg/storage"),
 		TempDir:       getenv("TEMP_DIR", "/opt/openimg/tmp"),
 		PublicBaseURL: getenv("PUBLIC_BASE_URL", "http://127.0.0.1:8080"),

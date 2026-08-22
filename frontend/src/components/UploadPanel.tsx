@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useEffect, useState } from "react";
 import { FORMAT_LABELS, linkFor, useUpload, type QueueItem } from "../UploadContext";
 import { formatBytes } from "../api";
@@ -74,9 +75,9 @@ export default function UploadPanel() {
             }`}
           >
             {errorCount > 0 ? (
-              <i className="fa-solid fa-triangle-exclamation" />
+              <Icon name="triangle-exclamation"  />
             ) : finished ? (
-              <i className="fa-solid fa-check" />
+              <Icon name="check"  />
             ) : (
               <RingSpinner className="h-3.5 w-3.5" />
             )}
@@ -103,8 +104,9 @@ export default function UploadPanel() {
           <span className="shrink-0 text-[10px] text-neutral-500 tabular-nums">
             {!finished && `${overallProgress}%`}
           </span>
-          <i
-            className={`fa-solid ${collapsed ? "fa-chevron-up" : "fa-chevron-down"} text-[10px] text-neutral-600 shrink-0`}
+          <Icon
+            name={collapsed ? "chevron-up" : "chevron-down"}
+            className="text-[10px] text-neutral-600 shrink-0"
           />
         </button>
 
@@ -144,7 +146,7 @@ export default function UploadPanel() {
                     onClick={() => copy(allLinks, "all")}
                     className="rounded-lg bg-brand-600 px-2.5 py-1 text-[10px] font-medium text-brand-ink hover:bg-brand-500 transition whitespace-nowrap"
                   >
-                    <i className={`fa-solid ${copied === "all" ? "fa-check" : "fa-copy"} mr-1`} />
+                    <Icon name={copied === "all" ? "check" : "copy"} className={`mr-1`}  />
                     {copied === "all" ? t.common.copied : t.uploadPanel.copyAll(done.length)}
                   </button>
                 </>
@@ -212,7 +214,7 @@ function Row({
         )}
         {item.state === "error" && (
           <div className="absolute inset-0 bg-red-950/70 flex items-center justify-center">
-            <i className="fa-solid fa-xmark text-[10px] text-red-300" />
+            <Icon name="xmark" className="text-[10px] text-red-300"  />
           </div>
         )}
       </div>
@@ -262,7 +264,7 @@ function Row({
                 : "text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
             }`}
           >
-            <i className={`fa-solid ${copied === item.id ? "fa-check" : "fa-copy"}`} />
+            <Icon name={copied === item.id ? "check" : "copy"}  />
           </button>
         )}
         {item.state === "error" && (
@@ -271,7 +273,7 @@ function Row({
             title={t.uploadPanel.retry}
             className="w-6 h-6 rounded-md text-[10px] text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200 transition"
           >
-            <i className="fa-solid fa-rotate-right" />
+            <Icon name="rotate-right"  />
           </button>
         )}
         <button
@@ -279,7 +281,7 @@ function Row({
           title={t.common.remove}
           className="w-6 h-6 rounded-md text-[10px] text-neutral-600 hover:bg-neutral-800 hover:text-neutral-300 transition opacity-0 group-hover:opacity-100"
         >
-          <i className="fa-solid fa-xmark" />
+          <Icon name="xmark"  />
         </button>
       </div>
     </div>

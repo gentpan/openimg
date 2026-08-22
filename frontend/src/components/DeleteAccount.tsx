@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useState } from "react";
 import { useAuth } from "../AuthContext";
 import { userApi } from "../api";
@@ -41,7 +42,7 @@ export default function DeleteAccount() {
         onClick={() => setOpen(true)}
         className="inline-flex h-8 items-center justify-center rounded-lg bg-red-600 px-3 text-xs font-medium text-white hover:bg-red-700 transition"
       >
-        <i className="fa-solid fa-trash-can mr-1.5" />
+        <Icon name="trash-can" className="mr-1.5"  />
         {t.deleteAccount.button}
       </button>
     );
@@ -50,7 +51,7 @@ export default function DeleteAccount() {
   return (
     <div className="rounded-xl border border-red-500/30 bg-red-950/15 p-4">
       <div className="text-sm text-red-200 mb-2">
-        <i className="fa-solid fa-triangle-exclamation mr-1.5" />
+        <Icon name="triangle-exclamation" className="mr-1.5"  />
         {t.deleteAccount.warningTitle}
       </div>
       <ul className="text-[11px] text-neutral-400 space-y-1 mb-3 leading-relaxed">

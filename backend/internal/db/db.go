@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gentpan/openimg/backend/internal/models"
 	"github.com/gentpan/openimg/backend/internal/quota"
@@ -18,10 +19,29 @@ const (
 	gib = int64(1) << 30
 )
 
-func Open(dsn string) *gorm.DB {
+// Open connects and, unless autoMigrate is false, syncs the schema. Turning it
+// off skips the full-table scans GORM does per model on every restart — worth
+// it in production once the schema is stable; keep it on while models churn.
+func Open(dsn string, autoMigrate bool) *gorm.DB {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("open db: %v", err)
+	}
+	// GORM's defaults are tuned for "just connect": no cap on open
+	// connections, and idle ones are closed immediately so every burst
+	// re-dials. Upload bursts and the scheduler workers all hit this pool,
+	// so size it explicitly instead.
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("db pool: %v", err)
+	}
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetConnMaxLifetime(5 * time.Minute)
+	if !autoMigrate {
+		log.Printf("db: auto-migrate disabled (DB_AUTO_MIGRATE=false)")
+		seedDefaults(db)
+		return db
 	}
 	if err := db.AutoMigrate(
 		&models.User{},

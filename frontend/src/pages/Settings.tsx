@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { startRegistration } from "@simplewebauthn/browser";
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -97,7 +98,7 @@ export default function SettingsPage() {
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
         <h1 className="mb-5 flex items-center gap-2.5 text-lg font-brand text-neutral-100">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-brand-400">
-            <i className="fa-solid fa-gear text-sm" />
+            <Icon name="gear" className="text-sm"  />
           </span>
           {t.settings.title}
         </h1>
@@ -105,24 +106,24 @@ export default function SettingsPage() {
         {info && <div className="mb-4 rounded-lg border border-teal-900/60 bg-teal-900/15 px-4 py-2 text-sm text-teal-300">{info}</div>}
         {err && <div className="mb-4 rounded-lg border border-red-900/60 bg-red-900/15 px-4 py-2 text-sm text-red-300">{err}</div>}
 
-        <Section icon="fa-id-badge" title={t.settings.profile.title} subtitle={t.settings.profile.subtitle}>
+        <Section icon="id-badge" title={t.settings.profile.title} subtitle={t.settings.profile.subtitle}>
           <Profile />
         </Section>
 
         <Section
-          icon="fa-hard-drive"
+          icon="hard-drive"
           title={t.settings.storage.title}
           subtitle={t.settings.storage.subtitle}
         >
           <StorageProfiles />
         </Section>
 
-        <Section icon="fa-wand-magic-sparkles" title={t.settings.convert.title} subtitle={t.settings.convert.subtitle}>
+        <Section icon="wand-magic-sparkles" title={t.settings.convert.title} subtitle={t.settings.convert.subtitle}>
           <ConvertSettings />
         </Section>
 
         <Section
-          icon="fa-key"
+          icon="key"
           title="API Token"
           subtitle={
             <>
@@ -139,7 +140,7 @@ export default function SettingsPage() {
         </Section>
 
         {/* Account info */}
-        <Section icon="fa-circle-info" title={t.settings.accountInfo.title}>
+        <Section icon="circle-info" title={t.settings.accountInfo.title}>
           <Row label={t.common.email} value={
             <span>
               {user.email}{" "}
@@ -151,7 +152,7 @@ export default function SettingsPage() {
         </Section>
 
         {/* Login methods */}
-        <Section icon="fa-right-to-bracket" title={t.settings.loginMethods.title} subtitle={t.settings.loginMethods.subtitle}>
+        <Section icon="right-to-bracket" title={t.settings.loginMethods.title} subtitle={t.settings.loginMethods.subtitle}>
           {/* Password */}
           <ConnectionRow
             icon={<KeyIcon />}
@@ -202,7 +203,7 @@ export default function SettingsPage() {
 
         {/* 账号关联 —— 与上面那组分开是有意的:pic.bi 打通的是额度,
             它不能用来登录本站,混进「登录方式」会读成又一个登录入口。 */}
-        <Section icon="fa-link" title={t.settings.picbi.title} subtitle={t.settings.picbi.subtitle}>
+        <Section icon="link" title={t.settings.picbi.title} subtitle={t.settings.picbi.subtitle}>
           <ConnectionRow
             icon={<PicbiIcon />}
             label="pic.bi"
@@ -221,7 +222,7 @@ export default function SettingsPage() {
 
         <PasskeySection />
 
-        <Section icon="fa-triangle-exclamation" danger title={t.settings.danger.title} subtitle={t.settings.danger.subtitle}>
+        <Section icon="triangle-exclamation" danger title={t.settings.danger.title} subtitle={t.settings.danger.subtitle}>
           <DeleteAccount />
         </Section>
       </div>
@@ -366,7 +367,7 @@ function NicknameField() {
         className="w-44 h-8 rounded-lg bg-neutral-950 border border-neutral-800 px-2.5 text-xs outline-none focus:border-brand-500 placeholder-faint transition"
       />
       {state === "saving" && <RingSpinner className="h-3 w-3 text-brand-400" />}
-      {state === "saved" && <i className="fa-solid fa-check text-[10px] text-teal-400" />}
+      {state === "saved" && <Icon name="check" className="text-[10px] text-teal-400"  />}
       {state === "error" && <span className="text-[10px] text-red-400">{err}</span>}
       {state === "idle" && (
         <span className="text-[10px] text-faint">{t.settings.profile.displayNameHint}</span>
@@ -547,7 +548,7 @@ function Section({
               danger ? "bg-red-950/40 text-red-400" : "bg-neutral-800/70 text-brand-400"
             }`}
           >
-            <i className={`fa-solid ${icon} text-xs`} />
+            <Icon name={icon} className={`text-xs`}  />
           </span>
         )}
         <div className="min-w-0">
@@ -733,7 +734,7 @@ function PasskeySection() {
   }
 
   return (
-    <Section icon="fa-fingerprint" title="Passkey" subtitle={t.settings.passkey.subtitle}>
+    <Section icon="fingerprint" title="Passkey" subtitle={t.settings.passkey.subtitle}>
       {enroll && (
         <OtpConfirm
           purpose="passkey"
@@ -751,7 +752,7 @@ function PasskeySection() {
         {list.map((pk) => (
           <div key={pk.id} className="flex items-center gap-3 py-2 border-b border-neutral-900 last:border-b-0">
             <div className="text-brand-400">
-              <i className="fa-solid fa-fingerprint" aria-hidden></i>
+              <Icon name="fingerprint" />
             </div>
             <div className="flex-1">
               <div className="text-sm text-neutral-200">{pk.name}</div>
@@ -775,7 +776,7 @@ function PasskeySection() {
         disabled={busy}
         className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink hover:bg-brand-500 disabled:bg-neutral-800 disabled:text-neutral-500 transition"
       >
-        <i className="fa-solid fa-plus" aria-hidden></i>
+        <Icon name="plus" />
         {busy ? t.settings.passkey.waiting : t.common.addPasskey}
       </button>
     </Section>

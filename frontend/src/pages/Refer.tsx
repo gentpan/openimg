@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../AuthContext";
@@ -84,7 +85,7 @@ export default function ReferPage() {
                 onClick={copy}
                 className="rounded-lg bg-brand-600 hover:bg-brand-500 px-4 py-2 text-sm font-medium text-brand-ink inline-flex items-center gap-1.5"
               >
-                <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"}`} />
+                <Icon name={copied ? "check" : "copy"}  />
                 {copied ? t.common.copied : t.common.copy}
               </button>
             </div>
@@ -95,7 +96,7 @@ export default function ReferPage() {
             )}
           </div>
           <div className="hidden sm:block text-7xl text-brand-300/60">
-            <i className="fa-solid fa-gift" />
+            <Icon name="gift"  />
           </div>
         </div>
 
@@ -118,9 +119,9 @@ export default function ReferPage() {
         {/* Summary */}
         <h3 className="text-sm uppercase tracking-wide text-neutral-500 mb-3">{t.refer.statsHeading}</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
-          <Stat icon="fa-user-plus" iconBg="bg-teal-900/40 text-teal-300" label={t.refer.stat.invited} value={s?.count ?? 0} />
-          <Stat icon="fa-database" iconBg="bg-brand-900/40 text-brand-300" label={t.refer.stat.totalEarned} value={formatBytes(s?.total_bytes ?? 0, 0)} />
-          <Stat icon="fa-gift" iconBg="bg-amber-900/40 text-amber-300" label={t.refer.stat.perReferral} value={`${bonus} × 2`} />
+          <Stat icon="user-plus" iconBg="bg-teal-900/40 text-teal-300" label={t.refer.stat.invited} value={s?.count ?? 0} />
+          <Stat icon="database" iconBg="bg-brand-900/40 text-brand-300" label={t.refer.stat.totalEarned} value={formatBytes(s?.total_bytes ?? 0, 0)} />
+          <Stat icon="gift" iconBg="bg-amber-900/40 text-amber-300" label={t.refer.stat.perReferral} value={`${bonus} × 2`} />
         </div>
 
         {/* Invitees table */}
@@ -171,7 +172,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 function Bullet({ children }: { children: React.ReactNode }) {
   return (
     <li className="flex items-start gap-2 text-sm text-neutral-300">
-      <i className="fa-solid fa-circle-check text-teal-500 mt-0.5" />
+      <Icon name="circle-check" className="text-teal-500 mt-0.5"  />
       <span>{children}</span>
     </li>
   );
@@ -181,7 +182,7 @@ function Stat({ icon, iconBg, label, value }: { icon: string; iconBg: string; la
   return (
     <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-4 flex items-center gap-3">
       <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${iconBg}`}>
-        <i className={`fa-solid ${icon}`} />
+        <Icon name={icon}  />
       </div>
       <div>
         <div className="text-2xl font-semibold leading-none">{value}</div>

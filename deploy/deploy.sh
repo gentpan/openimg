@@ -78,8 +78,10 @@ ok "前端产物"
 # 一直停在最后一次手动 scp 的版本。切 CDN 域名时这个缺口才暴露:代码、env、
 # DNS、证书全就位,而 Caddy 仍在服务旧域名,Cloudflare 拿到的是 525。
 #
-# 路径是 /etc/frankenphp/sites/,不是 /etc/caddy/ —— 后者那个 systemd 服务
-# 早就停了(2026-08-03 起 php_server 指令报错),真正在 443 上的是 frankenphp。
+# 路径是 /etc/frankenphp/sites/。443 上跑的是 frankenphp;apt 的 caddy 服务
+# 2026-08-03 起就停了,2026-08-22 已卸载并 mask。所有源站证书在
+# /etc/frankenphp/certs/(同日从 /etc/caddy/certs 迁来,旧路径留了 symlink
+# 兼容外部仓库的旧引用),配置里一律写新路径。
 #
 # validate 通过才 reload:配置有语法错时 reload 会让服务整个停掉,而那一刻
 # 站点是活的。宁可不生效,也不能把活站点搞挂。

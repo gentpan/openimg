@@ -541,12 +541,12 @@ export const nativeAuth = {
 export const SORTS = [
   // Keys and icons only. The labels live in the dictionary: they change with
   // the language, and this module is the API client, not the view.
-  { key: "newest", icon: "fa-arrow-down-wide-short" },
-  { key: "oldest", icon: "fa-arrow-up-wide-short" },
-  { key: "largest", icon: "fa-weight-hanging" },
-  { key: "smallest", icon: "fa-feather" },
-  { key: "widest", icon: "fa-expand" },
-  { key: "name", icon: "fa-arrow-down-a-z" },
+  { key: "newest", icon: "arrow-down-wide-short" },
+  { key: "oldest", icon: "arrow-up-wide-short" },
+  { key: "largest", icon: "weight-hanging" },
+  { key: "smallest", icon: "feather" },
+  { key: "widest", icon: "expand" },
+  { key: "name", icon: "arrow-down-a-z" },
 ] as const;
 
 export type SortKey = (typeof SORTS)[number]["key"];

@@ -1,3 +1,4 @@
+import Icon from "../../Icon";
 import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { imageApi } from "../../api";
 import { useLang } from "../../LangContext";
@@ -188,11 +189,11 @@ export default function SourceImages({
   const actions = (
     <div className="flex flex-wrap items-center gap-1.5">
       <button type="button" onClick={() => openPicker()} className={chip}>
-        <i className="fa-solid fa-images text-[10px] text-neutral-500" />
+        <Icon name="images" className="text-[10px] text-neutral-500"  />
         {t.aiSource.fromGallery}
       </button>
       <button type="button" onClick={browse} className={chip}>
-        <i className="fa-solid fa-cloud-arrow-up text-[10px] text-neutral-500" />
+        <Icon name="cloud-arrow-up" className="text-[10px] text-neutral-500"  />
         {t.aiSource.uploadNew}
       </button>
     </div>
@@ -249,7 +250,7 @@ export default function SourceImages({
                 dragging ? "border-brand-500 bg-brand-950/20" : "border-neutral-800 bg-neutral-950"
               }`}
             >
-              <i className="fa-solid fa-images text-lg text-neutral-600" />
+              <Icon name="images" className="text-lg text-neutral-600"  />
               {actions}
               <span className="text-[10px] text-neutral-600">
                 {dragging ? t.aiSource.dropHere : t.aiSource.sourceHint(max)}
@@ -284,7 +285,7 @@ export default function SourceImages({
                   aria-label={t.common.remove}
                   className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/60 text-[9px] text-white/70 transition hover:bg-red-600 hover:text-white"
                 >
-                  <i className="fa-solid fa-xmark" />
+                  <Icon name="xmark"  />
                 </button>
               </div>
             ))}
@@ -306,7 +307,7 @@ export default function SourceImages({
                   title={t.aiSource.fromGallery}
                   className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-neutral-800 text-neutral-600 transition hover:border-brand-500 hover:text-brand-300"
                 >
-                  <i className="fa-solid fa-images text-sm" />
+                  <Icon name="images" className="text-sm"  />
                   <span className="text-[10px]">{t.aiSource.fromGallery}</span>
                 </button>
                 <button
@@ -315,7 +316,7 @@ export default function SourceImages({
                   title={t.aiSource.uploadNew}
                   className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-neutral-800 text-neutral-600 transition hover:border-brand-500 hover:text-brand-300"
                 >
-                  <i className="fa-solid fa-cloud-arrow-up text-sm" />
+                  <Icon name="cloud-arrow-up" className="text-sm"  />
                   <span className="text-[10px]">{t.aiSource.uploadNew}</span>
                 </button>
               </>
@@ -332,7 +333,7 @@ export default function SourceImages({
             .filter((p) => p.error)
             .map((p) => (
               <div key={p.id} className="text-[10px] text-red-400">
-                <i className="fa-solid fa-triangle-exclamation mr-1.5" />
+                <Icon name="triangle-exclamation" className="mr-1.5"  />
                 <span className="text-red-300">{p.file.name}</span>
                 <span className="ml-1 text-red-400/80">· {p.error}</span>
               </div>
@@ -414,13 +415,13 @@ function PendingTile({
         title={`${item.file.name} · ${item.error}`}
         className="relative flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border border-red-500/40 bg-red-950/20"
       >
-        <i className="fa-solid fa-triangle-exclamation text-sm text-red-400" />
+        <Icon name="triangle-exclamation" className="text-sm text-red-400"  />
         <button
           type="button"
           onClick={onRetry}
           className="text-[10px] text-red-300 transition hover:text-red-200"
         >
-          <i className="fa-solid fa-rotate-right mr-1 text-[9px]" />
+          <Icon name="rotate-right" className="mr-1 text-[9px]"  />
           {t.aiSource.retry}
         </button>
         <button
@@ -430,7 +431,7 @@ function PendingTile({
           aria-label={t.common.remove}
           className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/60 text-[9px] text-white/70 transition hover:bg-red-600 hover:text-white"
         >
-          <i className="fa-solid fa-xmark" />
+          <Icon name="xmark"  />
         </button>
       </div>
     );

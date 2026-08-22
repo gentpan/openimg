@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useLang } from "../LangContext";
 
 /**
@@ -15,20 +16,20 @@ import { useLang } from "../LangContext";
  */
 const STYLES: Record<string, { icon: string; cls: string }> = {
   admin: {
-    icon: "fa-shield-halved",
+    icon: "shield-halved",
     cls: "border-amber-500/30 bg-amber-500/10 text-amber-300",
   },
   trusted: {
-    icon: "fa-medal",
+    icon: "medal",
     cls: "border-teal-500/30 bg-teal-500/10 text-teal-300",
   },
   free: {
-    icon: "fa-user",
+    icon: "user",
     cls: "border-neutral-700 bg-neutral-800/60 text-neutral-400",
   },
 };
 
-const FALLBACK = { icon: "fa-layer-group", cls: STYLES.free.cls };
+const FALLBACK = { icon: "layer-group", cls: STYLES.free.cls };
 
 export default function GroupBadge({ name }: { name: string }) {
   const { t } = useLang();
@@ -42,7 +43,7 @@ export default function GroupBadge({ name }: { name: string }) {
     <span
       className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${s.cls}`}
     >
-      <i className={`fa-solid ${s.icon} text-[9px]`} />
+      <Icon name={s.icon} className={`text-[9px]`}  />
       {labels[name] ?? name}
     </span>
   );

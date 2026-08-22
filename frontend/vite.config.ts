@@ -5,6 +5,22 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    rollupOptions: {
+      output: {
+        // The inline SVG icon data (src/icons.ts) is needed by the first
+        // paint (Nav, Home), so pin it into the entry chunk. Left alone,
+        // rolldown splits it into a shared chunk that also drags the i18n
+        // dictionaries with it, and the first paint pays for two round
+        // trips instead of one slightly larger entry.
+        manualChunks(id) {
+          if (id.includes('src/icons.ts') || id.includes('src/Icon.tsx')) {
+            return 'index'
+          }
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': 'http://127.0.0.1:8080',

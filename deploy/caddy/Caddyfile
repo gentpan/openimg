@@ -1,5 +1,10 @@
 # Openimg — reverse proxy.
 #
+# NOTE: this is a standalone template for self-hosters running their own
+# Caddy. It is NOT what serves openimg.io in production — that is
+# frankenphp's /etc/frankenphp/sites/openimg.caddy, synced by deploy.sh
+# from deploy/caddy/openimg.caddy. Keep the two in sync when editing.
+#
 # Two ways to run this, and the short links are what decide between them.
 
 # --- Recommended: one process owns the domain -------------------------------

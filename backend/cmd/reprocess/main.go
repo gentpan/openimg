@@ -54,7 +54,7 @@ func main() {
 	flag.Parse()
 
 	cfg := config.Load()
-	gdb := db.Open(cfg.DatabaseURL)
+	gdb := db.Open(cfg.DatabaseURL, true)
 
 	cipher, err := crypto.New(cfg.StorageMasterKey)
 	if err != nil {

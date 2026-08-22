@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useState } from "react";
 import { formatBytes, imageApi, reportApi } from "../api";
 import Spinner, { RingSpinner } from "./Spinner";
@@ -101,7 +102,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
         <div className="p-4 border-b border-neutral-800 flex items-center justify-between">
           <span className="text-sm font-medium text-neutral-100 truncate">{img.orig_name}</span>
           <button onClick={onClose} className="text-neutral-400 hover:text-neutral-100 shrink-0 ml-3">
-            <i className="fa-solid fa-xmark" />
+            <Icon name="xmark"  />
           </button>
         </div>
 
@@ -156,7 +157,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
                         : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
                     }`}
                   >
-                    <i className={`fa-solid ${copied === l.key ? "fa-check" : "fa-copy"}`} />
+                    <Icon name={copied === l.key ? "check" : "copy"}  />
                   </button>
                 </div>
               </div>
@@ -181,7 +182,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 rounded-md bg-brand-600/20 border border-brand-500/30 px-2 py-1 text-[10px] text-brand-300 hover:bg-brand-600/30 transition"
                     >
-                      <i className="fa-solid fa-check text-[8px]" />
+                      <Icon name="check" className="text-[8px]"  />
                       {w}px
                     </a>
                   );
@@ -208,7 +209,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
                   title={t.imageDetail.originalTitle}
                   className="inline-flex items-center gap-1 rounded-md bg-amber-600/15 border border-amber-500/30 px-2 py-1 text-[10px] text-amber-300 hover:bg-amber-600/25 transition"
                 >
-                  <i className="fa-solid fa-file-arrow-down text-[8px]" />
+                  <Icon name="file-arrow-down" className="text-[8px]"  />
                   {t.imageDetail.originalLink(originalKey.slice(5).toUpperCase())}
                 </a>
               )}
@@ -242,7 +243,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
               download={img.orig_name}
               className="flex-1 text-center rounded-xl bg-neutral-800 px-4 py-2 text-xs text-neutral-200 hover:bg-neutral-700 transition"
             >
-              <i className="fa-solid fa-download mr-1.5" />
+              <Icon name="download" className="mr-1.5"  />
               {t.common.download}
             </a>
             <button
@@ -250,7 +251,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
               disabled={busy}
               className="flex-1 rounded-xl bg-red-600 px-4 py-2 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50 transition"
             >
-              <i className="fa-solid fa-trash-can mr-1.5" />
+              <Icon name="trash-can" className="mr-1.5"  />
               {t.common.delete}
             </button>
           </div>
@@ -260,7 +261,7 @@ export default function DetailPanel({ img, onClose, onDeleted }: { img: Image; o
               onClick={() => setReporting(true)}
               className="text-[11px] text-neutral-600 hover:text-red-400 transition"
             >
-              <i className="fa-solid fa-flag mr-1 text-[9px]" />
+              <Icon name="flag" className="mr-1 text-[9px]"  />
               {t.report.imageTitle}
             </button>
           </div>
@@ -324,7 +325,7 @@ function ReportDialog({ img, onClose }: { img: Image; onClose: () => void }) {
       <div className="relative w-full max-w-sm rounded-2xl border border-neutral-800 bg-neutral-900 p-5 shadow-panel">
         <div className="flex items-center gap-2 mb-1">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-900/40 text-xs text-red-300">
-            <i className="fa-solid fa-flag" />
+            <Icon name="flag"  />
           </span>
           <span className="text-sm text-neutral-100">{t.report.dialogTitle}</span>
         </div>

@@ -1,3 +1,4 @@
+import Icon from "../../Icon";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLang } from "../../LangContext";
@@ -85,7 +86,7 @@ export function QuotaNotice({ status }: { status: AIStatusOn }) {
 
   return (
     <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-amber-500/30 bg-amber-950/20 px-3.5 py-2.5 text-[11px] text-amber-200">
-      <i className={`fa-solid ${monthly ? "fa-hourglass-end" : "fa-clock"} mr-0.5`} />
+      <Icon name={monthly ? "hourglass-end" : "clock"} className={`mr-0.5`}  />
       <span>{monthly ? q.monthlyExhausted : q.dailyExhausted}</span>
       <span className="text-amber-200/70">
         {monthly ? q.monthlyExhaustedHint : q.dailyExhaustedHint(status.daily_limit)}
@@ -140,7 +141,7 @@ export function OptionPicker({
       <div className="flex flex-wrap gap-1.5">
         {autoLabel && (
           <button onClick={() => onChange(null)} title={autoTitle} className={chip(value === null)}>
-            <i className="fa-solid fa-arrows-left-right-to-line text-[9px]" />
+            <Icon name="arrows-left-right-to-line" className="text-[9px]"  />
             {autoLabel}
           </button>
         )}
@@ -265,7 +266,7 @@ export function GenerationHistory({
       {gens.length === 0 ? (
         <div className="px-5 py-14 text-center">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-neutral-900 mb-3">
-            <i className={`fa-solid ${icon} text-xl text-brand-500`} />
+            <Icon name={icon} className={`text-xl text-brand-500`}  />
           </div>
           <div className="text-sm text-neutral-400">{empty}</div>
           <div className="mt-1 text-xs text-neutral-600">{emptyHint}</div>
@@ -290,7 +291,7 @@ export function GenerationHistory({
                     <StatusBadge status={g.status} label={t.generate.history.status[g.status]} />
                     {genKind(g) === "edit" && (
                       <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-[10px] text-neutral-300">
-                        <i className="fa-solid fa-wand-magic mr-1 text-[9px]" />
+                        <Icon name="wand-magic" className="mr-1 text-[9px]"  />
                         {t.retouch.history.kindBadge}
                       </span>
                     )}
@@ -332,7 +333,7 @@ export function GenerationHistory({
                       title={reuseLabel}
                       className="text-[10px] text-neutral-600 hover:text-brand-300 transition"
                     >
-                      <i className="fa-solid fa-rotate-left mr-1 text-[9px]" />
+                      <Icon name="rotate-left" className="mr-1 text-[9px]"  />
                       {reuseLabel}
                     </button>
 
@@ -344,10 +345,9 @@ export function GenerationHistory({
                             copied === img.id ? "text-brand-300" : "text-neutral-600 hover:text-brand-300"
                           }`}
                         >
-                          <i
-                            className={`fa-solid mr-1 text-[9px] ${
-                              copied === img.id ? "fa-check" : "fa-link"
-                            }`}
+                          <Icon
+                            name={copied === img.id ? "check" : "link"}
+                            className="mr-1 text-[9px]"
                           />
                           {copied === img.id ? t.common.copied : t.generate.history.copyLink}
                         </button>
@@ -355,7 +355,7 @@ export function GenerationHistory({
                           onClick={() => onOpenDetail(img)}
                           className="text-[10px] text-neutral-600 hover:text-brand-300 transition"
                         >
-                          <i className="fa-solid fa-up-right-and-down-left-from-center mr-1 text-[9px]" />
+                          <Icon name="up-right-and-down-left-from-center" className="mr-1 text-[9px]"  />
                           {t.generate.history.openDetail}
                         </button>
                       </>
@@ -368,7 +368,7 @@ export function GenerationHistory({
                         onClick={() => askDelete(g, img)}
                         className="text-[10px] text-neutral-600 hover:text-red-300 transition"
                       >
-                        <i className="fa-solid fa-trash-can mr-1 text-[9px]" />
+                        <Icon name="trash-can" className="mr-1 text-[9px]"  />
                         {t.generate.history.remove}
                       </button>
                     )}
@@ -471,10 +471,10 @@ function Thumb({
   return (
     <div className="shrink-0 w-16 h-16 rounded-xl border border-neutral-800 bg-neutral-950 flex items-center justify-center">
       {gen.status === "failed" ? (
-        <i className="fa-solid fa-triangle-exclamation text-sm text-red-500/70" />
+        <Icon name="triangle-exclamation" className="text-sm text-red-500/70"  />
       ) : gen.status === "completed" ? (
         // Completed, but the picture is gone — deleted from the gallery since.
-        <i className="fa-solid fa-image text-sm text-neutral-700" />
+        <Icon name="image" className="text-sm text-neutral-700"  />
       ) : (
         <RingSpinner className="h-4 w-4 text-brand-500" />
       )}

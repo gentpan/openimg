@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
@@ -157,7 +158,7 @@ export default function GalleryPage() {
           <SortMenu value={sort} onChange={setSort} />
 
           <div className="relative">
-            <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-neutral-600" />
+            <Icon name="magnifying-glass" className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-neutral-600"  />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -170,7 +171,7 @@ export default function GalleryPage() {
             to="/upload"
             className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-brand-ink hover:bg-brand-500 transition"
           >
-            <i className="fa-solid fa-plus mr-1.5" />
+            <Icon name="plus" className="mr-1.5"  />
             {t.common.upload}
           </Link>
         </div>
@@ -192,7 +193,7 @@ export default function GalleryPage() {
                       : "border-neutral-600 text-transparent"
                 }`}
               >
-                <i className={`fa-solid ${allLoadedSelected ? "fa-check" : "fa-minus"}`} />
+                <Icon name={allLoadedSelected ? "check" : "minus"}  />
               </span>
               {allLoadedSelected ? t.gallery.clearSelection : t.gallery.selectAllOnPage}
             </button>
@@ -209,7 +210,7 @@ export default function GalleryPage() {
                 disabled={busy || wiping !== null}
                 className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50 transition"
               >
-                <i className="fa-solid fa-trash-can mr-1.5" />
+                <Icon name="trash-can" className="mr-1.5"  />
                 {t.gallery.deleteSelected(selected.size)}
               </button>
             )}
@@ -227,7 +228,7 @@ export default function GalleryPage() {
                 </>
               ) : (
                 <>
-                  <i className="fa-solid fa-fire mr-1.5" />
+                  <Icon name="fire" className="mr-1.5"  />
                   {query ? t.gallery.wipeSearch : t.gallery.wipeAll}
                 </>
               )}
@@ -240,7 +241,7 @@ export default function GalleryPage() {
         {images.length === 0 && !busy ? (
           <div className="text-center py-24">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-neutral-900 mb-4">
-              <i className="fa-solid fa-images text-2xl text-brand-500" />
+              <Icon name="images" className="text-2xl text-brand-500"  />
             </div>
             <div className="text-sm text-neutral-400">{query ? t.gallery.emptySearch : t.common.noUploadsYet}</div>
             {!query && (
@@ -328,9 +329,9 @@ function SortMenu({ value, onChange }: { value: SortKey; onChange: (v: SortKey) 
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-1.5 rounded-lg bg-neutral-900 border border-neutral-800 px-3 py-1.5 text-xs text-neutral-300 hover:border-neutral-700 transition"
       >
-        <i className={`fa-solid ${current.icon} text-[10px] text-neutral-500`} />
+        <Icon name={current.icon} className={`text-[10px] text-neutral-500`}  />
         {t.gallery.sort[current.key]}
-        <i className="fa-solid fa-chevron-down text-[8px] text-neutral-600" />
+        <Icon name="chevron-down" className="text-[8px] text-neutral-600"  />
       </button>
 
       {open && (
@@ -346,9 +347,9 @@ function SortMenu({ value, onChange }: { value: SortKey; onChange: (v: SortKey) 
                 s.key === value ? "text-brand-300 bg-brand-950/30" : "text-neutral-400 hover:bg-neutral-800/60"
               }`}
             >
-              <i className={`fa-solid ${s.icon} text-[10px] w-3`} />
+              <Icon name={s.icon} className={`text-[10px] w-3`}  />
               {t.gallery.sort[s.key]}
-              {s.key === value && <i className="fa-solid fa-check ml-auto text-[9px]" />}
+              {s.key === value && <Icon name="check" className="ml-auto text-[9px]"  />}
             </button>
           ))}
         </div>
@@ -394,7 +395,7 @@ function Card({
               }`
         }`}
       >
-        <i className="fa-solid fa-check" />
+        <Icon name="check"  />
       </button>
 
       {img.status === "blocked" && (
@@ -407,8 +408,14 @@ function Card({
         <div className="text-[11px] text-neutral-400 truncate" title={img.orig_name}>
           {img.orig_name}
         </div>
-        <div className="text-[10px] text-neutral-600">
-          {img.width}×{img.height} · {formatBytes(img.size_stored, 0)}
+        {/* 格式靠右单列:五列网格下卡片只有一百多像素宽,把格式接在尺寸后面会
+            第一个被 truncate 掉。而它恰恰是最该看见的一项——文件名写着 .jpeg,
+            存进来的其实是 webp。 */}
+        <div className="text-[10px] text-neutral-600 flex items-baseline justify-between gap-1.5">
+          <span className="truncate">
+            {img.width}×{img.height} · {formatBytes(img.size_stored, 0)}
+          </span>
+          {img.ext && <span className="shrink-0 uppercase">{img.ext}</span>}
         </div>
       </div>
     </div>

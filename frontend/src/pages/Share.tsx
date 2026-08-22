@@ -1,3 +1,4 @@
+import Icon from "../Icon";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { REPORT_CATEGORIES, formatBytes, shareApi, type SharePayload } from "../api";
@@ -47,7 +48,7 @@ export default function SharePage() {
       <Shell>
         <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 py-14 sm:py-20 text-center">
           <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-800">
-            <i className="fa-solid fa-link-slash text-xl text-neutral-500" />
+            <Icon name="link-slash" className="text-xl text-neutral-500"  />
           </div>
           <div className="text-sm text-neutral-300">{err}</div>
           <Link to="/" className="mt-3 inline-block text-xs text-brand-400 hover:underline">
@@ -117,12 +118,12 @@ export default function SharePage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 border-t border-neutral-800/60 px-4 py-3">
-          <Meta icon="fa-file" text={formatBytes(data.size)} />
-          <Meta icon="fa-image" text={`${data.width} × ${data.height}`} />
+          <Meta icon="file" text={formatBytes(data.size)} />
+          <Meta icon="image" text={`${data.width} × ${data.height}`} />
           <span className="rounded-md bg-brand-900/40 px-2 py-0.5 text-[10px] font-medium text-brand-300">
             {data.ext.toUpperCase()}
           </span>
-          {data.views > 0 && <Meta icon="fa-eye" text={t.share.views(data.views)} />}
+          {data.views > 0 && <Meta icon="eye" text={t.share.views(data.views)} />}
 
           <div className="flex-1" />
 
@@ -133,7 +134,7 @@ export default function SharePage() {
             download={data.orig_name}
             className="inline-flex h-8 items-center justify-center rounded-lg bg-brand-600 px-3 text-xs font-medium text-brand-ink transition hover:bg-brand-500"
           >
-            <i className="fa-solid fa-download mr-1.5" />
+            <Icon name="download" className="mr-1.5"  />
             {t.common.download}
           </a>
         </div>
@@ -148,7 +149,7 @@ export default function SharePage() {
       <ShareRow url={data.short_url} title={data.orig_name} />
 
       <div className="mt-6 rounded-xl border-l-2 border-brand-500 bg-neutral-900/40 px-4 py-3 text-[11px] leading-relaxed text-neutral-500">
-        <i className="fa-solid fa-circle-info mr-1.5 text-brand-400" />
+        <Icon name="circle-info" className="mr-1.5 text-brand-400"  />
         {t.share.copyrightNotice}
       </div>
 
@@ -184,7 +185,7 @@ function Shell({
               title={t.report.imageTitle}
               className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-900/30 text-xs text-red-300 transition hover:bg-red-900/50"
             >
-              <i className="fa-solid fa-flag" />
+              <Icon name="flag"  />
             </button>
           )}
         </div>
@@ -210,7 +211,7 @@ function Shell({
 function Meta({ icon, text }: { icon: string; text: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-neutral-400">
-      <i className={`fa-solid ${icon} text-[10px] text-neutral-600`} />
+      <Icon name={icon} className={`text-[10px] text-neutral-600`}  />
       {text}
     </span>
   );
@@ -301,7 +302,7 @@ function FormatRow({ label, value, first }: { label: string; value: string; firs
           copied ? "bg-brand-600 text-brand-ink" : "bg-neutral-900/40 text-neutral-500 hover:text-brand-300"
         }`}
       >
-        <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"}`} />
+        <Icon name={copied ? "check" : "copy"}  />
       </button>
     </div>
   );
@@ -317,12 +318,12 @@ function ShareRow({ url, title }: { url: string; title: string }) {
   const encodedTitle = encodeURIComponent(title);
 
   const targets = [
-    { icon: "fa-brands fa-x-twitter", label: "X", href: `https://x.com/intent/tweet?url=${u}&text=${encodedTitle}` },
-    { icon: "fa-brands fa-telegram", label: "Telegram", href: `https://t.me/share/url?url=${u}&text=${encodedTitle}` },
-    { icon: "fa-brands fa-facebook", label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
-    { icon: "fa-brands fa-reddit-alien", label: "Reddit", href: `https://www.reddit.com/submit?url=${u}&title=${encodedTitle}` },
-    { icon: "fa-brands fa-weibo", label: t.share.targetWeibo, href: `https://service.weibo.com/share/share.php?url=${u}&title=${encodedTitle}` },
-    { icon: "fa-solid fa-envelope", label: t.share.targetEmail, href: `mailto:?subject=${encodedTitle}&body=${u}` },
+    { icon: "x-twitter", label: "X", href: `https://x.com/intent/tweet?url=${u}&text=${encodedTitle}` },
+    { icon: "telegram", label: "Telegram", href: `https://t.me/share/url?url=${u}&text=${encodedTitle}` },
+    { icon: "facebook", label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
+    { icon: "reddit-alien", label: "Reddit", href: `https://www.reddit.com/submit?url=${u}&title=${encodedTitle}` },
+    { icon: "weibo", label: t.share.targetWeibo, href: `https://service.weibo.com/share/share.php?url=${u}&title=${encodedTitle}` },
+    { icon: "envelope", label: t.share.targetEmail, href: `mailto:?subject=${encodedTitle}&body=${u}` },
   ];
 
   return (
@@ -336,7 +337,7 @@ function ShareRow({ url, title }: { url: string; title: string }) {
           title={s.label}
           className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition hover:border-brand-500 hover:text-brand-300"
         >
-          <i className={`${s.icon} text-sm`} />
+          <Icon name={s.icon} className="text-sm" />
         </a>
       ))}
       <button
@@ -349,7 +350,7 @@ function ShareRow({ url, title }: { url: string; title: string }) {
         title={t.share.copyShortLink}
         className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition hover:border-brand-500 hover:text-brand-300"
       >
-        <i className="fa-solid fa-link text-sm" />
+        <Icon name="link" className="text-sm"  />
       </button>
     </div>
   );
@@ -397,7 +398,7 @@ function ReportDialog({ code, onClose }: { code: string; onClose: () => void }) 
             aria-label={t.common.close}
             className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-800 hover:text-neutral-200"
           >
-            <i className="fa-solid fa-xmark" />
+            <Icon name="xmark"  />
           </button>
         </div>
 

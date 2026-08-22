@@ -14,6 +14,7 @@ import Home from "./pages/Home";
 // the chart library, the AI pages and everything else at once.
 const AdminLayout = lazy(() => import("./pages/Admin"));
 const DashboardPage = lazy(() => import("./pages/Dashboard"));
+const DownloadPage = lazy(() => import("./pages/Download"));
 const GalleryPage = lazy(() => import("./pages/Gallery"));
 const GeneratePage = lazy(() => import("./pages/Generate"));
 const SharePage = lazy(() => import("./pages/Share"));
@@ -66,6 +67,7 @@ export default function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/refer" element={<ReferPage />} />
             <Route path="/docs" element={<DocsPage />} />
+            <Route path="/download" element={<DownloadPage />} />
             <Route
               path="/admin/*"
               element={

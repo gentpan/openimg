@@ -78,6 +78,35 @@ export const en: Dict = {
     },
   },
 
+  mac: {
+    sectionTitle: "Mac app",
+    sectionSubtitle: "Drop a file, get a link on your clipboard",
+    tagline: "Your image host, in the menu bar",
+    intro:
+      "Drag-and-drop uploads, parallel batches, local downscaling and location stripping — all before anything leaves your Mac. Passkey sign-in and in-app updates included.",
+    download: "Download for macOS",
+    downloadDmg: "Download disk image (.dmg)",
+    downloadZip: "Download .zip",
+    dmgHint: "Prefer the .dmg: open it and drag OpenImg into Applications. Running from an unzipped folder breaks in-app updates.",
+    version: "Version",
+    updated: "Updated",
+    downloads: "Downloads",
+    size: "Size",
+    requires: (v: string) => `Requires macOS ${v} or later`,
+    times: (n: number) => `${n}`,
+    viewOnGithub: "View on GitHub",
+    changelog: "Changelog",
+    changelogSubtitle: "What changed in each release",
+    fullChangelog: "Full changelog",
+    loading: "Fetching release info…",
+    unavailable: "Release info is unavailable right now — you can download from GitHub directly",
+    features: [
+      { icon: "cloud-arrow-up", title: "Drop to upload", desc: "Drag or paste; the link lands on your clipboard" },
+      { icon: "bolt", title: "Parallel batches", desc: "Up to 20 at once, no more waiting one by one" },
+      { icon: "shield-halved", title: "Stripped before sending", desc: "GPS and device data removed locally; blocked if it cannot be" },
+      { icon: "fingerprint", title: "Passkey sign-in", desc: "Touch ID, no password to remember" },
+    ],
+  },
   home: {
     highlight: {
       optimizeOrOriginal: "Optimized or keep original",

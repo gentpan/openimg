@@ -19,6 +19,7 @@ import type {
   StorageProfile,
   User,
   UserGroup,
+  MacInfo,
 } from "./types";
 import { currentBrand } from "./BrandContext";
 import { currentLang } from "./LangContext";
@@ -303,6 +304,11 @@ export const aiApi = {
 };
 
 // ----- Quota & check-in -----
+export const appApi = {
+  /** 下载页数据。不需要登录。 */
+  macInfo: () => jfetch<MacInfo>("/api/app/mac/info"),
+};
+
 export const quotaApi = {
   info: () => jfetch<QuotaInfo>("/api/quota"),
   /** Aggregated in the database across every live image — not a sample. */

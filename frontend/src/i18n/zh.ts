@@ -78,6 +78,36 @@ export const zh = {
     },
   },
 
+  /** Mac 客户端的下载板块与下载页。 */
+  mac: {
+    sectionTitle: "Mac 客户端",
+    sectionSubtitle: "拖进来就传，链接直接进剪贴板",
+    tagline: "把图床放进菜单栏",
+    intro:
+      "拖放上传、批量并发、本地压缩与去除定位信息，都在传出去之前完成。支持 Passkey 登录与应用内更新。",
+    download: "下载 for macOS",
+    downloadDmg: "下载安装盘（.dmg）",
+    downloadZip: "下载 .zip",
+    dmgHint: "推荐 .dmg：打开后拖进「应用程序」。zip 就地双击会让应用内更新失效。",
+    version: "版本",
+    updated: "更新于",
+    downloads: "累计下载",
+    size: "体积",
+    requires: (v: string) => `需要 macOS ${v} 或更新版本`,
+    times: (n: number) => `${n} 次`,
+    viewOnGithub: "在 GitHub 上查看",
+    changelog: "更新记录",
+    changelogSubtitle: "每个版本改了什么",
+    fullChangelog: "完整改动",
+    loading: "正在取版本信息…",
+    unavailable: "版本信息暂时取不到，可以直接去 GitHub 下载",
+    features: [
+      { icon: "cloud-arrow-up", title: "拖进来就传", desc: "拖放或粘贴，传完链接自动进剪贴板" },
+      { icon: "bolt", title: "批量并发", desc: "最多 20 张同时传，不用一张一张等" },
+      { icon: "shield-halved", title: "先去定位再上传", desc: "GPS 与设备信息在本机剥掉，剥不干净就不传" },
+      { icon: "fingerprint", title: "Passkey 登录", desc: "指纹解锁，不用记密码" },
+    ],
+  },
   home: {
     highlight: {
       optimizeOrOriginal: "压缩或留原图",

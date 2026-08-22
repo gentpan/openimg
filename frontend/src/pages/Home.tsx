@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import Footer from "../Footer";
+import MacDownloadSection from "../components/MacDownload";
 import Nav from "../components/Nav";
 import Uploader from "../components/Uploader";
 import Reveal, { RevealGroup } from "../components/Reveal";
@@ -159,6 +160,16 @@ export default function Home() {
               ]}
             </RevealGroup>
           </div>
+        </section>
+
+        {/* Mac 客户端 */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+          <Reveal>
+            <SectionHead title={t.mac.sectionTitle} subtitle={t.mac.sectionSubtitle} />
+          </Reveal>
+          <Reveal direction="scale" duration={700}>
+            <MacDownloadSection />
+          </Reveal>
         </section>
 
         {/* Integration */}

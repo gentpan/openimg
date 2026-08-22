@@ -453,3 +453,27 @@ export interface AIStatusOn {
 }
 
 export type AIStatus = AIStatusOff | AIStatusOn;
+
+
+// ----- Mac app -----
+
+export interface MacRelease {
+  version: string;
+  date: string;
+  highlights: string[];
+  url: string;
+}
+
+/** 下载页要的一切。版本与体积来自发布流程写下的清单，下载次数和更新日志来自
+ *  GitHub —— 后者取不到时前两项照常显示。 */
+export interface MacInfo {
+  version: string;
+  build: number;
+  size: number;
+  zip_url: string;
+  dmg_url?: string;
+  minimum_system: string;
+  published_at: string;
+  downloads: number;
+  history: MacRelease[];
+}

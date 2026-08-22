@@ -122,6 +122,8 @@ func (s *Server) Router() *gin.Engine {
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	})
 	r.GET("/api/public-stats", s.handlePublicStats)
+	// 下载页要的版本号、体积、下载次数、更新日志。公开,不鉴权。
+	r.GET("/api/app/mac/info", s.handleMacInfo)
 	// Abuse reports accept anonymous submissions, so they get their own
 	// (tighter) limiter to keep the queue from being flooded.
 	// Share page: public, and reactions need to know whether the visitor is

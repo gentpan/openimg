@@ -399,7 +399,14 @@ export const zh = {
       inline: {
         times: (n: number) => `${n} 次`,
         today: (used: number, limit: number) => `今日 ${used}/${limit}`,
-        monthly: (credits: number, monthly: number) => `本月 ${credits}/${monthly}`,
+        /**
+         * 配给和签到分开报。从前这里是 `本月 ${credits}/${monthly}`,而 credits
+         * 含签到攒的那部分,于是配 50 却显示 56/50——看着就像数据错了,真有人
+         * 因此来问过两次。
+         */
+        monthly: (left: number, total: number) => `配给 ${left}/${total}`,
+        granted: (n: number) => `签到 ${n}`,
+        expiring: (n: number, date: string) => `${n} 次将于 ${date} 过期`,
         /** 关联 pic.bi 之后多出来的那一份余额，本站的用完了就接着扣它。 */
         picbi: (n: number) => `pic.bi ${n} 次`,
       },
@@ -407,7 +414,7 @@ export const zh = {
       dailyExhausted: "今天的次数用完了",
       dailyExhaustedHint: (limit: number) => `每天最多 ${limit} 次，明天恢复`,
       monthlyExhausted: "这个月的次数用完了",
-      monthlyExhaustedHint: "每天签到随机送 1–3 次，攒够了就能接着生成",
+      monthlyExhaustedHint: "每天签到送 1 次，连签 10/20/30 天再送 3/5/10 次",
       checkinLink: "去签到领次数 →",
       /** 签到反馈里的一句：不说的话，用户不知道签到到底有没有把次数领到手。 */
       checkinGranted: (n: number) => `另外领到 ${n} 次 AI 生成`,

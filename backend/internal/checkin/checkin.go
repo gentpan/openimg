@@ -210,7 +210,7 @@ func Do(db *gorm.DB, user *models.User, group *models.UserGroup) (*Result, error
 	}
 	// 签到附带送 AI 次数。送不出去(没开/顶到上限)不算签到失败——空间已经
 	// 发了,为一份附赠回滚整次签到不合算。
-	aiGranted, aiErr := aigen.GrantCheckin(db, user, *group)
+	aiGranted, aiErr := aigen.GrantCheckin(db, user, *group, streak)
 	if aiErr != nil {
 		log.Printf("checkin: AI 次数赠送失败 user=%s: %v", user.ID, aiErr)
 	}

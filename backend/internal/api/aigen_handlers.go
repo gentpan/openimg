@@ -258,10 +258,19 @@ func (s *Server) handleAIStatus(c *gin.Context) {
 		"daily_limit": bal.DailyLimit,
 		"monthly":     bal.Monthly,
 		"remaining":   bal.Remaining(),
+		// 余额的拆解。少了它,"本月余额 56 · 每月配 50"读起来就像数据错了
+		// ——那 6 次是签到攒的,而界面从前无从说起。
+		"monthly_left": bal.MonthlyLeft,
+		"granted":      bal.Granted,
 		"sizes":       []string{"1:1", "3:2", "2:3", "4:3", "3:4", "16:9", "9:16"},
 		// 与两个提交入口共用同一个函数。界面上能选什么,后端就收什么。
 		"resolutions":  allowedResolutionsFor(u),
 		"picbi_linked": picbiLinked(u),
+	}
+	// 快过期的那批要单独说。额度有了有效期,却不告诉用户哪天作废,等于没有。
+	if bal.NextExpiry != nil {
+		out["next_expiry"] = bal.NextExpiry
+		out["next_expiry_credits"] = bal.NextExpiryCredits
 	}
 	// 关联之后本地额度用完不等于不能生成了,界面得知道那边还剩多少,否则
 	// remaining=0 会把入口整个藏掉。查不到就不报这个字段——它是锦上添花,

@@ -58,11 +58,51 @@ func Open(dsn string, autoMigrate bool) *gorm.DB {
 		&models.SiteSetting{},
 		&models.Reaction{},
 		&models.AIGeneration{},
+		&models.AICreditGrant{},
 	); err != nil {
 		log.Fatalf("automigrate: %v", err)
 	}
 	seedDefaults(db)
+	migrateAIGrants(db)
 	return db
+}
+
+// migrateAIGrants 把批次账本上线之前的存量余额补成一笔发放。
+//
+// 不补的话老用户的 users.ai_credits 还在,但批次是空的,第一次生成就会撞上
+// "汇总说够、批次说不够",被校准成 0——余额凭空蒸发。
+//
+// 过期时间给到月底,与从前的语义一致:那时余额本来就是每月重置的,存量这笔
+// 本来也活不过这个月。
+//
+// 幂等靠"一条批次都没有"这个条件:跑过一次之后这些用户就有记录了,重启不会
+// 重复补发。
+func migrateAIGrants(db *gorm.DB) {
+	var users []models.User
+	if err := db.Where("ai_credits > 0 AND id NOT IN (SELECT user_id FROM ai_credit_grants)").
+		Find(&users).Error; err != nil {
+		log.Printf("ai 批次迁移: 查存量失败: %v", err)
+		return
+	}
+	if len(users) == 0 {
+		return
+	}
+	now := time.Now().UTC()
+	exp := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+	n := 0
+	for _, u := range users {
+		g := models.AICreditGrant{
+			ID: uuid.New(), UserID: u.ID,
+			Amount: u.AICredits, Remaining: u.AICredits,
+			Reason: models.AIGrantMigrated, ExpiresAt: &exp,
+		}
+		if err := db.Create(&g).Error; err != nil {
+			log.Printf("ai 批次迁移: user=%s 失败: %v", u.ID, err)
+			continue
+		}
+		n++
+	}
+	log.Printf("ai 批次迁移: %d 个账号的存量余额已转成批次", n)
 }
 
 func seedDefaults(db *gorm.DB) {

@@ -20,11 +20,24 @@ var (
 )
 
 // Balance 是一个用户当下能用多少次的完整答案。
+//
+// Credits 之外还带着拆解,是因为一个总数解释不了自己:界面上"本月余额 56 次 ·
+// 每月配 50"曾经让人以为是数据错了,而 56 = 配给 50 + 签到 6 本来一句话就能
+// 讲清。额度有了有效期之后更需要说明——用户有权知道哪几次快过期了。
 type Balance struct {
 	Credits    int `json:"credits"`
 	UsedToday  int `json:"used_today"`
 	DailyLimit int `json:"daily_limit"`
 	Monthly    int `json:"monthly"`
+
+	// MonthlyLeft 是本月配给里还没用掉的,Granted 是签到攒下的。两者相加
+	// 等于 Credits。
+	MonthlyLeft int `json:"monthly_left"`
+	Granted     int `json:"granted"`
+
+	// 最近一批将要过期的额度。没有将过期的额度时两个字段都是零值。
+	NextExpiry        *time.Time `json:"next_expiry,omitempty"`
+	NextExpiryCredits int        `json:"next_expiry_credits,omitempty"`
 }
 
 // Remaining 是这一刻真正还能生成几次:余额与今日剩余里更小的那个。
@@ -41,24 +54,33 @@ func (b Balance) Remaining() int {
 
 func monthKey(t time.Time) string { return t.UTC().Format("2006-01") }
 
-// EnsureMonthly 按需补发当月额度。
+// EnsureMonthly 按需补发当月配给,顺带清掉过期批次。
 //
-// 没有定时任务:这个项目刻意不跑 cron(见 scheduler 的注释),所以月度发放
-// 在"用到的时候"结算——发现记录里的月份不是本月,就把余额重置为本月的量。
-// 重置而不是累加:每月 50 张是"每月的配给"而不是"攒着不过期的存货",否则
-// 半年不用的账号会攒出 300 张的突袭额度。签到送的次数在本月内有效,同理。
+// 没有定时任务:这个项目刻意不跑 cron(见 scheduler 的注释),所以发放和过期
+// 都在"用到的时候"结算。
+//
+// 从前这里是"发现月份变了就把余额重置成 50"。那个写法有个藏得很深的问题:
+// 重置是无差别的,会把签到攒下的一起抹平——而那些按规则该活满 60 天。现在
+// 配给自己带过期时间(月底),到点随批次一起失效,"不累积"是这么来的,不再
+// 需要谁去动别人的额度。
 func EnsureMonthly(db *gorm.DB, u *models.User, g models.UserGroup) error {
-	now := monthKey(time.Now())
-	if u.AICreditsMonth == now {
-		return nil
+	now := time.Now()
+	// 快路径:本月配给已经发过,也没有到期待清的批次,那就一个字都不用写。
+	// 读余额是最热的那条路,不该每次都开事务。
+	if u.AICreditsMonth == monthKey(now) {
+		var pending int64
+		if err := db.Model(&models.AICreditGrant{}).
+			Where("user_id = ? AND remaining > 0 AND expires_at IS NOT NULL AND expires_at <= ?",
+				u.ID, now).Count(&pending).Error; err != nil {
+			return err
+		}
+		if pending == 0 {
+			return nil
+		}
 	}
-	u.AICredits = g.AIMonthly
-	u.AICreditsMonth = now
-	return db.Model(&models.User{}).Where("id = ?", u.ID).
-		Updates(map[string]any{
-			"ai_credits":       u.AICredits,
-			"ai_credits_month": u.AICreditsMonth,
-		}).Error
+	return db.Transaction(func(tx *gorm.DB) error {
+		return ensureMonthlyTx(tx, u, g)
+	})
 }
 
 // UsedToday 数今天已经提交过几次。
@@ -88,46 +110,46 @@ func Current(db *gorm.DB, u *models.User, g models.UserGroup) (Balance, error) {
 	if err != nil {
 		return Balance{}, err
 	}
-	return Balance{
+	b := Balance{
 		Credits:    u.AICredits,
 		UsedToday:  used,
 		DailyLimit: g.AIDaily,
 		Monthly:    g.AIMonthly,
-	}, nil
+	}
+
+	grants, err := LiveGrants(db, u.ID)
+	if err != nil {
+		// 拆解失败不该让整个余额查询失败:总数是准的,少的只是说明文字。
+		log.Printf("ai: 取批次明细失败 user=%s: %v", u.ID, err)
+		return b, nil
+	}
+	for _, gr := range grants {
+		if gr.Reason == models.AIGrantMonthly {
+			b.MonthlyLeft += gr.Remaining
+		} else {
+			b.Granted += gr.Remaining
+		}
+	}
+	// LiveGrants 已按最先过期排序,取第一笔的日子,再把同一天到期的并进来
+	// ——同一天分两行报没有意义。
+	for _, gr := range grants {
+		if gr.ExpiresAt == nil {
+			continue
+		}
+		if b.NextExpiry == nil {
+			b.NextExpiry = gr.ExpiresAt
+		}
+		if sameDay(*gr.ExpiresAt, *b.NextExpiry) {
+			b.NextExpiryCredits += gr.Remaining
+		}
+	}
+	return b, nil
 }
 
-// Reserve 在提交给上游之前先把次数扣掉。
-//
-// 先扣后用:上游那一次调用真的花了钱,先调再扣会让并发请求越过余额。扣不
-// 动就直接拒,不进上游。
-func Reserve(db *gorm.DB, u *models.User, g models.UserGroup, credits int) error {
-	if credits <= 0 {
-		credits = 1
-	}
-	if err := EnsureMonthly(db, u, g); err != nil {
-		return err
-	}
-	used, err := UsedToday(db, u.ID)
-	if err != nil {
-		return err
-	}
-	if g.AIDaily > 0 && used >= g.AIDaily {
-		return ErrDailyLimit
-	}
-
-	// 条件更新兼作并发闸门:两个请求同时进来,只有一个能把余额从 n 减到
-	// n-1,另一个 RowsAffected 为 0。
-	res := db.Model(&models.User{}).
-		Where("id = ? AND ai_credits >= ?", u.ID, credits).
-		UpdateColumn("ai_credits", gorm.Expr("ai_credits - ?", credits))
-	if res.Error != nil {
-		return res.Error
-	}
-	if res.RowsAffected == 0 {
-		return ErrNoCredits
-	}
-	u.AICredits -= credits
-	return nil
+func sameDay(a, b time.Time) bool {
+	ay, am, ad := a.UTC().Date()
+	by, bm, bd := b.UTC().Date()
+	return ay == by && am == bm && ad == bd
 }
 
 // Begin 开一次生成:先花本地的免费次数,花光了才去动 pic.bi 的钱。
@@ -262,8 +284,8 @@ func beginLocal(db *gorm.DB, u *models.User, g models.UserGroup, gen *models.AIG
 		if locked.AICredits < gen.Credits {
 			return ErrNoCredits
 		}
-		if err := tx.Model(&models.User{}).Where("id = ?", u.ID).
-			UpdateColumn("ai_credits", gorm.Expr("ai_credits - ?", gen.Credits)).Error; err != nil {
+		// 按"先过期的先扣"走批次账本;汇总由 consumeTx 一并减掉。
+		if err := consumeTx(tx, u.ID, gen.Credits, time.Now()); err != nil {
 			return err
 		}
 
@@ -356,17 +378,28 @@ func beginRemote(db *gorm.DB, u *models.User, gen *models.AIGeneration) error {
 // ensureMonthlyTx 是 EnsureMonthly 的事务内版本。逻辑一致,只是复用外面
 // 传进来的 tx,好让补发与扣减落在同一把锁里。
 func ensureMonthlyTx(tx *gorm.DB, u *models.User, g models.UserGroup) error {
-	now := monthKey(time.Now())
-	if u.AICreditsMonth == now {
-		return nil
+	now := time.Now()
+	if _, err := expireTx(tx, u.ID, now); err != nil {
+		return err
 	}
-	u.AICredits = g.AIMonthly
-	u.AICreditsMonth = now
-	return tx.Model(&models.User{}).Where("id = ?", u.ID).
-		Updates(map[string]any{
-			"ai_credits":       u.AICredits,
-			"ai_credits_month": u.AICreditsMonth,
-		}).Error
+	if key := monthKey(now); u.AICreditsMonth != key {
+		exp := monthEnd(now)
+		if err := grantTx(tx, u.ID, g.AIMonthly, models.AIGrantMonthly, &exp); err != nil {
+			return err
+		}
+		if err := tx.Model(&models.User{}).Where("id = ?", u.ID).
+			UpdateColumn("ai_credits_month", key).Error; err != nil {
+			return err
+		}
+		u.AICreditsMonth = key
+	}
+	// 上面两步都可能动过汇总,回读一次,调用方手里的 u 才是准的。
+	var fresh models.User
+	if err := tx.Select("ai_credits").First(&fresh, "id = ?", u.ID).Error; err != nil {
+		return err
+	}
+	u.AICredits = fresh.AICredits
+	return nil
 }
 
 // Refund 在生成失败时把额度还回去。今日次数不退,理由见 UsedToday。
@@ -481,51 +514,80 @@ var refundLocal = func(db *gorm.DB, userID uuid.UUID, credits int) error {
 	if credits <= 0 {
 		return nil
 	}
-	return db.Model(&models.User{}).Where("id = ?", userID).
-		UpdateColumn("ai_credits", gorm.Expr("ai_credits + ?", credits)).Error
+	// 退成一笔新发放,而不是往原批次里加回去:扣的时候可能横跨好几笔,原样
+	// 退回得记住"从谁身上扣了多少",而那份记录并不存在。给满 TTL 是有意的
+	// ——生成失败不该让用户手里的额度比原来更短命。
+	exp := time.Now().Add(GrantTTL)
+	return db.Transaction(func(tx *gorm.DB) error {
+		return grantTx(tx, userID, credits, models.AIGrantRefund, &exp)
+	})
 }
 
-// GrantCheckin 是签到附带的赠送:随机 [min, max] 次。
+// GrantCheckin 是签到赠送:每天固定一份,连签踩中里程碑再加一笔。
 //
 // 永远只写本地账本,不分流。签到是"送",而 pic.bi 的分是用户充值的真钱、
 // 还能在 pic.bi 站内消费——往那边送就是免费铸币。
 //
-// 返回实际送出的次数,好让签到接口能如实告诉用户拿到了什么。上限按当月额度
-// 的两倍封顶——签到是锦上添花,不该让人靠天天签到把月配额顶到十倍。
-func GrantCheckin(db *gorm.DB, u *models.User, g models.UserGroup) (int, error) {
-	if g.AICheckinMax <= 0 {
-		return 0, nil
+// streak 由调用方传进来而不是读 u.CheckinStreak:那个字段在签到流程里是中途
+// 才写上去的,依赖调用顺序等于给以后的人埋一个"挪一行代码就少发奖励"的雷。
+//
+// 返回实际送出的次数,好让签到接口能如实告诉用户拿到了什么。
+func GrantCheckin(db *gorm.DB, u *models.User, g models.UserGroup, streak int) (int, error) {
+	if g.AICheckinMin <= 0 && g.AICheckinMax <= 0 {
+		return 0, nil // 这个组没开签到赠送
 	}
 	if err := EnsureMonthly(db, u, g); err != nil {
 		return 0, err
 	}
-	lo, hi := g.AICheckinMin, g.AICheckinMax
-	if lo < 0 {
-		lo = 0
+
+	daily := g.AICheckinMin
+	if daily < 0 {
+		daily = 0
 	}
-	if hi < lo {
-		hi = lo
+	// 区间退化成一个点就是固定值。留着随机能力是为了以后想调回去不用改结构。
+	if g.AICheckinMax > daily {
+		daily += rand.IntN(g.AICheckinMax - daily + 1)
 	}
-	want := lo
-	if hi > lo {
-		want = lo + rand.IntN(hi-lo+1)
-	}
-	if want == 0 {
+	bonus, label := streakReward(streak)
+	if daily+bonus <= 0 {
 		return 0, nil
 	}
-	cap := g.AIMonthly * 2
-	if cap > 0 && u.AICredits+want > cap {
-		want = cap - u.AICredits
-	}
-	if want <= 0 {
-		return 0, nil
-	}
-	if err := db.Model(&models.User{}).Where("id = ?", u.ID).
-		UpdateColumn("ai_credits", gorm.Expr("ai_credits + ?", want)).Error; err != nil {
-		return 0, err
-	}
-	u.AICredits += want
-	return want, nil
+
+	now := time.Now()
+	granted := 0
+	err := db.Transaction(func(tx *gorm.DB) error {
+		// 上限只卡赠送那部分,每月配给不计入——否则配给一发下来就把签到
+		// 的空间挤没了,越是活跃的用户越拿不到东西。
+		have, err := grantedLiveTx(tx, u.ID, now)
+		if err != nil {
+			return err
+		}
+		room := MaxGrantedCredits - have
+		if room <= 0 {
+			return nil
+		}
+		exp := now.Add(GrantTTL)
+		if n := min(daily, room); n > 0 {
+			if err := grantTx(tx, u.ID, n, models.AIGrantCheckin, &exp); err != nil {
+				return err
+			}
+			granted += n
+			room -= n
+		}
+		if n := min(bonus, room); n > 0 {
+			if err := grantTx(tx, u.ID, n, label, &exp); err != nil {
+				return err
+			}
+			granted += n
+		}
+		var fresh models.User
+		if err := tx.Select("ai_credits").First(&fresh, "id = ?", u.ID).Error; err != nil {
+			return err
+		}
+		u.AICredits = fresh.AICredits
+		return nil
+	})
+	return granted, err
 }
 
 // Describe 供日志与账本文案使用。

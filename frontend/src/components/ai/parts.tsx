@@ -40,6 +40,14 @@ export function QuotaInline({ status }: { status: AIStatusOn }) {
   const local = status.remaining;
   if (local <= 0 && picbi <= 0) return null;
 
+  // 额度有了有效期,就得说清哪天作废——不说的话用户是在毫无预警的情况下
+  // 少掉几次。放 title 里而不是单开一段:它只在快到期时才有意义,常态下多
+  // 一段字反而把这一行挤散。
+  const expiry =
+    status.next_expiry && status.next_expiry_credits
+      ? q.expiring(status.next_expiry_credits, new Date(status.next_expiry).toLocaleDateString())
+      : undefined;
+
   // The lead figure is whatever the next generation will actually be drawn
   // from. Once the free allowance is spent the pic.bi balance is the pool in
   // use, and showing a brand-coloured "0 次" above a button that still works
@@ -52,7 +60,15 @@ export function QuotaInline({ status }: { status: AIStatusOn }) {
       <span className="text-neutral-700">·</span>
       <span className="text-neutral-500">{q.today(status.used_today, status.daily_limit)}</span>
       <span className="text-neutral-700">·</span>
-      <span className="text-neutral-500">{q.monthly(status.credits, status.monthly)}</span>
+      <span className="text-neutral-500">{q.monthly(status.monthly_left, status.monthly)}</span>
+      {status.granted > 0 && (
+        <>
+          <span className="text-neutral-700">·</span>
+          <span className="text-neutral-500" title={expiry}>
+            {q.granted(status.granted)}
+          </span>
+        </>
+      )}
       {/* Only worth a fourth segment while the free pool is still the one in
           use; once it is not, the pic.bi figure is already the lead. */}
       {local > 0 && picbi > 0 && (

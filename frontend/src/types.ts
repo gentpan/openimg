@@ -426,12 +426,18 @@ export interface AIStatusOff {
 
 export interface AIStatusOn {
   enabled: true;
-  /** Generations left this month. Reset monthly, not accumulated. */
+  /** 当前总余额。= monthly_left + granted。 */
   credits: number;
   used_today: number;
   daily_limit: number;
   /** The monthly allowance, for reading `credits` as a fraction. */
   monthly: number;
+  /** credits 的拆解:配给还剩多少 + 签到攒了多少。两者相加等于 credits。 */
+  monthly_left: number;
+  granted: number;
+  /** 最近一批额度的过期时刻,没有将过期的额度时不下发。 */
+  next_expiry?: string;
+  next_expiry_credits?: number;
   /** min(credits, daily_limit − used_today) — what is left right now. */
   remaining: number;
   /** Aspect ratios the server accepts, e.g. "16:9". */

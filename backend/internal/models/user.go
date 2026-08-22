@@ -177,12 +177,21 @@ type UserGroup struct {
 	// AI 文生图额度。按"次"计,与存储字节是两套账——一次生成占的空间由
 	// 产出的图自己按字节计,而生成本身的成本是调用上游一次。
 	//
-	// 三个数一起约束:AIMonthly 是每月发放的次数,AIDaily 是每天最多用几次
-	// (防一天烧光整月配额),签到再随机加 [AICheckinMin, AICheckinMax] 次。
+	// 三个数一起约束:AIMonthly 是每月发放的次数(月底过期,不累积),
+	// AIDaily 是每天最多用几次(防一天烧光整月配额),签到再加
+	// [AICheckinMin, AICheckinMax] 次。
+	//
+	// 两端默认都是 1,也就是每天固定送一次——区间退化成一个点。留着区间是
+	// 为了以后想改回随机不用动结构。连签里程碑另算,阶梯写在 aigen 包里
+	// (StreakRewards),不进这张表:那是全站统一的产品规则,不是分组配额。
+	//
+	// 注意 AIDaily 在库里的列名是 a_idaily,不是 ai_daily。GORM 的命名策略
+	// 把 AIDaily 切成了 A+ID+aily(ID 在它的固有缩写表里)。列已经建成那样了,
+	// 改要迁移;新表请显式写 TableName/column,别再踩。
 	AIMonthly    int `gorm:"not null;default:50" json:"ai_monthly"`
 	AIDaily      int `gorm:"not null;default:5" json:"ai_daily"`
 	AICheckinMin int `gorm:"not null;default:1" json:"ai_checkin_min"`
-	AICheckinMax int `gorm:"not null;default:3" json:"ai_checkin_max"`
+	AICheckinMax int `gorm:"not null;default:1" json:"ai_checkin_max"`
 
 	AllowBYOS   bool `gorm:"not null;default:true" json:"allow_byos"`
 	MaxProfiles int  `gorm:"not null;default:3" json:"max_profiles"`

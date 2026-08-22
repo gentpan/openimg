@@ -564,6 +564,11 @@ export const en: Dict = {
   },
 
   gallery: {
+    copyLinksFailed: "Copy failed",
+    copyLinks: "Copy links",
+    copyFormat: "Format",
+    copiedLinks: (n: number) => `Copied ${n} link${n === 1 ? "" : "s"}`,
+    wipePhrase: "DELETE ALL",
     title: "My gallery",
     searchPlaceholder: "Search file names",
     clearSelection: "Clear selection",
@@ -894,6 +899,7 @@ export const en: Dict = {
   },
 
   otpConfirm: {
+    typeToConfirm: "Type this to confirm:",
     passkeyAction: "Continue",
     purgeTitle: "Clear gallery",
     purgeAction: "Confirm clear",

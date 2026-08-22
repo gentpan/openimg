@@ -25,6 +25,7 @@ export default function OtpConfirm({
   purpose,
   detail,
   danger,
+  confirmPhrase,
   onCancel,
   onVerified,
 }: {
@@ -32,12 +33,21 @@ export default function OtpConfirm({
   /** Extra line describing exactly what is about to happen. */
   detail?: React.ReactNode;
   danger?: boolean;
+  /**
+   * 除验证码之外还要一字不差地打出来的短语。
+   *
+   * 验证码证明的是"这个邮箱是你的",证明不了"你真的想清空整个图库"——收到码
+   * 之后照着填是肌肉记忆,而这一步逼人停下来看清自己在做什么。只给真正不可
+   * 逆的操作用。
+   */
+  confirmPhrase?: string;
   onCancel: () => void;
   /** Receives the code; throw to keep the dialog open and show the message. */
   onVerified: (code: string) => Promise<void>;
 }) {
   const { t } = useLang();
   const [code, setCode] = useState("");
+  const [phrase, setPhrase] = useState("");
   const [sending, setSending] = useState(true);
   const [busy, setBusy] = useState(false);
   const [sentTo, setSentTo] = useState("");
@@ -81,8 +91,13 @@ export default function OtpConfirm({
     return () => document.removeEventListener("keydown", onKey);
   }, [busy, onCancel]);
 
+  // 两道都过了才让点。短语要求一字不差——大小写和空格都算,因为它唯一的
+  // 作用就是打断"下一步下一步"的惯性。
+  const phraseOK = !confirmPhrase || phrase === confirmPhrase;
+  const ready = code.length === 6 && phraseOK;
+
   async function submit() {
-    if (code.length !== 6 || busy) return;
+    if (!ready || busy) return;
     setBusy(true);
     setErr(null);
     try {
@@ -138,6 +153,26 @@ export default function OtpConfirm({
           className="w-full rounded-lg bg-neutral-950 border border-neutral-800 px-3 py-2 text-center text-lg tracking-[0.4em] tabular-nums outline-none focus:border-brand-500 placeholder-faint placeholder:text-sm placeholder:tracking-normal"
         />
 
+        {confirmPhrase && (
+          <div className="mt-2.5">
+            <p className="text-[11px] text-neutral-500 mb-1.5">
+              {t.otpConfirm.typeToConfirm}
+              <code className="mx-1 rounded bg-neutral-950 border border-neutral-800 px-1.5 py-0.5 text-[11px] text-red-300">
+                {confirmPhrase}
+              </code>
+            </p>
+            <input
+              value={phrase}
+              onChange={(e) => setPhrase(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              placeholder={confirmPhrase}
+              autoComplete="off"
+              spellCheck={false}
+              className="w-full rounded-lg bg-neutral-950 border border-neutral-800 px-3 py-1.5 text-sm outline-none focus:border-red-500 placeholder-faint"
+            />
+          </div>
+        )}
+
         {err && <div className="mt-2 text-[11px] text-red-400">{err}</div>}
 
         <div className="mt-3 flex items-center gap-2">
@@ -158,7 +193,7 @@ export default function OtpConfirm({
           </button>
           <button
             onClick={submit}
-            disabled={code.length !== 6 || busy}
+            disabled={!ready || busy}
             className={`rounded-lg px-3 py-1.5 text-xs font-medium text-white transition disabled:bg-neutral-800 disabled:text-neutral-500 ${
               danger ? "bg-red-600 hover:bg-red-700" : "bg-brand-600 hover:bg-brand-500"
             }`}

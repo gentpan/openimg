@@ -598,6 +598,11 @@ export const zh = {
   },
 
   gallery: {
+    copyLinksFailed: "复制失败",
+    copyLinks: "复制链接",
+    copyFormat: "复制格式",
+    copiedLinks: (n: number) => `已复制 ${n} 条链接`,
+    wipePhrase: "清空图库",
     title: "我的图库",
     searchPlaceholder: "搜索文件名",
     clearSelection: "取消全选",
@@ -924,6 +929,7 @@ export const zh = {
   },
 
   otpConfirm: {
+    typeToConfirm: "再输入一次这几个字确认：",
     passkeyAction: "继续添加",
     purgeTitle: "清空图库",
     purgeAction: "确认清空",

@@ -12,6 +12,7 @@ import OtpConfirm from "../components/OtpConfirm";
 import { useToast } from "../ToastContext";
 import { useLang } from "../LangContext";
 import PageSizeMenu from "../components/PageSizeMenu";
+import { FORMAT_LABELS, linkFor, type LinkFormat } from "../UploadContext";
 import { useDialog } from "../DialogContext";
 
 // Every size is a multiple of the 5-column grid, so a full page never ends in
@@ -33,6 +34,10 @@ export default function GalleryPage() {
   const [wipeOpen, setWipeOpen] = useState(false);
   const toast = useToast();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // 复制格式记在这里而不是每次问一遍:同一个人几乎总用同一种格式,
+  // 每批都要重选一次是纯粹的摩擦。
+  const [copyFmt, setCopyFmt] = useState<LinkFormat>("url");
+  const [fmtOpen, setFmtOpen] = useState(false);
   const [detail, setDetail] = useState<Image | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -78,6 +83,22 @@ export default function GalleryPage() {
   const allLoadedSelected = images.length > 0 && selected.size === images.length;
   function toggleAll() {
     setSelected(allLoadedSelected ? new Set() : new Set(images.map((i) => i.id)));
+  }
+
+  /** 把选中的图按当前格式拼成多行复制走。
+   *
+   * 顺序按图库里看到的来,不按勾选的先后——粘进文章里的顺序应该是你眼睛看到
+   * 的那个顺序,而不是你手点的顺序。 */
+  async function copySelected(fmt: LinkFormat) {
+    const picked = images.filter((i) => selected.has(i.id));
+    if (picked.length === 0) return;
+    const text = picked.map((i) => linkFor(i, fmt)).join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(t.gallery.copiedLinks(picked.length));
+    } catch (e) {
+      toast.error(t.gallery.copyLinksFailed, e instanceof Error ? e.message : String(e));
+    }
   }
 
   async function removeSelected() {
@@ -205,6 +226,55 @@ export default function GalleryPage() {
             <div className="flex-1" />
 
             {selected.size > 0 && (
+              <div className="relative">
+                <div className="flex items-stretch rounded-lg border border-neutral-700 overflow-hidden">
+                  <button
+                    onClick={() => copySelected(copyFmt)}
+                    disabled={busy || wiping !== null}
+                    className="px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-800 disabled:opacity-50 transition"
+                  >
+                    <Icon name="copy" className="mr-1.5" />
+                    {t.gallery.copyLinks}
+                  </button>
+                  {/* 分开的下拉:主按钮用上次的格式一键走完,换格式才需要多点一下。 */}
+                  <button
+                    onClick={() => setFmtOpen((v) => !v)}
+                    disabled={busy || wiping !== null}
+                    title={t.gallery.copyFormat}
+                    className="border-l border-neutral-700 px-2 text-xs text-neutral-500 hover:bg-neutral-800 hover:text-neutral-300 disabled:opacity-50 transition"
+                  >
+                    {FORMAT_LABELS.find((f) => f.key === copyFmt)?.label}
+                    <Icon name="chevron-down" className="ml-1 text-[9px]" />
+                  </button>
+                </div>
+                {fmtOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setFmtOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1 z-20 min-w-[7rem] rounded-lg border border-neutral-800 bg-neutral-900 py-1 shadow-panel">
+                      {FORMAT_LABELS.map((f) => (
+                        <button
+                          key={f.key}
+                          onClick={() => {
+                            setCopyFmt(f.key);
+                            setFmtOpen(false);
+                            copySelected(f.key);
+                          }}
+                          className={`block w-full px-3 py-1.5 text-left text-xs transition ${
+                            f.key === copyFmt
+                              ? "text-brand-300"
+                              : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
+                          }`}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {selected.size > 0 && (
               <button
                 onClick={removeSelected}
                 disabled={busy || wiping !== null}
@@ -284,6 +354,7 @@ export default function GalleryPage() {
         <OtpConfirm
           purpose="purge"
           danger
+          confirmPhrase={t.gallery.wipePhrase}
             detail={query ? t.gallery.wipeConfirmSearch(total, query) : t.gallery.wipeConfirmAll(total)}
           onCancel={() => setWipeOpen(false)}
           onVerified={wipeAll}

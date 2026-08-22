@@ -19,6 +19,7 @@ import (
 	"github.com/gentpan/openimg/backend/internal/i18n"
 	"github.com/gentpan/openimg/backend/internal/imageproc"
 	"github.com/gentpan/openimg/backend/internal/models"
+	"github.com/gentpan/openimg/backend/internal/promote"
 	"github.com/gentpan/openimg/backend/internal/quota"
 	"github.com/gentpan/openimg/backend/internal/scheduler"
 	"github.com/gentpan/openimg/backend/internal/storage"
@@ -168,7 +169,18 @@ func (s *Server) finishUpload(c *gin.Context, u *models.User, g *models.UserGrou
 	}
 
 	out := s.decorate([]models.Image{*img})
-	c.JSON(http.StatusCreated, gin.H{"image": out[0], "deduplicated": dup})
+	resp := gin.H{"image": out[0], "deduplicated": dup}
+	// 顺带看一眼够不够格升级/扩容。挂在这里是因为没有定时任务,而"刚传完一
+	// 张图"正好是判断依据刚变过的那一刻。Check 自己吞掉所有错误——这是件
+	// 顺带做的好事,不该让上传因为它失败。
+	if r := promote.Check(s.DB, u, *g); r.Any() {
+		resp["promoted"] = gin.H{
+			"group":         r.PromotedTo,
+			"granted_bytes": r.GrantedBytes,
+			"loyalty":       r.Loyalty,
+		}
+	}
+	c.JSON(http.StatusCreated, resp)
 }
 
 type storeParams struct {

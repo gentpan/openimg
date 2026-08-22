@@ -9,6 +9,7 @@ import (
 
 	"github.com/gentpan/openimg/backend/internal/auth"
 	"github.com/gentpan/openimg/backend/internal/checkin"
+	"github.com/gentpan/openimg/backend/internal/promote"
 	"github.com/gentpan/openimg/backend/internal/models"
 	"github.com/gentpan/openimg/backend/internal/quota"
 	"github.com/gin-gonic/gin"
@@ -119,6 +120,11 @@ func (s *Server) handleCheckin(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	// 签到是唯一一个"没在传图也会天天来"的动作,拿它兜住那些攒够了资历、
+	// 只是最近没上传的账号。这里不改签到的返回结构,升上去了下次进页面就
+	// 看得到——为一个附带结果去动签到的响应契约不划算。
+	promote.Check(s.DB, u, g)
+
 	if res.Capped && res.Granted == 0 {
 		// 内嵌 Result 而不是手抄字段。手抄过一版,结果把 granted_bytes 写成
 		// 了 granted,还整个漏掉 ai_credits——存储顶到上限时 AI 次数照常发放,

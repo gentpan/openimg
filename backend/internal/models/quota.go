@@ -14,6 +14,11 @@ const (
 	QuotaCheckin  QuotaTxType = "checkin"
 	QuotaReferral QuotaTxType = "referral"
 	QuotaAdmin    QuotaTxType = "admin_grant"
+	// QuotaPromote 是升到受信任组时补上的那段差额,QuotaLoyalty 是长期活跃
+	// 用户每半年一次的扩容。两者都进账本,好处不只是能回溯:"上次什么时候
+	// 扩过容"直接从这张表查最近一条就有,不必在 users 上再挂一个时间字段。
+	QuotaPromote  QuotaTxType = "promote_grant"
+	QuotaLoyalty  QuotaTxType = "loyalty_bonus"
 	// Occupancy changes — these move User.UsedBytes.
 	QuotaUpload QuotaTxType = "upload"
 	QuotaDelete QuotaTxType = "delete_refund"
@@ -24,7 +29,7 @@ const (
 // user a single readable timeline.
 func (t QuotaTxType) AffectsCapacity() bool {
 	switch t {
-	case QuotaSignup, QuotaCheckin, QuotaReferral, QuotaAdmin:
+	case QuotaSignup, QuotaCheckin, QuotaReferral, QuotaAdmin, QuotaPromote, QuotaLoyalty:
 		return true
 	default:
 		return false

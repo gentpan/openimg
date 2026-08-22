@@ -80,6 +80,13 @@ type User struct {
 	LastCheckinDate string `gorm:"size:10;index" json:"last_checkin_date,omitempty"`
 	CheckinStreak   int    `gorm:"not null;default:0" json:"checkin_streak"`
 
+	// InactiveNotifiedAt 是上一次给这个账号发"你的图还在"提醒的时间。
+	//
+	// 判重条件写成 InactiveNotifiedAt < LastLoginAt 而不是"发过就不再发":
+	// 用户回来登录一次、又沉寂半年,是该再提醒一次的。用两个时间戳的先后
+	// 关系表达"这一轮沉寂里提醒过了吗",比再加一个计数器干净。
+	InactiveNotifiedAt *time.Time `json:"-"`
+
 	// DefaultProfileID is the storage destination new uploads land on. Nil
 	// means "use the platform pool".
 	DefaultProfileID *uuid.UUID `gorm:"type:uuid" json:"default_profile_id,omitempty"`

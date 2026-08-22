@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gentpan/openimg/backend/internal/i18n"
+	"html"
 	"io"
 	"net/http"
 	"time"
@@ -134,4 +135,47 @@ func OTPEmailHTML(lang i18n.Lang, brand, code string, ttlMinutes int) string {
 		pal.BoxBg, pal.BoxBorder, pal.Code, code,
 		i18n.TL(lang, "email.otp.warning"),
 		i18n.TL(lang, "email.footer.tagline"))
+}
+
+// InactiveEmailHTML 渲染"很久没见，你的图都还在"这封信。
+//
+// 刻意不提删除、不设期限、不写"逾期将清理"。这不是催促,是一次唤回,顺带把
+// 图床最该给人的那个承诺再说一遍——链接不会坏。图床存的东西和网盘不一样:
+// 它被写进了别人的博客和帖子里,收信人自己不登录,不代表那些页面不在被人看。
+// 拿删除吓唬他,吓走的是这个承诺本身。
+func InactiveEmailHTML(brand, nickname string, images int, space, siteURL string) string {
+	pal := mailPalettes[MailBrand(brand)]
+	who := nickname
+	if who == "" {
+		who = "你"
+	}
+	return fmt.Sprintf(`<!DOCTYPE html>
+<html><body style="margin:0;padding:0;background:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="padding:32px 16px">
+    <tr><td align="center">
+      <table role="presentation" width="480" style="background:#ffffff;border-radius:12px;padding:40px 32px;max-width:100%%">
+        <tr><td>
+          <h1 style="margin:0 0 8px;color:#1a1a1a;font-size:20px">好久不见</h1>
+          <p style="margin:0 0 24px;color:#6b6b6b;font-size:14px;line-height:1.6">
+            %s 有半年多没来 Openimg 了。这封信只是想说一声：图都还在，链接也都还能用。
+          </p>
+          <div style="background:%s;border:1px solid %s;border-radius:8px;padding:18px;text-align:center">
+            <div style="color:%s;font-size:28px;font-weight:600;line-height:1.2">%d 张</div>
+            <div style="color:#6b6b6b;font-size:13px;margin-top:4px">共 %s</div>
+          </div>
+          <p style="margin:24px 0 0;color:#6b6b6b;font-size:14px;line-height:1.6">
+            我们不会因为你没登录就删掉它们——那些链接可能正躺在别人的文章里。
+          </p>
+          <p style="margin:24px 0 0">
+            <a href="%s" style="display:inline-block;background:%s;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:14px">回去看看</a>
+          </p>
+          <p style="margin:28px 0 0;color:#9b9b9b;font-size:12px;line-height:1.5">
+            这封信不需要回复。如果你不想再收到，登录后可以在设置里关掉。
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`, html.EscapeString(who), pal.BoxBg, pal.BoxBorder, pal.Code, images, html.EscapeString(space),
+		html.EscapeString(siteURL), pal.Code)
 }

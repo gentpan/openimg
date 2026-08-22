@@ -56,10 +56,18 @@ export function linkFor(img: Image, fmt: LinkFormat): string {
   }
 }
 
-// Uploads run a few at a time: the server transcodes synchronously, so firing
-// twenty at once just queues them behind each other while holding twenty
-// connections open.
-const CONCURRENCY = 3;
+// 同时传几个。
+//
+// 3 太保守了,依据也不完全对——服务器是 12 核,并不是"发二十个就全排在一起"。
+// 但也不该照搬 Mac 端那个 20,浏览器这边的瓶颈在别处:
+//
+//   · 服务端 vips 按 VIPS_CONCURRENCY=4 跑,12 核大约只够 3 路真正并行转码。
+//     再多的请求转码那一段仍然排队,只有网络传输那一段是叠起来的。
+//   · 每个 XHR 的进度回调都会 setItems 一次,而那是整条队列的 map。并发越
+//     多,重渲染越密,几十张的队列会肉眼可见地掉帧。
+//
+// 6 让传输段有足够重叠盖住转码排队,又不至于把进度更新变成一场重渲染风暴。
+const CONCURRENCY = 6;
 
 /** Wide enough to stay crisp in the 32px slot on a 2x display. */
 const PREVIEW_PX = 96;

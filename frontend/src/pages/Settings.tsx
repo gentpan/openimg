@@ -5,7 +5,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import Footer from "../Footer";
 import Nav from "../components/Nav";
-import { accountApi, authApi } from "../api";
+import { accountApi, authApi, userApi } from "../api";
 import ApiTokens from "../components/ApiTokens";
 import OtpConfirm from "../components/OtpConfirm";
 import { useToast } from "../ToastContext";
@@ -149,6 +149,7 @@ export default function SettingsPage() {
           } />
           <Row label={t.settings.accountInfo.role} value={<Tag color="brand">{user.role}</Tag>} />
           {user.group && <Row label={t.settings.accountInfo.tier} value={user.group} />}
+          <Row label={t.settings.accountInfo.emailNotify} value={<EmailNotifyToggle />} />
         </Section>
 
         {/* Login methods */}
@@ -558,6 +559,59 @@ function Section({
       </div>
       <div className="space-y-3">{children}</div>
     </section>
+  );
+}
+
+/** 沉寂提醒的开关。
+ *
+ * 只管这一类"可以不发"的信,验证码和密码重置不受它影响——那些是用户自己当场
+ * 触发的动作,收不到等于功能坏了,不是打扰。两类混在一个开关下,用户一关就再
+ * 也登不回来。
+ *
+ * 乐观更新:这是个开关,请求在飞的时候让它弹回去会显得像坏了。
+ */
+function EmailNotifyToggle() {
+  const { user, refresh } = useAuth();
+  const { t } = useLang();
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const [local, setLocal] = useState<boolean | null>(null);
+  if (!user) return null;
+
+  const on = local ?? user.email_notify !== false;
+
+  async function toggle() {
+    const next = !on;
+    setLocal(next);
+    setBusy(true);
+    try {
+      await userApi.updatePreferences({ email_notify: next });
+      await refresh();
+      setLocal(null);
+    } catch (e) {
+      setLocal(null); // 回到服务端那份真相
+      toast.error(t.common.saveFailed, e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <span className="inline-flex items-center gap-2">
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={busy}
+        className={`rounded-md px-2 py-0.5 text-xs transition ${
+          on
+            ? "bg-brand-600/20 text-brand-300 hover:bg-brand-600/30"
+            : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+        } disabled:opacity-50`}
+      >
+        {on ? t.settings.accountInfo.emailNotifyOn : t.settings.accountInfo.emailNotifyOff}
+      </button>
+      <span className="text-[11px] text-neutral-600">{t.settings.accountInfo.emailNotifyHint}</span>
+    </span>
   );
 }
 

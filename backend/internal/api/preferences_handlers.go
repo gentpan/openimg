@@ -19,6 +19,9 @@ type preferencesReq struct {
 	// Timezone 决定这个账号的"一天"从几点开始,签到与日限都按它算。
 	// IANA 名,客户端启动时报一次。
 	Timezone *string `json:"timezone"`
+
+	// 关掉之后不再收沉寂提醒。指针类型:不传表示"这次不动这一项"。
+	EmailNotify *bool `json:"email_notify"`
 }
 
 var (
@@ -61,6 +64,9 @@ func (s *Server) handleUpdatePreferences(c *gin.Context) {
 			}
 		}
 		updates["timezone"] = *req.Timezone
+	}
+	if req.EmailNotify != nil {
+		updates["email_notify"] = *req.EmailNotify
 	}
 	if req.UploadMode != nil {
 		if !allowedModes[*req.UploadMode] {

@@ -42,6 +42,7 @@ type publicUser struct {
 	CheckedInToday bool   `json:"checked_in_today"`
 	HasPassword    bool   `json:"has_password"`
 	EmailVerified  bool   `json:"email_verified"`
+	EmailNotify    bool   `json:"email_notify"`
 	Google         bool   `json:"google_connected"`
 	Github         bool   `json:"github_connected"`
 	// Picbi 不是登录方式,是"额度从 pic.bi 扣"的关联。前端据此决定要不要
@@ -69,6 +70,7 @@ func toPublic(u *models.User, group *models.UserGroup, avatarURL string) publicU
 		CheckedInToday: u.LastCheckinDate >= checkin.TodayIn(u.Location()) && u.LastCheckinDate != "",
 		HasPassword:    u.PasswordHash != "",
 		EmailVerified:  u.EmailVerified,
+		EmailNotify:    u.EmailNotify,
 		Google:         u.GoogleSub != "",
 		Github:         u.GithubID != "",
 		Picbi:          u.PicbiID != "",

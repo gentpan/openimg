@@ -80,6 +80,13 @@ type User struct {
 	LastCheckinDate string `gorm:"size:10;index" json:"last_checkin_date,omitempty"`
 	CheckinStreak   int    `gorm:"not null;default:0" json:"checkin_streak"`
 
+	// EmailNotify 管的只是"可以不发"的那类邮件——目前就是沉寂提醒。
+	//
+	// 验证码、密码重置这些不受它影响:那些是用户自己当场触发的动作,收不到
+	// 就等于功能坏了,不是打扰。把两类混在一个开关下,用户一关就再也登不
+	// 回来。
+	EmailNotify bool `gorm:"not null;default:true" json:"email_notify"`
+
 	// InactiveNotifiedAt 是上一次给这个账号发"你的图还在"提醒的时间。
 	//
 	// 判重条件写成 InactiveNotifiedAt < LastLoginAt 而不是"发过就不再发":

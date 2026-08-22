@@ -703,6 +703,10 @@ export const zh = {
       docsLink: "怎么接入",
     },
     accountInfo: {
+      emailNotify: "邮件提醒",
+      emailNotifyOn: "接收",
+      emailNotifyOff: "已关闭",
+      emailNotifyHint: "很久没来时提醒你图还在。验证码这类不受影响。",
       title: "账号信息",
       role: "角色",
       tier: "用户组",

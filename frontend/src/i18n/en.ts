@@ -672,6 +672,10 @@ export const en: Dict = {
       docsLink: "How to set it up",
     },
     accountInfo: {
+      emailNotify: "Email",
+      emailNotifyOn: "On",
+      emailNotifyOff: "Off",
+      emailNotifyHint: "A nudge if you have been away a long while. Sign-in codes are unaffected.",
       title: "Account info",
       role: "Role",
       tier: "Tier",

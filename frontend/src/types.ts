@@ -18,6 +18,8 @@ export interface User {
   avatar_url?: string;
   referral_code?: string;
   default_profile_id?: string;
+  /** 关掉之后不再收沉寂提醒。验证码这类不受影响——那是当场触发的动作。 */
+  email_notify: boolean;
   upload_mode: "optimized" | "original";
   variant_format: "none" | "webp" | "avif";
   max_image_width: number;

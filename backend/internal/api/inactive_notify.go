@@ -82,6 +82,7 @@ func (s *Server) notifyInactive(ctx context.Context) {
 		AND (inactive_notified_at IS NULL OR inactive_notified_at < COALESCE(last_login_at, created_at))
 		AND status = ?
 		AND email_verified = true
+		AND email_notify = true
 		AND EXISTS (SELECT 1 FROM images WHERE images.user_id = users.id AND images.deleted_at IS NULL)
 	`, cutoff, models.UserActive).
 		Order("COALESCE(last_login_at, created_at) ASC").
